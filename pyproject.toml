@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "AdEx_blackbox"
+version = "0.1.0"
+description = ""
+authors = ["oe1307 <oe.issa.392@s.kyushu-u.ac.jp>"]
+
+[tool.poetry.dependencies]
+python = "=3.9.13"
+pip = "^22.2.2"
+black = {extras = ["jupyter"], version = "^22.6.0"}
+isort = "^5.10.1"
+pyproject-flake8 = "^0.0.1-alpha.5"
+taskipy = "^1.10.2"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.flake8]
+ignore = "W605, W503, F401 E203,"
+max-line-length = 88
+
+[tool.taskipy.tasks]
+format = "black .; isort .; pflake8 ."
