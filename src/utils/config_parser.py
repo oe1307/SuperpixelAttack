@@ -1,0 +1,42 @@
+import json
+import os
+import pprint
+
+import yaml
+from attrdict import AttrDict
+
+from .logging import setup_logger
+
+logger = setup_logger(__name__)
+
+
+class ConfigParser:
+    def __init__(self):
+        self.log_format = {
+            "indent": 1,
+            "width": 40,
+            "depth": None,
+            "compact": False,
+            "sort_dicts": False,
+        }
+
+    def read(self, path, args=None):
+        logger.debug(f"\n [ READ ] {path}\n")
+        obj = yaml.safe_load(open(path, mode="r"))
+        if args is not None:
+            args = vars(args)
+            for k in args.keys():
+                if args[k] is None and k in obj.keys():
+                    args[k] = obj[k]
+            obj.update(args)
+        msg = pprint.pformat(obj, **self.log_format)
+        logger.debug(msg)
+        self.config = AttrDict(obj)
+        return self.config
+
+    def save(self, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        json.dump(self.config, open(path, mode="w"), indent=4)
+
+
+config_parser = ConfigParser()

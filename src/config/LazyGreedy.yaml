@@ -1,0 +1,22 @@
+attacker: LazyGreedy
+
+n_examples: 11000
+norm: Linf
+dataset:
+    #
+    cifar10
+    # cifar100
+    # imagenet
+
+epsilon: 0.03137254901960784
+iteration: 2000
+criterion:
+    #
+    cw
+    # ce
+    # dlr
+
+model:
+    # model_name: batch_size
+    Carmon2019Unlabeled: 2000
+    Ding2020MMA: 1000

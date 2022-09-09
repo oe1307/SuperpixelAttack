@@ -1,0 +1,19 @@
+# model
+git+https://github.com/RobustBench/robustbench.git
+--find-links https://download.pytorch.org/whl/cu116/torch_stable.html
+torch
+torchvision
+
+# utils
+tqdm
+colorlog
+pyyaml
+numpy
+pandas
+attrdict
+notebook
+
+# formatter
+black
+isort
+pyproject-flake8

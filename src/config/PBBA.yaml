@@ -1,6 +1,0 @@
-# https://github.com/snu-mllab/parsimonious-blackbox-attack
-
-model: Carmon2019Unlabeled
-queries: 1000
-
-attacker: PBBA

@@ -1,0 +1,38 @@
+#!/bin/sh
+
+if [ $1 = "setup" ]; then
+    mkdir -p $(dirname $0)/storage/data
+    cd $(dirname $0)/storage/data
+    if [ ! -e imagenet.tar.gz ]; then
+        scp ds:/data0/issa/other/imagenet.tar.gz imagenet.tar.gz
+    fi
+    if [ ! -e imagenet ]; then
+        tar -xzf imagenet.tar.gz
+    else
+        echo "-> imagenet already exists"
+    fi
+
+elif [ $1 = "install" ]; then
+    cd $(dirname $0)
+    pip freeze >__tmp.txt
+    pip uninstall -r __tmp.txt -y
+    rm __tmp.txt
+    pip install -r requirements.txt
+    clear
+
+elif [ $1 = "format" ]; then
+    echo "\n----black-----"
+    black $(dirname $0)
+    echo "\n----isort-----"
+    isort $(dirname $0)
+    echo "\n----flake8----"
+    pflake8 $(dirname $0)
+    echo
+
+elif [ $1 = "test" ]; then
+    cd $(dirname $0)/src
+    python attack.py --config config/LazyGreedy.yaml
+
+else
+    echo "Usage: $0 [setup|install|format|test]"
+fi
