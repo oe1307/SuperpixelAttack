@@ -9,11 +9,13 @@ tqdm
 colorlog
 pyyaml
 numpy
+matplotlib
 pandas
 attrdict
 notebook
 
 # formatter
 black
+black[jupyter]
 isort
 pyproject-flake8

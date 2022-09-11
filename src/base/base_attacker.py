@@ -19,35 +19,54 @@ class Attacker:
         self.total_time = time.time()
         self.clean_acc = 0
         self.robust_acc = 0
-        self.best_loss = torch.zeros((self.config.n_examples, self.config.iteration))
-        self.current_loss = torch.zeros((self.config.n_examples, self.config.iteration))
+        self.best_loss = torch.zeros(
+            (self.config.n_examples, self.config.iteration + 1)
+        )
+        self.current_loss = torch.zeros(
+            (self.config.n_examples, self.config.iteration + 1)
+        )
         self.num_forward = 0
         self.num_backward = 0
+        self._recorder()
 
-    @torch.inference_mode()
+    def _recorder(self):
+        pass
+
     def attack(self, model, data, label, criterion):
         self.savedir = self.config.savedir + f"{model.name}"
         os.makedirs(self.savedir)
 
         num_batch = math.ceil(data.shape[0] / model.batch_size)
         for i in range(num_batch):
-            start = i * model.batch_size
-            end = min((i + 1) * model.batch_size, self.config.n_examples)
-            x = data[start:end].to(self.config.device)
-            y = label[start:end].to(self.config.device)
-            breakpoint()
+            logger.info(f"batch {i + 1}/{num_batch}")
+            self.start = i * model.batch_size
+            self.end = min((i + 1) * model.batch_size, self.config.n_examples)
+            x = data[self.start : self.end].to(self.config.device)
+            y = label[self.start : self.end].to(self.config.device)
+            self._clean_acc(model, x, y, criterion)
             self._attack(model, x, y, criterion)
 
         self.record()
 
-    def record(self):
-        self.total_time = time.time() - self.total_time
-        self.clean_acc /= self.config.n_examples
-        self.robust_acc /= self.config.n_examples
-        self.ASR = 1 - self.robust_acc
+    @torch.inference_mode()
+    def _clean_acc(self, model, x, y, criterion):
+        logits = model(x).clone().detach()
+        self.clean_acc += torch.sum(logits.argmax(dim=1) == y).item()
+        loss = criterion(logits, y).detach().cpu()
+        self.best_loss[self.start : self.end, 0] = loss
+        self.current_loss[self.start : self.end, 0] = loss
+        self.num_forward += x.shape[0]
 
-        np.savetxt(f"{self.savedir}/best_loss.csv", self.best_loss)
-        np.savetxt(f"{self.savedir}/current_loss.csv", self.current_loss)
+    def record(self):
+        self._record()
+
+        self.total_time = time.time() - self.total_time
+        self.clean_acc = self.clean_acc / self.config.n_examples * 100
+        self.robust_acc = self.clean_acc / self.config.n_examples * 100
+        self.ASR = 100 - self.robust_acc
+
+        np.save(f"{self.savedir}/best_loss.npy", self.best_loss.cpu().numpy())
+        np.save(f"{self.savedir}/current_loss.npy", self.best_loss.cpu().numpy())
 
         print(
             "\n"
@@ -59,3 +78,6 @@ class Attacker:
             + f"num_backward = {self.num_backward}\n",
             file=open(self.savedir + "/summary.txt", "w"),
         )
+
+    def _record(self):
+        pass

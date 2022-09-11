@@ -1,10 +1,9 @@
 from argparse import ArgumentParser
-from datetime import datetime
 
 import utils
 from attacker import get_attacker
-from base import get_model, load_dataset
-from utils import config_parser, reproducibility, setup_logger, rename_dir
+from base import get_criterion, get_model, load_dataset
+from utils import config_parser, rename_dir, reproducibility, setup_logger
 
 
 def argparser():
@@ -38,10 +37,10 @@ def argparser():
 
 def main():
     reproducibility()
-    data, label = load_dataset()
-    criterion = criterion()
+    criterion = get_criterion()
     for model_name, batch_size in config.model.items():
         print(f"\n{model_name}")
+        data, label = load_dataset(model_name)
         model = get_model(model_name, batch_size)
         attacker = get_attacker()
         attacker.attack(model, data, label, criterion)

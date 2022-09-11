@@ -4,7 +4,7 @@ if [ $1 = "setup" ]; then
     mkdir -p $(dirname $0)/storage/data
     cd $(dirname $0)/storage/data
     if [ ! -e imagenet.tar.gz ]; then
-        scp ds:/data0/issa/other/imagenet.tar.gz imagenet.tar.gz
+        scp ds:/data0/issa/dataset/imagenet.tar.gz imagenet.tar.gz
     fi
     if [ ! -e imagenet ]; then
         tar -xzf imagenet.tar.gz
@@ -14,11 +14,10 @@ if [ $1 = "setup" ]; then
 
 elif [ $1 = "install" ]; then
     cd $(dirname $0)
-    pip freeze >__tmp.txt
-    pip uninstall -r __tmp.txt -y
-    rm __tmp.txt
-    pip install -r requirements.txt
-    clear
+    pip freeze >uninstall_list.txt
+    pip uninstall -r uninstall_list.txt -y
+    rm uninstall_list.txt
+    pip install -r requirements.txt && clear
 
 elif [ $1 = "format" ]; then
     echo "\n----black-----"
@@ -31,7 +30,7 @@ elif [ $1 = "format" ]; then
 
 elif [ $1 = "test" ]; then
     cd $(dirname $0)/src
-    python attack.py --config config/LazyGreedy.yaml
+    python attack.py --config config/LazyGreedy.yaml -g 0
 
 else
     echo "Usage: $0 [setup|install|format|test]"

@@ -1,42 +1,34 @@
+import numpy as np
+from torch import Tensor
 from torch.nn import CrossEntropyLoss
 
 from utils import config_parser
 
 
-def criterion():
+def get_criterion():
     config = config_parser.config
-
     if config.criterion == "cw":
-        return CWLoss()
+        return cw_loss
     elif config.criterion == "ce":
         return CrossEntropyLoss(reduction="none")
     elif config.criterion == "dlr":
-        return DLRLoss()
+        return dlr_loss
     else:
         raise NotImplementedError
 
 
-class CWLoss:
-    def __init__(self):
-        self.name = "cw_loss"
-
-    def forward(self, logits, y):
-        x_sorted, ind_sorted = x.sort(dim=1)
-        ind = (ind_sorted[:, -1] == y).float()
-        z_y = x[np.arange(x.shape[0]), y]
-        max_zi = x_sorted[:, -2] * ind + x_sorted[:, -1] * (1.0 - ind)
-        value_true_maximum = z_y - max_zi
-        loss = (-1.0) * value_true_maximum
-        if output_target_label:
-            target = ind * ind_sorted[:, -2] + (1 - ind) * ind_sorted[:, -1]
-            return loss.reshape(-1), target
-        else:
-            return loss.reshape(-1)
+def cw_loss(logits: Tensor, y: Tensor) -> Tensor:
+    r"""
+    .. math::
+        loss = max_{i \neq y}z_i - z_y
+    """
+    logits_sorted, idx_sorted = logits.sort(dim=1)
+    acc = idx_sorted[:, -1] == y
+    z_y = logits[np.arange(logits.shape[0]), y]
+    max_zi = logits_sorted[:, -2] * acc + logits_sorted[:, -1] * ~acc
+    loss = max_zi - z_y
+    return loss
 
 
-class DLRLoss:
-    def __init__(self):
-        self.name = "dlr_loss"
-
-    def forward(self, logits, y):
-        return dlr_loss(logits, y)
+def dlr_loss(logits: Tensor, y: Tensor) -> Tensor:
+    raise NotImplementedError("dlr_loss is not implemented yet.")

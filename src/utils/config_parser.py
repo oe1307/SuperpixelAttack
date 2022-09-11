@@ -1,6 +1,8 @@
+import datetime
 import json
 import os
 import pprint
+import socket
 
 import yaml
 from attrdict import AttrDict
@@ -35,6 +37,8 @@ class ConfigParser:
         return self.config
 
     def save(self, path):
+        self.config.datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.config.hostname = socket.gethostname()
         os.makedirs(os.path.dirname(path), exist_ok=True)
         json.dump(self.config, open(path, mode="w"), indent=4)
 

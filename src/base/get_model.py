@@ -4,6 +4,7 @@ from utils import config_parser
 
 
 def get_model(model_name, batch_size):
+    """Get model from robustbench and set batch size."""
     config = config_parser.config
     model = load_model(
         model_name, model_dir="../storage/model", dataset=config.dataset

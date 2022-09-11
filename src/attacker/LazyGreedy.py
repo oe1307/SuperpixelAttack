@@ -1,5 +1,3 @@
-import os
-
 import torch
 
 from base import Attacker
@@ -13,9 +11,16 @@ class LazyGreedyAttacker(Attacker):
         super().__init__()
 
     @torch.inference_mode()
-    def _attack(self, model, x, y):
+    def _attack(self, model, x, y, criterion):
         upper = (x + self.config.epsilon).clamp(0, 1).clone().to(self.config.device)
         lower = (x - self.config.epsilon).clamp(0, 1).clone().to(self.config.device)
 
         for i in range(self.config.iteration):
-            pass
+            logger.debug(f"iteration {i}")
+            logits = model(x)
+            loss = criterion(logits, y)
+            self.current_loss[self.start : self.end, i + 1] = loss.detach().cpu()
+            self.best_loss[self.start : self.end, i + 1] = torch.max(
+                self.best_loss[self.start : self.end, i], loss.detach().cpu()
+            )
+            self.num_forward += x.shape[0]
