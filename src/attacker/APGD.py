@@ -1,8 +1,8 @@
-import torch
 import numpy as np
+import torch
 
 from base import Attacker
-from utils import setup_logger
+from utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 
@@ -12,13 +12,15 @@ class APGDAttacker(Attacker):
         super().__init__()
 
     def _recorder(self):
-        self.step_size = torch.zeros((self.config.n_examples, self.config.iteration))
+        config = config_parser.config
+        self.step_size = torch.zeros((config.n_examples, config.iteration))
 
     def _attack(self, model, x, y, criterion):
-        upper = (x + self.config.epsilon).clamp(0, 1).clone().to(self.config.device)
-        lower = (x - self.config.epsilon).clamp(0, 1).clone().to(self.config.device)
+        config = config_parser.config
+        upper = (x + config.epsilon).clamp(0, 1).clone().to(config.device)
+        lower = (x - config.epsilon).clamp(0, 1).clone().to(config.device)
 
-        for i in range(self.config.iteration):
+        for i in range(config.iteration):
             logger.info(f"   iteration {i + 1}")
             self.step_size_manager(i)
 
@@ -30,15 +32,16 @@ class APGDAttacker(Attacker):
             self.num_forward += x.shape[0]
 
     def step_size_manager(self, i):
+        config = config_parser.config
         if i == 0:
-            self.step_size[:, 0] = self.config.step_size
-            self.checkpoint = int(0.22 * self.config.iteration)
-            self.checkpoint_interval = int(0.22 * self.config.iteration)
-            self.checkpoint_decay = int(0.03 * self.config.iteration)
-            self.checkpoint_min = int(0.06 * self.config.iteration)
+            self.step_size[:, 0] = config.step_size
+            self.checkpoint = int(0.22 * config.iteration)
+            self.checkpoint_interval = int(0.22 * config.iteration)
+            self.checkpoint_decay = int(0.03 * config.iteration)
+            self.checkpoint_min = int(0.06 * config.iteration)
         elif i == self.checkpoint:
             breakpoint()
-            condition1 = 1 < self.config.rho * self.checkpoint_interval
+            condition1 = 1 < config.rho * self.checkpoint_interval
             condition2 = (
                 self.step_size[
                     self.start : self.end, self.checkpoint - self.checkpoint_interval

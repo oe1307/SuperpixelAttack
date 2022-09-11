@@ -1,7 +1,7 @@
 import torch
 
 from base import Attacker
-from utils import setup_logger
+from utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 
@@ -12,10 +12,11 @@ class LazyGreedyAttacker(Attacker):
 
     @torch.inference_mode()
     def _attack(self, model, x, y, criterion):
-        upper = (x + self.config.epsilon).clamp(0, 1).clone().to(self.config.device)
-        lower = (x - self.config.epsilon).clamp(0, 1).clone().to(self.config.device)
+        config = config_parser.config
+        upper = (x + config.epsilon).clamp(0, 1).clone().to(config.device)
+        lower = (x - config.epsilon).clamp(0, 1).clone().to(config.device)
 
-        for i in range(self.config.iteration):
+        for i in range(config.iteration):
             logger.debug(f"iteration {i}")
             logits = model(x)
             loss = criterion(logits, y)

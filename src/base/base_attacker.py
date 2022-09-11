@@ -12,19 +12,16 @@ logger = setup_logger(__name__)
 
 class Attacker:
     def __init__(self):
-        self.config = config_parser.config
         self.recorder()
 
     def recorder(self):
+        config = config_parser.config
+
         self.total_time = time.time()
         self.clean_acc = 0
         self.robust_acc = 0
-        self.best_loss = torch.zeros(
-            (self.config.n_examples, self.config.iteration + 1)
-        )
-        self.current_loss = torch.zeros(
-            (self.config.n_examples, self.config.iteration + 1)
-        )
+        self.best_loss = torch.zeros((config.n_examples, config.iteration + 1))
+        self.current_loss = torch.zeros((config.n_examples, config.iteration + 1))
         self.num_forward = 0
         self.num_backward = 0
         self._recorder()
@@ -33,16 +30,17 @@ class Attacker:
         pass
 
     def attack(self, model, data, label, criterion):
-        self.savedir = self.config.savedir + f"{model.name}"
+        config = config_parser.config
+        self.savedir = config.savedir + f"{model.name}"
         os.makedirs(self.savedir)
 
         num_batch = math.ceil(data.shape[0] / model.batch_size)
         for i in range(num_batch):
             logger.info(f"batch {i + 1}/{num_batch}")
             self.start = i * model.batch_size
-            self.end = min((i + 1) * model.batch_size, self.config.n_examples)
-            x = data[self.start : self.end].to(self.config.device)
-            y = label[self.start : self.end].to(self.config.device)
+            self.end = min((i + 1) * model.batch_size, config.n_examples)
+            x = data[self.start : self.end].to(config.device)
+            y = label[self.start : self.end].to(config.device)
             self._clean_acc(model, x, y, criterion)
             self._attack(model, x, y, criterion)
 
@@ -58,11 +56,12 @@ class Attacker:
         self.num_forward += x.shape[0]
 
     def record(self):
+        config = config_parser.config
         self._record()
 
         self.total_time = time.time() - self.total_time
-        self.clean_acc = self.clean_acc / self.config.n_examples * 100
-        self.robust_acc = self.clean_acc / self.config.n_examples * 100
+        self.clean_acc = self.clean_acc / config.n_examples * 100
+        self.robust_acc = self.clean_acc / config.n_examples * 100
         self.ASR = 100 - self.robust_acc
 
         np.save(f"{self.savedir}/best_loss.npy", self.best_loss.cpu().numpy())
