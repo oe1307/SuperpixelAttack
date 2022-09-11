@@ -22,3 +22,5 @@ def reproducibility(seed=0, use_torch=True):
         torch.manual_seed(seed)
         torch.backends.cudnn.benchmark = False
         torch.use_deterministic_algorithms(True)
+    else:
+        logger.debug("torch seed is not set")
