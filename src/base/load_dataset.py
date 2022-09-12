@@ -8,6 +8,18 @@ from .load_imagenet import load_imagenet
 
 
 def load_dataset(model_name):
+    """Load dataset for the given model.
+
+    Args:
+        model_name (str): model name in robustbench
+
+    Raises:
+        ValueError: if the model is not in robustbench
+
+    Returns:
+        img: all images
+        label: all labels
+    """
     config = config_parser.config
 
     models = model_dicts[BenchmarkDataset(config.dataset)]

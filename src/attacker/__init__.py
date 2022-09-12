@@ -1,16 +1,16 @@
 from utils import config_parser
 
-from .APGD import APGDAttacker
-from .LazyGreedy import LazyGreedyAttacker
+from .APGD import APGD_Attacker
+from .HALS import HALS_Attacker
 
 
 def get_attacker():
     config = config_parser.config
 
-    if config.attacker == "LazyGreedy":
-        attacker = LazyGreedyAttacker()
+    if config.attacker == "HALS":
+        attacker = HALS_Attacker()
     elif config.attacker == "APGD":
-        attacker = APGDAttacker()
+        attacker = APGD_Attacker()
     else:
         raise NotImplementedError(f"Attacker {config.attacker} is not implemented.")
 

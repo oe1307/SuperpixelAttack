@@ -14,14 +14,14 @@ if [ $1 = "setup" ]; then
 
 elif [ $1 = "install" ]; then
     cd $(dirname $0)
-    pip freeze >uninstall_list.txt
-    pip uninstall -r uninstall_list.txt -y
-    rm uninstall_list.txt
+    pip freeze >uninstall.txt
+    pip uninstall -r uninstall.txt -y
+    rm uninstall.txt
     pip install -r requirements.txt && clear
 
 elif [ $1 = "format" ]; then
     echo "\n----black-----"
-    black $(dirname $0)
+    black $(dirname $0) -q
     echo "\n----isort-----"
     isort $(dirname $0)
     echo "\n----flake8----"

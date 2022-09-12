@@ -3,9 +3,10 @@ attacker: APGD
 n_examples: 110
 norm: Linf
 epsilon: 0.03137254901960784
+iteration: 100
+
 step_size: 0.06274509803921569
 rho: 0.75
-iteration: 100
 
 criterion:
     #

@@ -1,4 +1,4 @@
-attacker: LazyGreedy
+attacker: HALS
 
 n_examples: 11000
 norm: Linf

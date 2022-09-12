@@ -39,7 +39,7 @@ def main():
     reproducibility()
     criterion = get_criterion()
     for model_name, batch_size in config.model.items():
-        print(f"\n{model_name}")
+        print(f"{model_name}\n")
         data, label = load_dataset(model_name)
         model = get_model(model_name, batch_size)
         attacker = get_attacker()
@@ -48,10 +48,10 @@ def main():
 
 if __name__ == "__main__":
     args = argparser()
-    config = config_parser.read(args.config, args)
-    config.savedir = rename_dir(f"../result/{config.attacker}")
-    config_parser.save(config.savedir + "/config.json")
     logger = setup_logger.setLevel(args.log_level)
+    config = config_parser.read(args.config, args)
+    config.savedir = rename_dir(f"../result/{config.attacker}_")
+    config_parser.save(config.savedir + "/config.json")
     main()
 
 else:
