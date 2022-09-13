@@ -1,8 +1,10 @@
+import heapq
+
 import torch
 from torch import Tensor
 
 from base import Attacker
-from utils import COMMENT, config_parser, setup_logger
+from utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 
@@ -14,68 +16,82 @@ class HALS_Attacker(Attacker):
         super().__init__()
 
     @torch.inference_mode()
-    def _attack(self, model, x, y, criterion, start, end):
+    def _attack(self, x: Tensor, y: Tensor):
         config = config_parser.config
-        upper = (x + config.epsilon).clamp(0, 1)
-        lower = (x - config.epsilon).clamp(0, 1)
+        upper = (x + config.epsilon).clamp(0, 1).detach().clone()
+        lower = (x - config.epsilon).clamp(0, 1).detach().clone()
 
-        x_adv = lower.detach().clone()
-        self._robust_acc(model, x_adv, y, criterion, start, end, iter=1)
+        # initialize
         split = config.initial_split
+        is_upper = torch.zeros(
+            (x.shape[0], x.shape[1], x.shape[2] // split, x.shape[3] // split),
+            dtype=torch.bool,
+            device=config.device,
+        )
+        logger.debug(f"mask shape: {list(is_upper.shape)}")
+        x_adv = lower.detach().clone()
+        loss = self.robust_acc(x_adv, y).detach().clone()
 
-        while True:
-            x_adv = self.local_search()
-            self._robust_acc(model, x_adv, y, criterion, start, end, iter=i + 1)
+        # repeat
+        for _ in range(config.num_search):
+            is_upper = self.local_search(upper, lower, is_upper, split, y, loss)
             if split > 1:
-                split = self.split_block(split)
+                # split block
+                is_upper = is_upper.repeat([1, 1, 2, 2])
+                logger.debug(f"mask shape: {list(is_upper.shape)}")
                 split //= 2
-
-        if COMMENT:
-            is_upper = torch.zeros(
-                (x.shape[0], x.shape[1], x.shape[2] // split, x.shape[3] // split),
-                dtype=torch.bool,
-            )
-            _is_upper = is_upper.repeat([1, 1, split, split]).to(config.device)
-            assert x.shape == _is_upper.shape
-            x = upper * _is_upper + lower * ~_is_upper
 
     @torch.inference_mode()
     def local_search(
         self,
-        model,
         upper: Tensor,
         lower: Tensor,
         is_upper: Tensor,
         split: int,
         y: Tensor,
-        criterion,
-        start: int,
-        end: int,
-        iter: int,
+        loss: Tensor,
     ):
         config = config_parser.config
         for _ in range(config.iteration):
-            is_upper = self.insert(is_upper)
-            is_upper = self.deletion(is_upper)
-
+            is_upper = self.insert(is_upper, y, upper, lower, split, loss)
+            breakpoint()
+            is_upper = self.deletion(is_upper, y, upper, lower, split, loss)
         _is_upper = is_upper.repeat([1, 1, split, split]).to(config.device)
-        x_adv = upper * _is_upper + lower * ~_is_upper
-        logits = model(x_adv).detach().clone()
-        loss1 = criterion(logits, y).detach().clone()
-        self._robust_acc(logits, y, loss1, start, end, iter)
 
-        x_adv = upper * ~_is_upper + lower * _is_upper
-        logits = model(x_adv).detach().clone()
-        loss2 = criterion(logits, y).detach().clone()
-        self._robust_acc(logits, y, loss2, start, end, iter)
+        x_adv_1 = upper * _is_upper + lower * ~_is_upper
+        loss_1 = self.robust_acc(x_adv_1, y)
 
-    def insert(self):
-        max_heap = []
-        # for e in
+        x_adv_2 = upper * ~_is_upper + lower * _is_upper
+        loss_2 = self.robust_acc(x_adv_2, y)
 
-    def deletion(self):
-        pass
+        return is_upper if loss_2 < loss_1 else ~is_upper
 
-    def split_block(self, split):
-        split *= 2
-        return split
+    @torch.inference_mode()
+    def insert(
+        self, is_upper: Tensor, y: Tensor, upper, lower, split, base_loss: Tensor
+    ) -> Tensor:
+        _is_upper = []
+        for idx in range(is_upper.shape[0]):  # FIXME: batch
+            max_heap = []
+            for c, h, w in (~is_upper[idx]).nonzero().tolist():
+                idx_is_upper = is_upper[idx].detach().clone()
+                idx_is_upper[c, h, w] = not idx_is_upper[c, h, w]
+                _idx_is_upper = idx_is_upper.repeat([1, split, split])
+                x_adv = upper[idx] * _idx_is_upper + lower[idx] * ~_idx_is_upper
+                loss = self.idx_robust_acc(x_adv, y, self.start + idx).detach().clone()
+                delta = (base_loss[idx] - loss).item()
+                heapq.heappush(max_heap, (delta, [c, h, w]))
+            while len(max_heap) > 0:
+                delta, (c, h, w) = heapq.heappop(max_heap)
+                self.current_loss[idx, self.iter] = base_loss[idx] - delta
+                self.best_loss[idx, self.iter] = torch.max(
+                    base_loss[idx] - delta, self.best_loss[idx, self.iter - 1]
+                )
+                idx_is_upper = is_upper[idx].detach().clone()
+                idx_is_upper[c, h, w] = not idx_is_upper[c, h, w]
+            _is_upper.append(idx_is_upper)
+        return torch.stack(_is_upper)
+
+    @torch.inference_mode()
+    def deletion(self, is_upper: Tensor) -> Tensor:
+        return is_upper

@@ -1,5 +1,7 @@
 from argparse import ArgumentParser
 
+import torch
+
 import utils
 from attacker import get_attacker
 from base import get_criterion, get_model, load_dataset
@@ -21,6 +23,11 @@ def argparser():
         required=True,
     )
     parser.add_argument(
+        "--thread",
+        type=int,
+        required=True,
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
     )
@@ -37,9 +44,10 @@ def argparser():
 
 def main():
     reproducibility()
+    torch.set_num_threads(config.thread)
     criterion = get_criterion()
     for model_name, batch_size in config.model.items():
-        print(f"{model_name}\n")
+        print(f"{model_name}")
         data, label = load_dataset(model_name)
         model = get_model(model_name, batch_size)
         attacker = get_attacker()

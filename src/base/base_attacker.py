@@ -17,38 +17,70 @@ class Attacker(Recorder):
 
     def attack(self, model, data, label, criterion):
         config = config_parser.config
+        self.model = model
+        self.criterion = criterion
         self.savedir = config.savedir + f"{model.name}"
         os.makedirs(self.savedir)
 
         num_batch = math.ceil(data.shape[0] / model.batch_size)
         for i in range(num_batch):
-            logger.info(f"Batch {i + 1}/{num_batch}")
-            start = i * model.batch_size
-            end = min((i + 1) * model.batch_size, config.n_examples)
-            x = data[start:end].to(config.device)
-            y = label[start:end].to(config.device)
-            self._clean_acc(model, x, y, criterion, start, end)
-            self._attack(model, x, y, criterion, start, end)
-
+            self.start = i * model.batch_size
+            self.end = min((i + 1) * model.batch_size, config.n_examples)
+            x = data[self.start : self.end].to(config.device)
+            y = label[self.start : self.end].to(config.device)
+            self.iter = 0
+            self.clean_acc(x, y)
+            self._attack(x, y)
         self.record()
 
     @torch.inference_mode()
-    def _clean_acc(self, model, x: Tensor, y: Tensor, criterion, start: int, end: int):
-        logits = model(x).clone().detach()
-        self.clean_acc += torch.sum(logits.argmax(dim=1) == y).item()
-        loss = criterion(logits, y).clone().detach()
-        self.best_loss[start:end, 0] = loss
-        self.current_loss[start:end, 0] = loss
+    def clean_acc(self, x: Tensor, y: Tensor):
+        logits = self.model(x).detach().clone()
+        self._clean_acc += torch.sum(logits.argmax(dim=1) == y).item()
+        loss = self.criterion(logits, y).detach().clone()
+        self.best_loss[self.start : self.end, 0] = loss
+        self.current_loss[self.start : self.end, 0] = loss
         self.num_forward += x.shape[0]
+        logger.debug(f"Clean accuracy: {self._clean_acc} / {self.end}")
 
-    @torch.no_grad()
-    def _robust_acc(
-        self, logits: Tensor, y: Tensor, loss: Tensor, start: int, end: int, iter: int
-    ) -> Tensor:
-        loss = loss.clone().detach()
-        self.robust_acc += torch.sum(logits.argmax(dim=1) == y).item()
-        self.current_loss[start:end, iter + 1] = loss
-        self.best_loss[start:end, iter + 1] = torch.max(
-            loss, self.best_loss[start:end, iter]
+    def robust_acc(self, x_adv: Tensor, y: Tensor) -> Tensor:
+        self.iter += 1
+        logits = self.model(x_adv).detach().clone()
+        self._robust_acc[self.start : self.end] = torch.logical_or(
+            self._robust_acc[self.start : self.end], logits.argmax(dim=1) == y
         )
-        self.num_forward += logits.shape[0]
+        loss = self.criterion(logits, y).clone()
+        self.current_loss[self.start : self.end, self.iter] = loss.detach().clone()
+        self.best_loss[self.start : self.end, self.iter] = torch.max(
+            loss.detach().clone(), self.best_loss[self.start : self.end, self.iter - 1]
+        )
+        self.num_forward += self.end - self.start
+        logger.debug(
+            f"Robust accuracy ( iter={self.iter} ):"
+            + f" {self._robust_acc.sum()} / {self.end}"
+        )
+        return loss
+
+    @torch.enable_grad()
+    def grad(self, x_adv: Tensor, loss: Tensor) -> Tensor:
+        """calculate gradient
+
+        Args:
+            loss (Tensor): loss value
+
+        Returns:
+            Tensor: gradient
+
+        Note:
+            do not set torch.inference_mode() here
+        """
+        grad = torch.autograd.grad(loss, [x_adv])[0].detach()
+        self.num_backward += self.end - self.start
+        return grad
+
+    def idx_robust_acc(self, x_adv: Tensor, y: Tensor, idx: int) -> Tensor:
+        x_adv = x_adv.unsqueeze(0).detach().clone()
+        logits = self.model(x_adv)
+        loss = self.criterion(logits, y[idx])
+        self.num_forward += 1
+        return loss

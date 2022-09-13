@@ -11,7 +11,7 @@ logger = setup_logger(__name__)
 def reproducibility(seed=0, use_torch=True):
     """Set random seed for reproducibility."""
 
-    logger.debug(f"\n [ REPRODUCIBILITY ] seed={seed}\n")
+    logger.debug(f"[ REPRODUCIBILITY ] seed={seed}\n")
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     os.environ["PYTHONHASHSEED"] = f"{seed}"
     random.seed(seed)

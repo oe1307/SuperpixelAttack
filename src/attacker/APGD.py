@@ -33,7 +33,7 @@ class APGD_Attacker(Attacker):
             step_size = self.step_size[start:end, i].view(-1, 1, 1, 1)
             x_adv = x_adv - step_size * torch.sign(grad)
             x_adv = torch.clamp(x_adv, lower, upper)
-            self._robust_acc(logits, y, loss, start, end, i)
+            self.robust_acc(logits, y, loss)
             del loss, grad
 
     def step_size_manager(self, i, start, end):

@@ -23,14 +23,14 @@ elif [ $1 = "format" ]; then
     echo "\n----black-----"
     black $(dirname $0) -q
     echo "\n----isort-----"
-    isort $(dirname $0)
+    isort $(dirname $0) -s ./run
     echo "\n----flake8----"
     pflake8 $(dirname $0)
     echo
 
 elif [ $1 = "test" ]; then
     cd $(dirname $0)/src
-    python attack.py --config config/LazyGreedy.yaml -g 0
+    python attack.py -c config/base/HALS.yaml -g 0 --thread 10 --log_level 10
 
 else
     echo "Usage: $0 [setup|install|format|test]"

@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-import nbformat
 import os
 import sys
 
-file_name = sys.argv[1]
+import nbformat
 
 
-def parse(code: list) -> nbformat.v4:
+def py2ipynb(code: list) -> nbformat.v4:
     nb = nbformat.v4.new_notebook()
     nb["cells"] = []
     cell_value = ""
@@ -24,9 +23,9 @@ def parse(code: list) -> nbformat.v4:
         nb["cells"].append(nbformat.v4.new_code_cell(cell_value))
     return nb
 
-
+file_name = sys.argv[1]
 with open(file_name) as file:
-    nb = parse(file.readlines())
+    nb = py2ipynb(file.readlines())
     ipynb = os.path.splitext(os.path.basename(file_name))[0] + ".ipynb"
     with open(ipynb, "w") as f:
         nbformat.write(nb, f)

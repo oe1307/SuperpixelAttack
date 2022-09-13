@@ -39,7 +39,6 @@ class setupLogger:
 
     def changeLevel(self, filename: str, level: int):
         getLogger(filename).setLevel(level)
-        self.root_logger.debug(f"{filename} set level {level}")
 
     def __call__(self, name):
         return self.root_logger.getChild(name)

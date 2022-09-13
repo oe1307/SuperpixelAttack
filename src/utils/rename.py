@@ -26,5 +26,5 @@ def rename_dir(dir_path):
         count += 1
         dir_path = f"{dir_name}{count}/"
     os.makedirs(dir_path, exist_ok=True)
-    logger.debug(f"\n [ SAVE_DIR ] {dir_path}")
+    logger.debug(f"[ SAVE_DIR ] {dir_path}")
     return dir_path

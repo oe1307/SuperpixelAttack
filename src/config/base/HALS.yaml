@@ -4,6 +4,7 @@ n_examples: 110
 norm: Linf
 epsilon: 0.03137254901960784
 iteration: 10
+num_search: 10
 
 initial_split: 4
 

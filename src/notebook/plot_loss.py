@@ -4,10 +4,9 @@
 # In[ ]:
 
 
-import numpy as np
 from glob import glob
-from matplotlib import pyplot as plt
 
+from matplotlib import pyplot as plt
 
 # Single
 
@@ -38,7 +37,3 @@ plt.subplots(figsize=(8, 8))
 
 
 # In[ ]:
-
-
-
-
