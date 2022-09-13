@@ -4,7 +4,7 @@ n_examples: 110
 norm: Linf
 epsilon: 0.03137254901960784
 max_iter: 1
-iteration: 10
+iteration: 6
 
 initial_split: 4
 

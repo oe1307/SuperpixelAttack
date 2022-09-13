@@ -30,18 +30,17 @@ class HALS_Attacker(Attacker):
             dtype=torch.bool,
             device=config.device,
         )
-        logger.debug(f"mask shape: {list(is_upper.shape)}")
+        logger.debug(f"\nmask shape: {list(is_upper.shape)}")
         x_adv = lower.detach().clone()
         loss = self.robust_acc(x_adv, y).detach().clone()
 
         # repeat
         for _ in range(config.iteration // 2 - 1):
+            logger.debug(f"\nmask shape: {list(is_upper.shape)}")
             is_upper = self.local_search(upper, lower, is_upper, split, y, loss)
-            logger.debug()
             if split > 1:
                 # split block
                 is_upper = is_upper.repeat([1, 1, 2, 2])
-                logger.debug(f"mask shape: {list(is_upper.shape)}")
                 split //= 2
 
     @torch.inference_mode()
