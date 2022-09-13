@@ -12,6 +12,7 @@ colorlog
 pyyaml
 numpy
 matplotlib
+GitPython
 pandas
 attrdict
 notebook
