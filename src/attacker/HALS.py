@@ -1,4 +1,5 @@
 import heapq
+import math
 
 import torch
 from torch import Tensor
@@ -18,6 +19,7 @@ class HALS_Attacker(Attacker):
     @torch.inference_mode()
     def _attack(self, x: Tensor, y: Tensor):
         config = config_parser.config
+        assert config.iteration % 2 == 0, "iteration should be even"
         upper = (x + config.epsilon).clamp(0, 1).detach().clone()
         lower = (x - config.epsilon).clamp(0, 1).detach().clone()
 
@@ -33,8 +35,9 @@ class HALS_Attacker(Attacker):
         loss = self.robust_acc(x_adv, y).detach().clone()
 
         # repeat
-        for _ in range(config.num_search):
+        for _ in range(config.iteration // 2 - 1):
             is_upper = self.local_search(upper, lower, is_upper, split, y, loss)
+            logger.debug()
             if split > 1:
                 # split block
                 is_upper = is_upper.repeat([1, 1, 2, 2])
@@ -52,9 +55,10 @@ class HALS_Attacker(Attacker):
         loss: Tensor,
     ):
         config = config_parser.config
-        for _ in range(config.iteration):
+        for iter in range(config.max_iter):
+            logger.debug(f"insert ( iter={iter} )")
             is_upper = self.insert(is_upper, y, upper, lower, split, loss)
-            breakpoint()
+            logger.debug(f"deletion ( iter={iter} )")
             is_upper = self.deletion(is_upper, y, upper, lower, split, loss)
         _is_upper = is_upper.repeat([1, 1, split, split]).to(config.device)
 
@@ -64,34 +68,88 @@ class HALS_Attacker(Attacker):
         x_adv_2 = upper * ~_is_upper + lower * _is_upper
         loss_2 = self.robust_acc(x_adv_2, y)
 
-        return is_upper if loss_2 < loss_1 else ~is_upper
+        return torch.where((loss_2 < loss_1).view(-1, 1, 1, 1), is_upper, ~is_upper)
 
     @torch.inference_mode()
     def insert(
         self, is_upper: Tensor, y: Tensor, upper, lower, split, base_loss: Tensor
     ) -> Tensor:
+        max_heap = [[] for _ in range(self.end - self.start)]
+        all_elements = (~is_upper).nonzero()
+
+        # search in elementary
+        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+        for i in range(num_batch):
+            _start = i * self.model.batch_size
+            _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
+            elements = all_elements[_start:_end]
+            _is_upper = is_upper[elements[:, 0]]
+            for i, (c, h, w) in enumerate(elements[:, 1:]):
+                _is_upper[i, c, h, w] = True
+            _is_upper = _is_upper.repeat([1, 1, split, split])
+            x_adv = (
+                upper[elements[:, 0]] * _is_upper + lower[elements[:, 0]] * ~_is_upper
+            )
+            loss = self.criterion(self.model(x_adv), y[elements[:, 0]])
+            self.num_forward += _end - _start
+            for i, (idx, c, h, w) in enumerate(elements.tolist()):
+                delta = (base_loss[idx] - loss[i]).item()
+                heapq.heappush(max_heap[idx], (delta, (c, h, w)))
+
+        # update
         _is_upper = []
-        for idx in range(is_upper.shape[0]):  # FIXME: batch
-            max_heap = []
-            for c, h, w in (~is_upper[idx]).nonzero().tolist():
-                idx_is_upper = is_upper[idx].detach().clone()
-                idx_is_upper[c, h, w] = not idx_is_upper[c, h, w]
-                _idx_is_upper = idx_is_upper.repeat([1, split, split])
-                x_adv = upper[idx] * _idx_is_upper + lower[idx] * ~_idx_is_upper
-                loss = self.idx_robust_acc(x_adv, y, self.start + idx).detach().clone()
-                delta = (base_loss[idx] - loss).item()
-                heapq.heappush(max_heap, (delta, [c, h, w]))
-            while len(max_heap) > 0:
-                delta, (c, h, w) = heapq.heappop(max_heap)
-                self.current_loss[idx, self.iter] = base_loss[idx] - delta
-                self.best_loss[idx, self.iter] = torch.max(
-                    base_loss[idx] - delta, self.best_loss[idx, self.iter - 1]
-                )
-                idx_is_upper = is_upper[idx].detach().clone()
-                idx_is_upper[c, h, w] = not idx_is_upper[c, h, w]
+        for idx, _max_heap in enumerate(max_heap):
+            idx_is_upper = is_upper[idx]
+            while len(_max_heap) > 1:
+                delta_hat, element_hat = heapq.heappop(_max_heap)
+                delta_tilde = _max_heap[0][0]
+                if delta_hat <= delta_tilde and delta_hat < 0:
+                    idx_is_upper[element_hat] = True
+                elif delta_hat <= delta_tilde and delta_hat >= 0:
+                    break
+                else:
+                    heapq.heappush(_max_heap, (delta_hat, element_hat))
             _is_upper.append(idx_is_upper)
         return torch.stack(_is_upper)
 
     @torch.inference_mode()
-    def deletion(self, is_upper: Tensor) -> Tensor:
-        return is_upper
+    def deletion(
+        self, is_upper: Tensor, y: Tensor, upper, lower, split, base_loss: Tensor
+    ) -> Tensor:
+        max_heap = [[] for _ in range(self.end - self.start)]
+        all_elements = is_upper.nonzero()
+
+        # search in elementary
+        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+        for i in range(num_batch):
+            _start = i * self.model.batch_size
+            _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
+            elements = all_elements[_start:_end]
+            _is_upper = is_upper[elements[:, 0]]
+            for i, (c, h, w) in enumerate(elements[:, 1:]):
+                _is_upper[i, c, h, w] = False
+            _is_upper = _is_upper.repeat([1, 1, split, split])
+            x_adv = (
+                upper[elements[:, 0]] * _is_upper + lower[elements[:, 0]] * ~_is_upper
+            )
+            loss = self.criterion(self.model(x_adv), y[elements[:, 0]])
+            self.num_forward += _end - _start
+            for i, (idx, c, h, w) in enumerate(elements.tolist()):
+                delta = (base_loss[idx] - loss[i]).item()
+                heapq.heappush(max_heap[idx], (delta, (c, h, w)))
+
+        # update
+        _is_upper = []
+        for idx, _max_heap in enumerate(max_heap):
+            idx_is_upper = is_upper[idx]
+            while len(_max_heap) > 1:
+                delta_hat, element_hat = heapq.heappop(_max_heap)
+                delta_tilde = _max_heap[0][0]
+                if delta_hat <= delta_tilde and delta_hat < 0:
+                    idx_is_upper[element_hat] = False
+                elif delta_hat <= delta_tilde and delta_hat >= 0:
+                    break
+                else:
+                    heapq.heappush(_max_heap, (delta_hat, element_hat))
+            _is_upper.append(idx_is_upper)
+        return torch.stack(_is_upper)

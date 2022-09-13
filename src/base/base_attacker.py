@@ -60,27 +60,3 @@ class Attacker(Recorder):
             + f" {self._robust_acc.sum()} / {self.end}"
         )
         return loss
-
-    @torch.enable_grad()
-    def grad(self, x_adv: Tensor, loss: Tensor) -> Tensor:
-        """calculate gradient
-
-        Args:
-            loss (Tensor): loss value
-
-        Returns:
-            Tensor: gradient
-
-        Note:
-            do not set torch.inference_mode() here
-        """
-        grad = torch.autograd.grad(loss, [x_adv])[0].detach()
-        self.num_backward += self.end - self.start
-        return grad
-
-    def idx_robust_acc(self, x_adv: Tensor, y: Tensor, idx: int) -> Tensor:
-        x_adv = x_adv.unsqueeze(0).detach().clone()
-        logits = self.model(x_adv)
-        loss = self.criterion(logits, y[idx])
-        self.num_forward += 1
-        return loss
