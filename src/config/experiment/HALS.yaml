@@ -1,22 +1,80 @@
 attacker: HALS
 
-n_examples: 11000
+n_examples: 10_000
 norm: Linf
-dataset:
-    #
-    cifar10
-    # cifar100
-    # imagenet
-
 epsilon: 0.03137254901960784
-iteration: 2000
+max_iter: 1
+iteration: 6
+initial_split: 4
+
 criterion:
     #
     # ce
     cw
     # dlr
-
+dataset:
+    #
+    cifar10
+    # cifar100
+    # imagenet
 model:
-    # model_name: batch_size
-    Carmon2019Unlabeled: 2000
-    Ding2020MMA: 1000
+    robustbench:
+        Andriushchenko2020Understanding: 1000
+        Carmon2019Unlabeled: 8000
+        Sehwag2020Hydra: 1000
+        Wang2020Improving: 1000
+        Hendrycks2019Using: 1000
+        Rice2020Overfitting: 1000
+        Zhang2019Theoretically: 1000
+        Engstrom2019Robustness: 1000
+        Chen2020Adversarial: 1000
+        Huang2020Self: 1000
+        Pang2020Boosting: 1000
+        Wong2020Fast: 1000
+        Ding2020MMA: 1000
+        Zhang2019You: 1000
+        Zhang2020Attacks: 1000
+        Wu2020Adversarial_extra: 1000
+        Wu2020Adversarial: 1000
+        Gowal2020Uncovering_70_16: 1000
+        Gowal2020Uncovering_70_16_extra: 1000
+        Gowal2020Uncovering_34_20: 1000
+        Gowal2020Uncovering_28_10_extra: 1000
+        Sehwag2021Proxy: 1000
+        Sehwag2021Proxy_R18: 1000
+        Sehwag2021Proxy_ResNest152: 1000
+        Sitawarin2020Improving: 1000
+        Chen2020Efficient: 1000
+        Cui2020Learnable_34_20: 1000
+        Cui2020Learnable_34_10: 1000
+        Zhang2020Geometry: 1000
+        Rebuffi2021Fixing_28_10_cutmix_ddpm: 1000
+        Rebuffi2021Fixing_106_16_cutmix_ddpm: 1000
+        Rebuffi2021Fixing_70_16_cutmix_ddpm: 1000
+        Rebuffi2021Fixing_70_16_cutmix_extra: 1000
+        Sridhar2021Robust: 1000
+        Sridhar2021Robust_34_15: 1000
+        Rebuffi2021Fixing_R18_ddpm: 1000
+        Rade2021Helper_R18_extra: 1000
+        Rade2021Helper_R18_ddpm: 1000
+        Rade2021Helper_extra: 1000
+        Rade2021Helper_ddpm: 1000
+        Huang2021Exploring: 1000
+        Huang2021Exploring_ema: 1000
+        Addepalli2021Towards_RN18: 1000
+        Addepalli2021Towards_WRN34: 1000
+        Gowal2021Improving_70_16_ddpm_100m: 1000
+        Dai2021Parameterizing: 1000
+        Gowal2021Improving_28_10_ddpm_100m: 1000
+        Gowal2021Improving_R18_ddpm_100m: 1000
+        Chen2021LTD_WRN34_10: 1000
+        Chen2021LTD_WRN34_20: 1000
+        Standard: 1000
+        Kang2021Stable: 1000
+        Jia2022LAS-AT_34_10: 1000
+        Jia2022LAS-AT_70_16: 1000
+        Pang2022Robustness_WRN28_10: 1000
+        Pang2022Robustness_WRN70_16: 1000
+        Addepalli2022Efficient_RN18: 1000
+        Addepalli2022Efficient_WRN_34_10: 1000
+

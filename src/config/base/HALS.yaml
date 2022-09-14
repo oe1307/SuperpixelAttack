@@ -1,25 +1,14 @@
 attacker: HALS
 
-n_examples: 110
+n_examples: 10_000
 norm: Linf
 epsilon: 0.03137254901960784
 max_iter: 1
 iteration: 6
-
 initial_split: 4
 
-criterion:
-    #
-    # ce
-    cw
-    # dlr
-dataset:
-    #
-    cifar10
-    # cifar100
-    # imagenet
+criterion: cw
+dataset: cifar10
 model:
-    # model_name: batch_size
-    Carmon2019Unlabeled: 20
-    # Ding2020MMA: 1000
-    # Salman2020Do_R18: 20
+    robustbench:
+        Carmon2019Unlabeled: 8000
