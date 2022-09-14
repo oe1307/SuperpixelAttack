@@ -40,7 +40,7 @@ class Recorder:
         self._recorder()
 
     def _recorder(self):
-        """This function is for recording the information of the each attacker."""
+        """This function for override."""
         pass
 
     def record(self):
@@ -50,7 +50,7 @@ class Recorder:
 
         self.total_time = time.time() - self.total_time
         self._clean_acc = self._clean_acc / config.n_examples * 100
-        self._robust_acc = self._clean_acc / config.n_examples * 100
+        self._robust_acc = self._robust_acc.sum() / config.n_examples * 100
         self.ASR = 100 - self._robust_acc
 
         np.save(f"{self.savedir}/best_loss.npy", self.best_loss.cpu().numpy())
@@ -69,5 +69,5 @@ class Recorder:
         self._record()
 
     def _record(self):
-        """This function is for recording the information of the each attacker."""
+        """This function for override."""
         pass

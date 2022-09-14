@@ -29,8 +29,13 @@ elif [ $1 = "format" ]; then
     echo
 
 elif [ $1 = "test" ]; then
-    cd $(dirname $0)/src
-    python attack.py -c config/base/HALS.yaml -g 0 --thread 10 --log_level 10
+    if [ $# = 2 ]; then
+        cd $(dirname $0)/src
+        python attack.py -c config/base/HALS.yaml -g $2 --thread 10 --log_level 10
+    else
+        echo "Usage: $0 test [gpu]"
+        exit 1
+    fi
 
 else
     echo "Usage: $0 [setup|install|format|test]"
