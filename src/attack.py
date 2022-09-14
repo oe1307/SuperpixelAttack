@@ -1,11 +1,12 @@
 from argparse import ArgumentParser
+from datetime import datetime
 
 import torch
 
 import utils
 from attacker import get_attacker
 from base import get_criterion, get_model, load_dataset
-from utils import config_parser, rename_dir, reproducibility, setup_logger
+from utils import config_parser, reproducibility, setup_logger
 
 
 def argparser():
@@ -49,6 +50,11 @@ def main():
     for model_container, models in config.model.items():
         for model_name, batch_size in models.items():
             print(f"{model_name}")
+            config.savedir = (
+                f"../result/{config.attacker}/{model_name}/"
+                + f"{datetime.now().strftime('%Y-%m-%d_%H:%M')}/"
+            )
+            config_parser.save(config.savedir + "config.json")
             data, label = load_dataset(model_name)
             model = get_model(model_container, model_name, batch_size)
             attacker = get_attacker()
@@ -59,8 +65,6 @@ if __name__ == "__main__":
     args = argparser()
     logger = setup_logger.setLevel(args.log_level)
     config = config_parser.read(args.config, args)
-    config.savedir = rename_dir(f"../result/{config.attacker}_")
-    config_parser.save(config.savedir + "/config.json")
     main()
 
 else:

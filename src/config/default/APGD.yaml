@@ -12,4 +12,4 @@ criterion: cw
 dataset: cifar10
 model:
     robustbench:
-        Carmon2019Unlabeled: 4000
+        Carmon2019Unlabeled: 3800

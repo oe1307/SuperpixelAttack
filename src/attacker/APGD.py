@@ -8,6 +8,7 @@ logger = setup_logger(__name__)
 
 
 class APGD_Attacker(Attacker):
+    """AutoPGD"""
     def __init__(self):
         super().__init__()
 
@@ -55,7 +56,8 @@ class APGD_Attacker(Attacker):
             self.num_backward += x_adv.shape[0]
             step_size = self.step_size[self.start : self.end, iter].view(-1, 1, 1, 1)
             logger.debug(
-                f"step_size ( iter={iter + 1} ) : {step_size.min():.4f} ~ {step_size.max():.4f}"
+                f"step_size ( iter={iter + 1} ) : "
+                + f"{step_size.min():.4f} ~ {step_size.max():.4f}"
             )
             z = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper)
             del grad
@@ -110,5 +112,6 @@ class APGD_Attacker(Attacker):
         return checker
 
     def _record(self):
+        config = config_parser.config
         self.step_size = self.step_size.cpu().numpy()
-        np.save(f"{self.savedir}/step_size.npy", self.step_size)
+        np.save(f"{config.savedir}/step_size.npy", self.step_size)

@@ -1,5 +1,4 @@
 import math
-import os
 
 import torch
 from torch import Tensor
@@ -19,8 +18,6 @@ class Attacker(Recorder):
         config = config_parser.config
         self.model = model
         self.criterion = criterion
-        self.savedir = config.savedir + f"{model.name}"
-        os.makedirs(self.savedir)
 
         num_batch = math.ceil(data.shape[0] / model.batch_size)
         for i in range(num_batch):
@@ -31,6 +28,8 @@ class Attacker(Recorder):
             self.iter = 0
             self.clean_acc(x, y)
             self._attack(x, y)
+            logger.info(f"Robust accuracy : {self._robust_acc.sum()} / {self.end}")
+            torch.cuda.empty_cache()
         self.record()
 
     @torch.inference_mode()
@@ -41,7 +40,7 @@ class Attacker(Recorder):
         loss = self.criterion(logits, y).detach().clone()
         self.best_loss[self.start : self.end, 0] = loss
         self.current_loss[self.start : self.end, 0] = loss
-        logger.debug(f"Clean accuracy : {self._clean_acc} / {self.end}")
+        logger.info(f"Clean accuracy : {self._clean_acc} / {self.end}")
 
     def robust_acc(self, x_adv: Tensor, y: Tensor) -> Tensor:
         self.iter += 1

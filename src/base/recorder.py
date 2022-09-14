@@ -46,27 +46,28 @@ class Recorder:
     def record(self):
         """This function is for recording the information of the attacker."""
         config = config_parser.config
-        logger.info(f"Attack start at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
         self.total_time = time.time() - self.total_time
         self._clean_acc = self._clean_acc / config.n_examples * 100
         self._robust_acc = self._robust_acc.sum() / config.n_examples * 100
         self.ASR = 100 - self._robust_acc
 
-        np.save(f"{self.savedir}/best_loss.npy", self.best_loss.cpu().numpy())
-        np.save(f"{self.savedir}/current_loss.npy", self.best_loss.cpu().numpy())
+        np.save(config.savedir + "best_loss.npy", self.best_loss.cpu().numpy())
+        np.save(config.savedir + "current_loss.npy", self.best_loss.cpu().numpy())
 
-        print(
+        msg = (
             "\n"
             + f"total time (sec) = {self.total_time:.2f}s\n"
             + f"clean acc (%) = {self._clean_acc:.2f}\n"
             + f"robust acc (%) = {self._robust_acc:.2f}\n"
             + f"ASR (%) = {self.ASR:.2f}\n"
             + f"num_forward = {self.num_forward}\n"
-            + f"num_backward = {self.num_backward}\n",
-            file=open(self.savedir + "/summary.txt", "w"),
+            + f"num_backward = {self.num_backward}\n"
         )
+        print(msg, file=open(config.savedir + "/summary.txt", "w"))
+        logger.info(msg)
         self._record()
+        logger.info(f"Attack end at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
     def _record(self):
         """This function for override."""
