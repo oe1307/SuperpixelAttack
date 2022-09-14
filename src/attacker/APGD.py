@@ -9,6 +9,7 @@ logger = setup_logger(__name__)
 
 class APGD_Attacker(Attacker):
     """AutoPGD"""
+
     def __init__(self):
         super().__init__()
 
