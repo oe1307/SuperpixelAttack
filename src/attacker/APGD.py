@@ -14,62 +14,89 @@ class APGD_Attacker(Attacker):
     def _recorder(self):
         config = config_parser.config
         self.step_size = torch.zeros(
-            (config.n_examples, config.iteration), device=config.device
+            (config.n_examples, config.iteration + 1), device=config.device
         )
 
-    def _attack(self, model, x, y, criterion, start, end):
+    def _attack(self, x, y):
         config = config_parser.config
         upper = (x + config.epsilon).clamp(0, 1).detach().clone()
         lower = (x - config.epsilon).clamp(0, 1).detach().clone()
+        self.step_size[self.start : self.end, 0] = (
+            torch.ones(self.end - self.start) * config.step_size
+        )
+        checker = {
+            "checkpoint": int(0.22 * config.iteration),
+            "checkpoint_interval": int(0.22 * config.iteration),
+            "checkpoint_decay": int(0.03 * config.iteration),
+            "checkpoint_min": int(0.06 * config.iteration),
+            "best_loss_update": torch.zeros(
+                self.end - self.start, dtype=torch.uint8, device=config.device
+            ),
+        }
 
         x_adv = x.detach().clone()
         x_adv.requires_grad_()
-        for i in range(config.iteration):
-            logger.info(f"   iteration {i + 1}")
-            self.step_size_manager(i, start, end)
-            logits = model(x_adv)
-            loss = criterion(logits, y).sum()
+        logits = self.model(x_adv)
+        loss = self.criterion(logits, y).sum()
+        self.num_forward += x_adv.shape[0]
+
+        for iter in range(config.iteration):
             grad = torch.autograd.grad(loss, [x_adv])[0]
-            step_size = self.step_size[start:end, i].view(-1, 1, 1, 1)
+            step_size = self.step_size[self.start : self.end, iter].view(-1, 1, 1, 1)
+            logger.debug(f"step_size: {step_size.min():.4f} - {step_size.max():.4f}")
             x_adv = x_adv - step_size * torch.sign(grad)
             x_adv = torch.clamp(x_adv, lower, upper)
-            self.robust_acc(logits, y, loss)
-            del loss, grad
+            loss = self.robust_acc(x_adv, y).sum()
+            checker = self.step_size_manager(iter, checker)
 
-    def step_size_manager(self, i, start, end):
-        config = config_parser.config
-        if i == 0:
-            self.step_size[:, 0] = config.step_size
-            self.checkpoint = int(0.22 * config.iteration)
-            self.checkpoint_interval = int(0.22 * config.iteration)
-            self.checkpoint_decay = int(0.03 * config.iteration)
-            self.checkpoint_min = int(0.06 * config.iteration)
-            self.checker = torch.zeros(end - start)
-        elif i == self.checkpoint:
-            if False:
-                condition1 = 1 < config.rho * self.checkpoint_interval
-                condition2_1 = (
-                    self.step_size[
-                        start:end, self.checkpoint - self.checkpoint_interval
-                    ]
-                    == self.step_size[start:end, self.checkpoint]
-                )
-                condition2_2 = (
-                    self.best_loss[
-                        start:end, self.checkpoint - self.checkpoint_interval
-                    ]
-                    == self.best_loss[start:end, self.checkpoint]
-                )
-                condition2 = torch.logical_and(condition2_1, condition2_2)
-                condition = torch.logical_and(condition1, condition2)
+    @torch.inference_mode()
+    def step_size_manager(self, iter, checker):
+        if iter == checker["checkpoint"]:
+            config = config_parser.config
+            threshold = (
+                config.rho
+                * checker["checkpoint_interval"]
+                * torch.ones(self.end - self.start, device=config.device)
+            )
+            condition1 = checker["best_loss_update"] < threshold
 
-                self.step_size[start:end, i] = self.step_size[start:end, i - 1] * (
-                    1 - condition * 0.5
-                )
-                self.checkpoint_interval -= self.checkpoint_decay
-                self.checkpoint += max(self.checkpoint_interval, self.checkpoint_min)
+            condition2_1 = self.step_size[
+                self.start : self.end,
+                checker["checkpoint"] - checker["checkpoint_interval"],
+            ]
+            condition2_2 = (
+                self.best_loss[
+                    self.start : self.end,
+                    checker["checkpoint"] - checker["checkpoint_interval"],
+                ]
+                == self.best_loss[self.start : self.end, checker["checkpoint"]]
+            )
+            condition2 = torch.logical_and(condition2_1, condition2_2)
+
+            condition = torch.logical_and(condition1, condition2)
+            self.step_size[self.start : self.end, iter + 1] = self.step_size[
+                self.start : self.end, iter
+            ] * (1 - condition * 0.5)
+            checker["checkpoint_interval"] = max(
+                checker["checkpoint_interval"] - checker["checkpoint_decay"],
+                checker["checkpoint_min"],
+            )
+            checker["checkpoint"] = (
+                checker["checkpoint"] + checker["checkpoint_interval"]
+            )
+            checker["best_loss_update"] = torch.zeros(
+                self.end - self.start, dtype=torch.uint8, device=config.device
+            )
+
         else:
-            self.step_size[start:end, i] = self.step_size[start:end, i - 1]
+            self.step_size[self.start : self.end, iter + 1] = self.step_size[
+                self.start : self.end, iter
+            ]
+            checker["best_loss_update"] += (
+                self.current_loss[self.start : self.end, iter + 1]
+                < self.current_loss[self.start : self.end, iter]
+            )
+        return checker
 
     def _record(self):
         self.step_size = self.step_size.cpu().numpy()

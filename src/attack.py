@@ -46,12 +46,13 @@ def main():
     reproducibility()
     torch.set_num_threads(config.thread)
     criterion = get_criterion()
-    for model_name, batch_size in config.model.items():
-        print(f"{model_name}")
-        data, label = load_dataset(model_name)
-        model = get_model(model_name, batch_size)
-        attacker = get_attacker()
-        attacker.attack(model, data, label, criterion)
+    for model_container, models in config.model.items():
+        for model_name, batch_size in models.items():
+            print(f"{model_name}")
+            data, label = load_dataset(model_name)
+            model = get_model(model_container, model_name, batch_size)
+            attacker = get_attacker()
+            attacker.attack(model, data, label, criterion)
 
 
 if __name__ == "__main__":

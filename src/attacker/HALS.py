@@ -62,10 +62,10 @@ class HALS_Attacker(Attacker):
         _is_upper = is_upper.repeat([1, 1, split, split]).to(config.device)
 
         x_adv_1 = upper * _is_upper + lower * ~_is_upper
-        loss_1 = self.robust_acc(x_adv_1, y)
+        loss_1 = self.robust_acc(x_adv_1, y).detach().clone()
 
         x_adv_2 = upper * ~_is_upper + lower * _is_upper
-        loss_2 = self.robust_acc(x_adv_2, y)
+        loss_2 = self.robust_acc(x_adv_2, y).detach().clone()
 
         return torch.where((loss_2 < loss_1).view(-1, 1, 1, 1), is_upper, ~is_upper)
 

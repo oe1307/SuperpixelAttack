@@ -7,16 +7,8 @@ max_iter: 1
 iteration: 6
 initial_split: 4
 
-criterion:
-    #
-    # ce
-    cw
-    # dlr
-dataset:
-    #
-    cifar10
-    # cifar100
-    # imagenet
+criterion: cw
+dataset: cifar10
 model:
     robustbench:
         Andriushchenko2020Understanding: 1000
@@ -77,4 +69,3 @@ model:
         Pang2022Robustness_WRN70_16: 1000
         Addepalli2022Efficient_RN18: 1000
         Addepalli2022Efficient_WRN_34_10: 1000
-

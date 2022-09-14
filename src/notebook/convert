@@ -12,16 +12,21 @@ def py2ipynb(code: list) -> nbformat.v4:
     cell_value = ""
 
     for line in code:
-        if line.startswith("# %%"):
+        if line.startswith("# In["):
             if cell_value:
                 nb["cells"].append(nbformat.v4.new_code_cell(cell_value))
             cell_value = ""
             continue
+        elif "!/usr/bin/env python" or "# coding: utf-8" in line:
+            pass
+        else:
+            breakpoint()
         cell_value += line
 
     if cell_value:
         nb["cells"].append(nbformat.v4.new_code_cell(cell_value))
     return nb
+
 
 file_name = sys.argv[1]
 with open(file_name) as file:
