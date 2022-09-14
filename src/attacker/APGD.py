@@ -46,6 +46,7 @@ class APGD_Attacker(Attacker):
             f"step_size ( iter=1 ) : {step_size.min():.4f} ~ {step_size.max():.4f}"
         )
         x_adv = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper)
+        del grad
         loss = self.robust_acc(x_adv, y).sum()
 
         for iter in range(1, config.iteration):
@@ -57,6 +58,7 @@ class APGD_Attacker(Attacker):
                 f"step_size ( iter={iter + 1} ) : {step_size.min():.4f} ~ {step_size.max():.4f}"
             )
             z = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper)
+            del grad
             x_adv, _x_adv = (
                 x_adv
                 + config.alpha * (z - x_adv)

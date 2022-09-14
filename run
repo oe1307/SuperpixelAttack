@@ -7,7 +7,7 @@ if [ $1 = "setup" ]; then
         scp ds:/data0/issa/dataset/imagenet.tar.gz imagenet.tar.gz
     fi
     if [ ! -e imagenet ]; then
-        tar -xzf imagenet.tar.gz
+        tar -xzf imagenet.tar.gz && clear
     else
         echo "-> imagenet already exists"
     fi
