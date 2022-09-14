@@ -1,38 +1,30 @@
 #!/usr/bin/env python
 
 import os
+import subprocess
 import sys
 
 import nbformat
 
+filename = sys.argv[1]
+base_name, extension = os.path.splitext(filename)
+if extension == ".ipynb":
+    subprocess.run(["jupyter", "nbconvert", "--to", "python", filename, "--show-input"])
+    subprocess.run(["black", base_name + ".py", "-q"])
 
-def py2ipynb(code: list) -> nbformat.v4:
+elif extension == ".py":
     nb = nbformat.v4.new_notebook()
     nb["cells"] = []
-    cell_value = ""
+    input = open(filename)
+    next(input)
+    next(input)
+    for line in input:
+        if line != "\n":
+            if line.startswith("# In["):
+                nb["cells"].append(nbformat.v4.new_code_cell(""))
+            else:
+                nb["cells"][-1]["source"] += line
+    nbformat.write(nb, open(base_name + ".ipynb", "w"))
 
-    for line in code:
-        if line.startswith("# In["):
-            if cell_value:
-                nb["cells"].append(nbformat.v4.new_code_cell(cell_value))
-            cell_value = ""
-            continue
-        elif "!/usr/bin/env python" or "# coding: utf-8" in line:
-            pass
-        else:
-            breakpoint()
-        cell_value += line
-
-    if cell_value:
-        nb["cells"].append(nbformat.v4.new_code_cell(cell_value))
-    return nb
-
-
-file_name = sys.argv[1]
-with open(file_name) as file:
-    nb = py2ipynb(file.readlines())
-    ipynb = os.path.splitext(os.path.basename(file_name))[0] + ".ipynb"
-    with open(ipynb, "w") as f:
-        nbformat.write(nb, f)
-        print("Generated: ", ipynb)
-    # jupyter nbconvert --to script plot_loss.ipynb --show-input
+else:
+    raise ValueError("Unknown file type")
