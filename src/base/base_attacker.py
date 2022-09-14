@@ -36,13 +36,12 @@ class Attacker(Recorder):
     @torch.inference_mode()
     def clean_acc(self, x: Tensor, y: Tensor):
         logits = self.model(x).detach().clone()
+        self._clean_acc += (logits.argmax(dim=1) == y).sum().item()
         self._robust_acc[self.start : self.end] = logits.argmax(dim=1) == y
-        self._clean_acc += self._robust_acc.sum().item()
         loss = self.criterion(logits, y).detach().clone()
         self.best_loss[self.start : self.end, 0] = loss
         self.current_loss[self.start : self.end, 0] = loss
-        self.num_forward += x.shape[0]
-        logger.debug(f"Clean accuracy: {self._clean_acc} / {self.end}")
+        logger.debug(f"Clean accuracy : {self._clean_acc} / {self.end}")
 
     def robust_acc(self, x_adv: Tensor, y: Tensor) -> Tensor:
         self.iter += 1
@@ -57,7 +56,7 @@ class Attacker(Recorder):
         )
         self.num_forward += self.end - self.start
         logger.debug(
-            f"Robust accuracy ( iter={self.iter} ):"
+            f"Robust accuracy ( iter={self.iter} ) :"
             + f" {self._robust_acc.sum()} / {self.end}"
         )
         return loss
