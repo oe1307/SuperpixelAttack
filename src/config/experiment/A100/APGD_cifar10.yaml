@@ -12,7 +12,10 @@ criterion: cw
 dataset: cifar10
 model:
     robustbench:
-        Carmon2019Unlabeled: 3800
-        Ding2020MMA: 7800
+        Andriushchenko2020Understanding: 10_000
+        Sehwag2020Hydra: 3_000
+        Wang2020Improving: 3_000
+        Carmon2019Unlabeled: 3_800
+        Ding2020MMA: 7_800
         Addepalli2021Towards_RN18: 10_000
-        Zhang2020Geometry: 4000
+        Zhang2020Geometry: 4_000
