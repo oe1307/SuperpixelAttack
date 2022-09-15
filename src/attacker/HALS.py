@@ -35,12 +35,14 @@ class HALS_Attacker(Attacker):
         loss = self.robust_acc(x_adv, y).detach().clone()
 
         # repeat
-        for _ in range(config.iteration // 2 - 1):
+        for _ in range(1, config.iteration // 2):
             logger.debug(f"\nmask shape: {list(is_upper.shape)}")
             is_upper = self.local_search(upper, lower, is_upper, split, y, loss)
             if split > 1:
                 # split block
                 is_upper = is_upper.repeat([1, 1, 2, 2])
+                if split % 2 == 1:
+                    logger.warning(f"split is not even: {split}")
                 split //= 2
 
     @torch.inference_mode()
@@ -77,25 +79,26 @@ class HALS_Attacker(Attacker):
         all_elements = (~is_upper).nonzero()
 
         # search in elementary
+        logger.debug("search in elementary")
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for i in range(num_batch):
             _start = i * self.model.batch_size
             _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
             elements = all_elements[_start:_end]
-            _is_upper = is_upper[elements[:, 0]]
+            _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
                 _is_upper[i, c, h, w] = True
             _is_upper = _is_upper.repeat([1, 1, split, split])
             x_adv = (
                 upper[elements[:, 0]] * _is_upper + lower[elements[:, 0]] * ~_is_upper
             )
-            loss = self.criterion(self.model(x_adv), y[elements[:, 0]])
+            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).detach().clone()
             self.num_forward += _end - _start
             for i, (idx, c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss[idx] - loss[i]).item()
                 heapq.heappush(max_heap[idx], (delta, (c, h, w)))
-
         # update
+        logger.debug("update")
         _is_upper = []
         for idx, _max_heap in enumerate(max_heap):
             idx_is_upper = is_upper[idx]
