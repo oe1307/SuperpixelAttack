@@ -79,9 +79,9 @@ class HALS_Attacker(Attacker):
         all_elements = (~is_upper).nonzero()
 
         # search in elementary
-        logger.debug("search in elementary")
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for i in range(num_batch):
+            logger.debug(f"insert search in elementary ( {i} / {num_batch} )")
             _start = i * self.model.batch_size
             _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
             elements = all_elements[_start:_end]
@@ -98,9 +98,9 @@ class HALS_Attacker(Attacker):
                 delta = (base_loss[idx] - loss[i]).item()
                 heapq.heappush(max_heap[idx], (delta, (c, h, w)))
         # update
-        logger.debug("update")
         _is_upper = []
         for idx, _max_heap in enumerate(max_heap):
+            logger.debug(f"insert update ( {idx} / {len(max_heap)} )")
             idx_is_upper = is_upper[idx]
             while len(_max_heap) > 1:
                 delta_hat, element_hat = heapq.heappop(_max_heap)
@@ -124,17 +124,18 @@ class HALS_Attacker(Attacker):
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for i in range(num_batch):
+            logger.debug(f"deletion search in elementary ( {i} / {num_batch} )")
             _start = i * self.model.batch_size
             _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
             elements = all_elements[_start:_end]
-            _is_upper = is_upper[elements[:, 0]]
+            _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
                 _is_upper[i, c, h, w] = False
             _is_upper = _is_upper.repeat([1, 1, split, split])
             x_adv = (
                 upper[elements[:, 0]] * _is_upper + lower[elements[:, 0]] * ~_is_upper
             )
-            loss = self.criterion(self.model(x_adv), y[elements[:, 0]])
+            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).detach().clone()
             self.num_forward += _end - _start
             for i, (idx, c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss[idx] - loss[i]).item()
@@ -143,6 +144,7 @@ class HALS_Attacker(Attacker):
         # update
         _is_upper = []
         for idx, _max_heap in enumerate(max_heap):
+            logger.debug(f"deletion update ( {idx} / {len(max_heap)} )")
             idx_is_upper = is_upper[idx]
             while len(_max_heap) > 1:
                 delta_hat, element_hat = heapq.heappop(_max_heap)
