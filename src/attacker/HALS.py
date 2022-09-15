@@ -18,14 +18,13 @@ class HALS_Attacker(Attacker):
         super().__init__()
 
     def _recorder(self):
-        # FIXME: 1000 is a temporary value
         self.best_loss = torch.zeros(
-            (config.n_examples, 1000),
+            (config.n_examples, 3 * config.iteration + 2),
             dtype=torch.float16,
             device=config.device,
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, 1000),
+            (config.n_examples, 3 * config.iteration + 2),
             dtype=torch.float16,
             device=config.device,
         )
@@ -96,7 +95,6 @@ class HALS_Attacker(Attacker):
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for i in range(num_batch):
-            logger.debug(f"insert search in elementary ( {i} / {num_batch} )")
             _start = i * self.model.batch_size
             _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
             elements = all_elements[_start:_end]
@@ -117,7 +115,6 @@ class HALS_Attacker(Attacker):
         # update
         _is_upper = []
         for idx, _max_heap in enumerate(max_heap):
-            logger.debug(f"insert update ( {idx} / {len(max_heap)} )")
             idx_is_upper = is_upper[idx]
             while len(_max_heap) > 1:
                 delta_hat, element_hat = heapq.heappop(_max_heap)
@@ -152,7 +149,6 @@ class HALS_Attacker(Attacker):
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for i in range(num_batch):
-            logger.debug(f"deletion search in elementary ( {i} / {num_batch} )")
             _start = i * self.model.batch_size
             _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
             elements = all_elements[_start:_end]
@@ -173,7 +169,6 @@ class HALS_Attacker(Attacker):
         # update
         _is_upper = []
         for idx, _max_heap in enumerate(max_heap):
-            logger.debug(f"deletion update ( {idx} / {len(max_heap)} )")
             idx_is_upper = is_upper[idx]
             while len(_max_heap) > 1:
                 delta_hat, element_hat = heapq.heappop(_max_heap)
