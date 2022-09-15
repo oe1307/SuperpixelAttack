@@ -12,4 +12,55 @@ criterion: cw
 dataset: cifar10
 model:
     robustbench:
-        Carmon2019Unlabeled: 3800
+        Hendrycks2019Using: 10_000
+        Rice2020Overfitting: 10_000
+        Zhang2019Theoretically: 10_000
+        Engstrom2019Robustness: 10_000
+        Chen2020Adversarial: 10_000
+        Huang2020Self: 10_000
+        Pang2020Boosting: 10_000
+        Wong2020Fast: 10_000
+        Zhang2019You: 10_000
+        Zhang2020Attacks: 10_000
+        Wu2020Adversarial_extra: 10_000
+        Wu2020Adversarial: 10_000
+        Gowal2020Uncovering_70_16: 10_000
+        Gowal2020Uncovering_70_16_extra: 10_000
+        Gowal2020Uncovering_34_20: 10_000
+        Gowal2020Uncovering_28_10_extra: 10_000
+        Sehwag2021Proxy: 10_000
+        Sehwag2021Proxy_R18: 10_000
+        Sehwag2021Proxy_ResNest152: 10_000
+        Sitawarin2020Improving: 10_000
+        Chen2020Efficient: 10_000
+        Cui2020Learnable_34_20: 10_000
+        Cui2020Learnable_34_10: 10_000
+        Rebuffi2021Fixing_28_10_cutmix_ddpm: 10_000
+        Rebuffi2021Fixing_106_16_cutmix_ddpm: 10_000
+        Rebuffi2021Fixing_70_16_cutmix_ddpm: 10_000
+        Rebuffi2021Fixing_70_16_cutmix_extra: 10_000
+        Sridhar2021Robust: 10_000
+        Sridhar2021Robust_34_15: 10_000
+        Rebuffi2021Fixing_R18_ddpm: 10_000
+        Rade2021Helper_R18_extra: 10_000
+        Rade2021Helper_R18_ddpm: 10_000
+        Rade2021Helper_extra: 10_000
+        Rade2021Helper_ddpm: 10_000
+        Huang2021Exploring: 10_000
+        Huang2021Exploring_ema: 10_000
+        Addepalli2021Towards_WRN34: 10_000
+        Gowal2021Improving_70_16_ddpm_100m: 10_000
+        Dai2021Parameterizing: 10_000
+        Gowal2021Improving_28_10_ddpm_100m: 10_000
+        Gowal2021Improving_R18_ddpm_100m: 10_000
+        Chen2021LTD_WRN34_10: 10_000
+        Chen2021LTD_WRN34_20: 10_000
+        Standard: 10_000
+        Kang2021Stable: 10_000
+        Jia2022LAS-AT_34_10: 10_000
+        Jia2022LAS-AT_70_16: 10_000
+        Pang2022Robustness_WRN28_10: 10_000
+        Pang2022Robustness_WRN70_16: 10_000
+        Addepalli2022Efficient_RN18: 10_000
+        Addepalli2022Efficient_WRN_34_10: 10_000
+

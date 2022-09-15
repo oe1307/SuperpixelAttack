@@ -4,9 +4,10 @@ from torch.nn import CrossEntropyLoss
 
 from utils import config_parser
 
+config = config_parser()
+
 
 def get_criterion():
-    config = config_parser.config
     if config.criterion == "cw":
         return cw_loss
     elif config.criterion == "ce":

@@ -37,6 +37,9 @@ class ConfigParser:
         logger.debug(f"{msg}\n")
         self.config.update(obj)
         return self.config
+    
+    def __call__(self):
+        return self.config
 
     def save(self, path):
         change_level("git", 30)

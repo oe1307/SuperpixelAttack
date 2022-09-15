@@ -8,6 +8,7 @@ from utils import config_parser, setup_logger
 from .recorder import Recorder
 
 logger = setup_logger(__name__)
+config = config_parser()
 
 
 class Attacker(Recorder):
@@ -15,7 +16,6 @@ class Attacker(Recorder):
         super().__init__()
 
     def attack(self, model, data, label, criterion):
-        config = config_parser.config
         self.model = model
         self.criterion = criterion
 

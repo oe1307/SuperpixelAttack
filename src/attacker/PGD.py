@@ -4,6 +4,7 @@ from base import Attacker
 from utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
+config = config_parser()
 
 
 class PGD_Attacker(Attacker):
@@ -13,7 +14,6 @@ class PGD_Attacker(Attacker):
         super().__init__()
 
     def _attack(self, x, y):
-        config = config_parser.config
         upper = (x + config.epsilon).clamp(0, 1).detach().clone()
         lower = (x - config.epsilon).clamp(0, 1).detach().clone()
         x_adv = x.clone().requires_grad_()

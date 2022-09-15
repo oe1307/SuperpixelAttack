@@ -5,6 +5,7 @@ from base import Attacker
 from utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
+config = config_parser()
 
 
 class APGD_Attacker(Attacker):
@@ -14,13 +15,11 @@ class APGD_Attacker(Attacker):
         super().__init__()
 
     def _recorder(self):
-        config = config_parser.config
         self.step_size = torch.zeros(
             (config.n_examples, config.iteration + 1), device=config.device
         )
 
     def _attack(self, x, y):
-        config = config_parser.config
         upper = (x + config.epsilon).clamp(0, 1).detach().clone()
         lower = (x - config.epsilon).clamp(0, 1).detach().clone()
         self.step_size[self.start : self.end, 0] = (
@@ -72,7 +71,6 @@ class APGD_Attacker(Attacker):
     @torch.inference_mode()
     def step_size_manager(self, iter, checker):
         if iter == checker["checkpoint"]:
-            config = config_parser.config
             threshold = config.rho * checker["checkpoint_interval"]
             condition1 = checker["loss_update"] < threshold
 
@@ -113,6 +111,5 @@ class APGD_Attacker(Attacker):
         return checker
 
     def _record(self):
-        config = config_parser.config
         self.step_size = self.step_size.cpu().numpy()
         np.save(f"{config.savedir}/step_size.npy", self.step_size)

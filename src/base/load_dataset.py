@@ -6,6 +6,8 @@ from utils import config_parser
 
 from .load_imagenet import load_imagenet
 
+config = config_parser()
+
 
 def load_dataset(model_name):
     """Load dataset for the given model.
@@ -20,8 +22,6 @@ def load_dataset(model_name):
         img: all images
         label: all labels
     """
-    config = config_parser.config
-
     models = model_dicts[BenchmarkDataset(config.dataset)]
     models = models[ThreatModel(config.norm)].keys()
     assert (

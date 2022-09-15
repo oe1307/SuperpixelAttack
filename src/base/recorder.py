@@ -7,6 +7,7 @@ import torch
 from utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
+config = config_parser()
 
 
 class Recorder:
@@ -15,7 +16,6 @@ class Recorder:
 
     def recorder(self):
         """This function is for recording the information of the attacker."""
-        config = config_parser.config
         logger.info(f"Attack start at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
         self.total_time = time.time()
@@ -45,8 +45,6 @@ class Recorder:
 
     def record(self):
         """This function is for recording the information of the attacker."""
-        config = config_parser.config
-
         self.total_time = time.time() - self.total_time
         self._clean_acc = self._clean_acc / config.n_examples * 100
         self._robust_acc = self._robust_acc.sum() / config.n_examples * 100

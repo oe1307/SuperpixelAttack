@@ -4,9 +4,10 @@ from .APGD import APGD_Attacker
 from .HALS import HALS_Attacker
 from .PGD import PGD_Attacker
 
+config = config_parser()
+
 
 def get_attacker():
-    config = config_parser.config
 
     if config.attacker == "HALS":
         attacker = HALS_Attacker()

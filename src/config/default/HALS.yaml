@@ -1,14 +1,14 @@
 attacker: HALS
 
-n_examples: 1000
+n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
-max_iter: 1
-iteration: 6
 initial_split: 4
+max_iter: 1
+iteration: 10
 
 criterion: cw
 dataset: cifar10
 model:
     robustbench:
-        Carmon2019Unlabeled: 300
+        Carmon2019Unlabeled: 100
