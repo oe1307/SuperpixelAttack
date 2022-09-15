@@ -1,0 +1,13 @@
+attacker: PGD
+
+n_examples: 10_000
+norm: Linf
+epsilon: 0.03137254901960784
+iteration: 20
+step_size: 0.01
+
+criterion: cw
+dataset: cifar10
+model:
+    robustbench:
+        Carmon2019Unlabeled: 4000

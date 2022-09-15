@@ -65,7 +65,7 @@ class Recorder:
             + f"num_backward = {self.num_backward}"
         )
         print(msg, file=open(config.savedir + "/summary.txt", "w"))
-        logger.info(msg)
+        logger.info(msg + "\n")
         self._record()
         logger.info(f"Attack end at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
