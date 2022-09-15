@@ -13,3 +13,6 @@ dataset: cifar10
 model:
     robustbench:
         Carmon2019Unlabeled: 3800
+        Ding2020MMA: 7800
+        Addepalli2021Towards_RN18: 10_000
+        Zhang2020Geometry: 4000
