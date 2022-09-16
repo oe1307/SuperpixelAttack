@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 from torch import Tensor
 from torch.nn import CrossEntropyLoss
@@ -7,7 +9,7 @@ from utils import config_parser
 config = config_parser()
 
 
-def get_criterion():
+def get_criterion() -> Callable[[Tensor, Tensor], Tensor]:
     if config.criterion == "cw":
         return cw_loss
     elif config.criterion == "ce":

@@ -37,7 +37,7 @@ class ConfigParser:
         logger.debug(f"{msg}\n")
         self.config.update(obj)
         return self.config
-    
+
     def __call__(self):
         return self.config
 

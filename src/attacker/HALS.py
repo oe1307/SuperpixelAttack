@@ -55,6 +55,10 @@ class HALS_Attacker(Attacker):
                     logger.warning(f"split is not even: {split}")
                 split //= 2
 
+        _is_upper = is_upper.repeat([1, 1, split, split])
+        x_adv = torch.where(_is_upper, upper, lower).detach().clone()
+        return x_adv
+
     @torch.inference_mode()
     def local_search(
         self,
@@ -69,7 +73,7 @@ class HALS_Attacker(Attacker):
             is_upper, loss = self.insert(is_upper, y, upper, lower, split, loss)
             is_upper, loss = self.deletion(is_upper, y, upper, lower, split, loss)
         _is_upper = is_upper.repeat([1, 1, split, split])
-        x_adv_inverse = upper * ~_is_upper + lower * _is_upper
+        x_adv_inverse = torch.where(~_is_upper, upper, lower).detach().clone()
         loss_inverse = self.robust_acc(x_adv_inverse, y).detach().clone()
         is_upper = torch.where(
             (loss_inverse < loss).view(-1, 1, 1, 1), is_upper, ~is_upper
@@ -98,12 +102,10 @@ class HALS_Attacker(Attacker):
             elements = all_elements[_start:_end]
             _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
-                assert _is_upper[i, c, h, w] == False
+                assert _is_upper[i, c, h, w] is False
                 _is_upper[i, c, h, w] = True
             _is_upper = _is_upper.repeat([1, 1, split, split])
-            x_adv = (
-                upper[elements[:, 0]] * _is_upper + lower[elements[:, 0]] * ~_is_upper
-            )
+            x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
             loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).detach().clone()
             self.num_forward += x_adv.shape[0]
             for i, (idx, c, h, w) in enumerate(elements.tolist()):
@@ -118,7 +120,7 @@ class HALS_Attacker(Attacker):
                 delta_hat, element_hat = heapq.heappop(_max_heap)
                 delta_tilde = _max_heap[0][0]
                 if delta_hat <= delta_tilde and delta_hat < 0:
-                    assert idx_is_upper[element_hat] == False
+                    assert idx_is_upper[element_hat] is False
                     idx_is_upper[element_hat] = True
                 elif delta_hat <= delta_tilde and delta_hat >= 0:
                     break
@@ -127,7 +129,7 @@ class HALS_Attacker(Attacker):
             _is_upper.append(idx_is_upper)
         is_upper = torch.stack(_is_upper)
         _is_upper = is_upper.repeat([1, 1, split, split])
-        x_adv = upper * _is_upper + lower * ~_is_upper
+        x_adv = torch.where(_is_upper, upper, lower).detach().clone()
         loss = self.robust_acc(x_adv, y).detach().clone()
         return is_upper, loss
 
@@ -152,12 +154,10 @@ class HALS_Attacker(Attacker):
             elements = all_elements[_start:_end]
             _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
-                assert _is_upper[i, c, h, w] == True
+                assert _is_upper[i, c, h, w] is True
                 _is_upper[i, c, h, w] = False
             _is_upper = _is_upper.repeat([1, 1, split, split])
-            x_adv = (
-                upper[elements[:, 0]] * _is_upper + lower[elements[:, 0]] * ~_is_upper
-            )
+            x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
             loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).detach().clone()
             self.num_forward += x_adv.shape[0]
             for i, (idx, c, h, w) in enumerate(elements.tolist()):
@@ -172,7 +172,7 @@ class HALS_Attacker(Attacker):
                 delta_hat, element_hat = heapq.heappop(_max_heap)
                 delta_tilde = _max_heap[0][0]
                 if delta_hat <= delta_tilde and delta_hat < 0:
-                    assert idx_is_upper[element_hat] == True
+                    assert idx_is_upper[element_hat] is True
                     idx_is_upper[element_hat] = False
                 elif delta_hat <= delta_tilde and delta_hat >= 0:
                     break
@@ -181,6 +181,6 @@ class HALS_Attacker(Attacker):
             _is_upper.append(idx_is_upper)
         is_upper = torch.stack(_is_upper)
         _is_upper = is_upper.repeat([1, 1, split, split])
-        x_adv = upper * _is_upper + lower * ~_is_upper
+        x_adv = torch.where(_is_upper, upper, lower).detach().clone()
         loss = self.robust_acc(x_adv, y).detach().clone()
         return is_upper, loss

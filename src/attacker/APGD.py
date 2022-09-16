@@ -67,6 +67,7 @@ class APGD_Attacker(Attacker):
                 + (1 - config.alpha) * (x_adv - _x_adv)
             ).clamp(lower, upper), x_adv.detach().clone()
             loss = self.robust_acc(x_adv, y).sum()
+        return x_adv
 
     @torch.inference_mode()
     def step_size_manager(self, iter, checker):
