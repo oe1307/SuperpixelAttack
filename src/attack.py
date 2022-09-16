@@ -51,7 +51,7 @@ def main():
         for model_name, batch_size in models.items():
             print(f"{model_name}")
             config.savedir = (
-                f"../result/{config.attacker}/{model_name}/"
+                f"../result/{config.attacker}/{config.dataset}/{config.norm}/{model_name}/"
                 + f"{datetime.now().strftime('%Y-%m-%d_%H:%M')}/"
             )
             config_parser.save(config.savedir + "config.json")
