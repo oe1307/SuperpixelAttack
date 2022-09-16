@@ -96,13 +96,13 @@ class HALS_Attacker(Attacker):
 
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
-        for i in range(num_batch):
-            _start = i * self.model.batch_size
-            _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
+        for batch in range(num_batch):
+            _start = batch * self.model.batch_size
+            _end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
             elements = all_elements[_start:_end]
             _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
-                assert _is_upper[i, c, h, w] is False
+                assert _is_upper[i, c, h, w].item() is False
                 _is_upper[i, c, h, w] = True
             _is_upper = _is_upper.repeat([1, 1, split, split])
             x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
@@ -120,7 +120,7 @@ class HALS_Attacker(Attacker):
                 delta_hat, element_hat = heapq.heappop(_max_heap)
                 delta_tilde = _max_heap[0][0]
                 if delta_hat <= delta_tilde and delta_hat < 0:
-                    assert idx_is_upper[element_hat] is False
+                    assert idx_is_upper[element_hat].item() is False
                     idx_is_upper[element_hat] = True
                 elif delta_hat <= delta_tilde and delta_hat >= 0:
                     break
@@ -148,13 +148,13 @@ class HALS_Attacker(Attacker):
 
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
-        for i in range(num_batch):
-            _start = i * self.model.batch_size
-            _end = min((i + 1) * self.model.batch_size, all_elements.shape[0])
+        for batch in range(num_batch):
+            _start = batch * self.model.batch_size
+            _end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
             elements = all_elements[_start:_end]
             _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
-                assert _is_upper[i, c, h, w] is True
+                assert _is_upper[i, c, h, w].item() is True
                 _is_upper[i, c, h, w] = False
             _is_upper = _is_upper.repeat([1, 1, split, split])
             x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
@@ -172,7 +172,7 @@ class HALS_Attacker(Attacker):
                 delta_hat, element_hat = heapq.heappop(_max_heap)
                 delta_tilde = _max_heap[0][0]
                 if delta_hat <= delta_tilde and delta_hat < 0:
-                    assert idx_is_upper[element_hat] is True
+                    assert idx_is_upper[element_hat].item() is True
                     idx_is_upper[element_hat] = False
                 elif delta_hat <= delta_tilde and delta_hat >= 0:
                     break

@@ -8,3 +8,4 @@ line_length = 88
 [tool.flake8]
 ignore = "W503, E203"
 max-line-length = 88
+exclude = "src/notebook"

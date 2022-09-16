@@ -1,3 +1,5 @@
+import os
+
 import torch
 from robustbench.data import CustomImageFolder, get_preprocessing
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
@@ -7,13 +9,13 @@ from utils import config_parser
 config = config_parser()
 
 
-def load_imagenet(model_name):
+def load_imagenet(model_name: str, data_dir: str):
     """Load ImageNet data."""
     assert config.n_examples <= 5000
     transform = get_preprocessing(
         BenchmarkDataset.imagenet, ThreatModel(config.norm), model_name, None
     )
-    dataset = CustomImageFolder("../storage/data/imagenet/val", transform=transform)
+    dataset = CustomImageFolder(os.path.join(data_dir, "imagenet/val"), transform=transform)
     img = list()
     label = list()
     for index in range(config.n_examples):

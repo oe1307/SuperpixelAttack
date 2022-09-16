@@ -9,7 +9,7 @@ from .load_imagenet import load_imagenet
 config = config_parser()
 
 
-def load_dataset(model_name):
+def load_dataset(model_name, data_dir):
     """Load dataset for the given model.
 
     Args:
@@ -29,11 +29,11 @@ def load_dataset(model_name):
     ), f"{model_name} not in robustbench[{config.dataset}][{config.norm}]"
 
     if config.dataset == "cifar10":
-        img, label = load_cifar10(config.n_examples, "../storage/data")
+        img, label = load_cifar10(config.n_examples, data_dir)
     elif config.dataset == "cifar100":
-        img, label = load_cifar100(config.n_examples, "../storage/data")
+        img, label = load_cifar100(config.n_examples, data_dir)
     elif config.dataset == "imagenet":
-        img, label = load_imagenet(model_name)
+        img, label = load_imagenet(model_name, data_dir)
     else:
         raise ValueError("Dataset not supported")
 
