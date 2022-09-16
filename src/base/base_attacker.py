@@ -45,6 +45,7 @@ class Attacker(Recorder):
     def robust_acc(self, x_adv: Tensor, y: Tensor) -> Tensor:
         self.iter += 1
         logits = self.model(x_adv).clone()
+        self.num_forward += x_adv.shape[0]
         self._robust_acc[self.start : self.end] = torch.logical_and(
             self._robust_acc[self.start : self.end], logits.argmax(dim=1) == y
         )
@@ -53,7 +54,6 @@ class Attacker(Recorder):
         self.best_loss[self.start : self.end, self.iter] = torch.max(
             loss.detach().clone(), self.best_loss[self.start : self.end, self.iter - 1]
         )
-        self.num_forward += self.end - self.start
         logger.debug(
             f"Robust accuracy ( iter={self.iter} ) :"
             + f" {self._robust_acc.sum()} / {self.end}"

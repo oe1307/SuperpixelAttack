@@ -46,7 +46,7 @@ class HALS_Attacker(Attacker):
 
         # repeat
         for _ in range(config.iteration):
-            logger.debug(f"\nmask shape: {list(is_upper.shape)}")
+            logger.debug(f"\nmask shape: {[c, h // split, w // split]}")
             is_upper, loss = self.local_search(upper, lower, is_upper, split, y, loss)
             if split > 1:
                 # split block
@@ -65,10 +65,8 @@ class HALS_Attacker(Attacker):
         y: Tensor,
         loss: Tensor,
     ):
-        for iter in range(config.max_iter):
-            logger.debug(f"insert ( iter={iter} )")
+        for _ in range(config.max_iter):
             is_upper, loss = self.insert(is_upper, y, upper, lower, split, loss)
-            logger.debug(f"deletion ( iter={iter} )")
             is_upper, loss = self.deletion(is_upper, y, upper, lower, split, loss)
         _is_upper = is_upper.repeat([1, 1, split, split])
         x_adv_inverse = upper * ~_is_upper + lower * _is_upper
