@@ -66,6 +66,7 @@ class APGD_Attacker(Attacker):
                 + config.alpha * (z - x_adv)
                 + (1 - config.alpha) * (x_adv - _x_adv)
             ).clamp(lower, upper), x_adv.detach().clone()
+            assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             loss = self.robust_acc(x_adv, y).sum()
         return x_adv
 

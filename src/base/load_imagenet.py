@@ -15,7 +15,9 @@ def load_imagenet(model_name: str, data_dir: str):
     transform = get_preprocessing(
         BenchmarkDataset.imagenet, ThreatModel(config.norm), model_name, None
     )
-    dataset = CustomImageFolder(os.path.join(data_dir, "imagenet/val"), transform=transform)
+    dataset = CustomImageFolder(
+        os.path.join(data_dir, "imagenet/val"), transform=transform
+    )
     img = list()
     label = list()
     for index in range(config.n_examples):

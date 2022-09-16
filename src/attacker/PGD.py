@@ -25,4 +25,5 @@ class PGD_Attacker(Attacker):
             self.num_backward += x_adv.shape[0]
             x_adv = (x_adv + config.step_size * torch.sign(grad)).clamp(lower, upper)
             del grad
+            assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             loss = self.robust_acc(x_adv, y).sum()
