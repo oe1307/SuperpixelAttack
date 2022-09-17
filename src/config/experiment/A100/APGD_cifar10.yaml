@@ -1,4 +1,4 @@
-attacker: APGD
+attacker: AutoPGD
 
 n_examples: 10_000
 norm: Linf

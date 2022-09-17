@@ -59,8 +59,8 @@ class Recorder:
             + f"clean acc (%) = {self._clean_acc:.2f}\n"
             + f"robust acc (%) = {self._robust_acc:.2f}\n"
             + f"ASR (%) = {self.ASR:.2f}\n"
-            + f"num_forward = {self.num_forward}\n"
-            + f"num_backward = {self.num_backward}"
+            + f"{self.num_forward = }\n"
+            + f"{self.num_backward = }"
         )
         print(msg, file=open(config.savedir + "/summary.txt", "w"))
         logger.info(msg + "\n")

@@ -31,8 +31,8 @@ class HALS_Attacker(Attacker):
 
     @torch.inference_mode()
     def _attack(self, x: Tensor, y: Tensor):
-        upper = (x + config.epsilon).clamp(0, 1).detach().clone()
-        lower = (x - config.epsilon).clamp(0, 1).detach().clone()
+        upper = (x + config.epsilon).clamp(0, 1).clone()
+        lower = (x - config.epsilon).clamp(0, 1).clone()
 
         # initialize
         split = config.initial_split
@@ -41,8 +41,8 @@ class HALS_Attacker(Attacker):
             (batch, c, h // split, w // split), dtype=torch.bool, device=config.device
         )
         logger.debug(f"\nmask shape: {[c, h // split, w // split]}")
-        x_adv = lower.detach().clone()
-        loss = self.robust_acc(x_adv, y).detach().clone()
+        x_adv = lower.clone()
+        loss = self.robust_acc(x_adv, y)[0].clone()
 
         # repeat
         for _ in range(config.iteration):
@@ -56,7 +56,7 @@ class HALS_Attacker(Attacker):
                 split //= 2
 
         _is_upper = is_upper.repeat([1, 1, split, split])
-        x_adv = torch.where(_is_upper, upper, lower).detach().clone()
+        x_adv = torch.where(_is_upper, upper, lower).clone()
         return x_adv
 
     @torch.inference_mode()
@@ -73,8 +73,8 @@ class HALS_Attacker(Attacker):
             is_upper, loss = self.insert(is_upper, y, upper, lower, split, loss)
             is_upper, loss = self.deletion(is_upper, y, upper, lower, split, loss)
         _is_upper = is_upper.repeat([1, 1, split, split])
-        x_adv_inverse = torch.where(~_is_upper, upper, lower).detach().clone()
-        loss_inverse = self.robust_acc(x_adv_inverse, y).detach().clone()
+        x_adv_inverse = torch.where(~_is_upper, upper, lower).clone()
+        loss_inverse = self.robust_acc(x_adv_inverse, y)[0].clone()
         is_upper = torch.where(
             (loss_inverse < loss).view(-1, 1, 1, 1), is_upper, ~is_upper
         )
@@ -97,16 +97,16 @@ class HALS_Attacker(Attacker):
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for batch in range(num_batch):
-            _start = batch * self.model.batch_size
-            _end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
-            elements = all_elements[_start:_end]
+            start = batch * self.model.batch_size
+            end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
+            elements = all_elements[start:end]
             _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
                 assert _is_upper[i, c, h, w].item() is False
                 _is_upper[i, c, h, w] = True
             _is_upper = _is_upper.repeat([1, 1, split, split])
             x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
-            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).detach().clone()
+            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
             self.num_forward += x_adv.shape[0]
             for i, (idx, c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss[idx] - loss[i]).item()
@@ -129,8 +129,8 @@ class HALS_Attacker(Attacker):
             _is_upper.append(idx_is_upper)
         is_upper = torch.stack(_is_upper)
         _is_upper = is_upper.repeat([1, 1, split, split])
-        x_adv = torch.where(_is_upper, upper, lower).detach().clone()
-        loss = self.robust_acc(x_adv, y).detach().clone()
+        x_adv = torch.where(_is_upper, upper, lower).clone()
+        loss = self.robust_acc(x_adv, y)[0].clone()
         return is_upper, loss
 
     @torch.inference_mode()
@@ -149,16 +149,16 @@ class HALS_Attacker(Attacker):
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for batch in range(num_batch):
-            _start = batch * self.model.batch_size
-            _end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
-            elements = all_elements[_start:_end]
+            start = batch * self.model.batch_size
+            end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
+            elements = all_elements[start:end]
             _is_upper = is_upper[elements[:, 0]].clone()
             for i, (c, h, w) in enumerate(elements[:, 1:]):
                 assert _is_upper[i, c, h, w].item() is True
                 _is_upper[i, c, h, w] = False
             _is_upper = _is_upper.repeat([1, 1, split, split])
             x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
-            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).detach().clone()
+            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
             self.num_forward += x_adv.shape[0]
             for i, (idx, c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss[idx] - loss[i]).item()
@@ -181,6 +181,6 @@ class HALS_Attacker(Attacker):
             _is_upper.append(idx_is_upper)
         is_upper = torch.stack(_is_upper)
         _is_upper = is_upper.repeat([1, 1, split, split])
-        x_adv = torch.where(_is_upper, upper, lower).detach().clone()
-        loss = self.robust_acc(x_adv, y).detach().clone()
+        x_adv = torch.where(_is_upper, upper, lower).clone()
+        loss = self.robust_acc(x_adv, y)[0].clone()
         return is_upper, loss

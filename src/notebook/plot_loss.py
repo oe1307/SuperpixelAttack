@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 # In[ ]:
 
 
-dirname = "../../result/APGD/Carmon2019Unlabeled/2022-09-14_20:14/"
+dirname = "../../result/AutoPGD/Carmon2019Unlabeled/2022-09-14_20:14/"
 
 
 # In[ ]:

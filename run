@@ -31,7 +31,7 @@ elif [ $1 = "format" ]; then
 elif [ $1 = "test" ]; then
     if [ $# = 2 ]; then
         cd $(dirname $0)/src
-        python attack.py -c config/default/APGD.yaml -g $2 --thread 10 --log_level 10
+        python attack.py -c config/default/AutoPGD.yaml -g $2 --thread 10 --log_level 10
     else
         echo "Usage: $0 test [gpu]"
         exit 1

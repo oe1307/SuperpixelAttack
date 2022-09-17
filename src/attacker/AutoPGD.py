@@ -8,7 +8,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class APGD_Attacker(Attacker):
+class AutoPGD_Attacker(Attacker):
     """AutoPGD"""
 
     def __init__(self):
@@ -20,10 +20,10 @@ class APGD_Attacker(Attacker):
         )
 
     def _attack(self, x, y):
-        upper = (x + config.epsilon).clamp(0, 1).detach().clone()
-        lower = (x - config.epsilon).clamp(0, 1).detach().clone()
+        upper = (x + config.epsilon).clamp(0, 1).clone()
+        lower = (x - config.epsilon).clamp(0, 1).clone()
         self.step_size[self.start : self.end, 0] = (
-            torch.ones(self.end - self.start) * config.step_size
+            torch.ones(x.shape[0]) * config.step_size
         )
         checker = {
             "checkpoint": int(0.22 * config.iteration),
@@ -32,42 +32,46 @@ class APGD_Attacker(Attacker):
             "checkpoint_min": int(0.06 * config.iteration),
             "previous_checkpoint": 0,
             "loss_update": torch.zeros(
-                self.end - self.start, dtype=torch.uint8, device=config.device
+                x.shape[0], dtype=torch.uint8, device=config.device
             ),
         }
 
+        _x_adv = x.clone()
         x_adv = x.clone().requires_grad_()
-        _x_adv = x.detach().clone()
-        loss = self.criterion(self.model(x_adv), y).sum()
+        loss = self.criterion(self.model(x_adv), y).sum().clone()
         self.num_forward += x_adv.shape[0]
-        grad = torch.autograd.grad(loss, [x_adv])[0]
+        grad = torch.autograd.grad(loss, [x_adv])[0].clone()
         self.num_backward += x_adv.shape[0]
         step_size = self.step_size[self.start : self.end, 0].view(-1, 1, 1, 1)
         logger.debug(
             f"step_size ( iter=1 ) : {step_size.min():.4f} ~ {step_size.max():.4f}"
         )
-        x_adv = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper)
+        x_adv = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper).clone()
         del grad
-        loss = self.robust_acc(x_adv, y).sum()
+        loss = self.robust_acc(x_adv, y)[0].sum().clone()
 
-        for iter in range(1, config.iteration):
+        for iter in range(2, config.iteration + 1):
             checker = self.step_size_manager(iter, checker)
-            grad = torch.autograd.grad(loss, [x_adv])[0]
+            grad = torch.autograd.grad(loss, [x_adv])[0].clone()
             self.num_backward += x_adv.shape[0]
             step_size = self.step_size[self.start : self.end, iter].view(-1, 1, 1, 1)
             logger.debug(
-                f"step_size ( iter={iter + 1} ) : "
-                + f"{step_size.min():.4f} ~ {step_size.max():.4f}"
+                f"step_size ( {iter=} ) : {step_size.min():.4f} ~ {step_size.max():.4f}"
             )
-            z = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper)
+            z = (
+                (x_adv + step_size * torch.sign(grad))
+                .clamp(lower, upper)
+                .detach()
+                .clone()
+            )
             del grad
             x_adv, _x_adv = (
                 x_adv
                 + config.alpha * (z - x_adv)
                 + (1 - config.alpha) * (x_adv - _x_adv)
-            ).clamp(lower, upper), x_adv.detach().clone()
+            ).clamp(lower, upper).clone(), x_adv.detach().clone()
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
-            loss = self.robust_acc(x_adv, y).sum()
+            loss = self.robust_acc(x_adv, y)[0].sum().clone()
         return x_adv
 
     @torch.inference_mode()

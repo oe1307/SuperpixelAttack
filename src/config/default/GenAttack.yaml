@@ -1,12 +1,13 @@
-attacker: APGD
+attacker: GenAttack
 
 n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
-iteration: 100
-step_size: 0.06274509803921569
-rho: 0.75
-alpha: 0.75
+iteration: 10
+mutation: 1.0
+probability: 0.05
+population: 6
+temperature: tau
 
 criterion: cw
 dataset: cifar10

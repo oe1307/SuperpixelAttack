@@ -25,10 +25,10 @@ def cw_loss(logits: Tensor, y: Tensor) -> Tensor:
     .. math::
         loss = max_{i \neq y}z_i - z_y
     """
-    logits_sorted, idx_sorted = logits.sort(dim=1)
-    acc = idx_sorted[:, -1] == y
+    logits_sorted, idx_sorted = logits.sort(dim=1, descending=True)
+    acc = idx_sorted[:, 0] == y
     z_y = logits[np.arange(logits.shape[0]), y]
-    max_zi = logits_sorted[:, -2] * acc + logits_sorted[:, -1] * ~acc
+    max_zi = logits_sorted[:, 1] * acc + logits_sorted[:, 0] * ~acc
     loss = max_zi - z_y
     return loss
 

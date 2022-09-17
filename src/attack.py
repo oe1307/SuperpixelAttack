@@ -44,12 +44,12 @@ def argparser():
 
 
 def main():
-    reproducibility()
     torch.set_num_threads(config.thread)
     criterion = get_criterion()
     for model_container, models in config.model.items():
         for model_name, batch_size in models.items():
             print(f"{model_name}")
+            reproducibility()
             config.savedir = (
                 f"../result/{config.attacker}/{config.dataset}/{config.norm}/"
                 + f"{model_name}/{datetime.now().strftime('%Y-%m-%d_%H:%M')}/"

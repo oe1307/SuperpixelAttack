@@ -7,7 +7,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class EdgeAttacker(Attacker):
+class Edge_Attacker(Attacker):
     """Edge Attacker"""
 
     def __init__(self):
