@@ -129,4 +129,18 @@ class AutoPGD_Attacker(Attacker):
 
     def _record(self):
         self.step_size = self.step_size.cpu().numpy()
+        self.num_forward = (
+            self.num_forward * self.success_iter.sum() / (config.n_examples * 101)
+        )
+        self.num_backward = (
+            self.num_backward * self.success_iter.sum() / (config.n_examples * 100)
+        )
+
         np.save(f"{config.savedir}/step_size.npy", self.step_size)
+
+        msg = (
+            f"num_forward = {self.num_forward}\n"
+            + f"num_backward = {self.num_backward}"
+        )
+        print(msg, file=open(config.savedir + "/summary.txt", "a"))
+        logger.info(msg + "\n")
