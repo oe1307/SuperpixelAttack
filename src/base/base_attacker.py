@@ -58,4 +58,4 @@ class Attacker(Recorder):
             f"Robust accuracy ( iter={self.iter} ) :"
             + f" {self._robust_acc.sum()} / {self.end}"
         )
-        return loss, logits
+        return loss

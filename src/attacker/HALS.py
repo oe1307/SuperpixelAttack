@@ -42,7 +42,7 @@ class HALS_Attacker(Attacker):
         )
         logger.debug(f"\nmask shape: {[c, h // split, w // split]}")
         x_adv = lower.clone()
-        loss = self.robust_acc(x_adv, y)[0].clone()
+        loss = self.robust_acc(x_adv, y).clone()
 
         # repeat
         for _ in range(config.iteration):
@@ -74,7 +74,7 @@ class HALS_Attacker(Attacker):
             is_upper, loss = self.deletion(is_upper, y, upper, lower, split, loss)
         _is_upper = is_upper.repeat([1, 1, split, split])
         x_adv_inverse = torch.where(~_is_upper, upper, lower).clone()
-        loss_inverse = self.robust_acc(x_adv_inverse, y)[0].clone()
+        loss_inverse = self.robust_acc(x_adv_inverse, y).clone()
         is_upper = torch.where(
             (loss_inverse < loss).view(-1, 1, 1, 1), is_upper, ~is_upper
         )
@@ -130,7 +130,7 @@ class HALS_Attacker(Attacker):
         is_upper = torch.stack(_is_upper)
         _is_upper = is_upper.repeat([1, 1, split, split])
         x_adv = torch.where(_is_upper, upper, lower).clone()
-        loss = self.robust_acc(x_adv, y)[0].clone()
+        loss = self.robust_acc(x_adv, y).clone()
         return is_upper, loss
 
     @torch.inference_mode()
@@ -182,5 +182,5 @@ class HALS_Attacker(Attacker):
         is_upper = torch.stack(_is_upper)
         _is_upper = is_upper.repeat([1, 1, split, split])
         x_adv = torch.where(_is_upper, upper, lower).clone()
-        loss = self.robust_acc(x_adv, y)[0].clone()
+        loss = self.robust_acc(x_adv, y).clone()
         return is_upper, loss

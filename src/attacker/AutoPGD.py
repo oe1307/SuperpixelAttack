@@ -15,6 +15,16 @@ class AutoPGD_Attacker(Attacker):
         super().__init__()
 
     def _recorder(self):
+        self.best_loss = torch.zeros(
+            (config.n_examples, config.iteration + 1),
+            dtype=torch.float16,
+            device=config.device,
+        )
+        self.current_loss = torch.zeros(
+            (config.n_examples, config.iteration + 1),
+            dtype=torch.float16,
+            device=config.device,
+        )
         self.step_size = torch.zeros(
             (config.n_examples, config.iteration + 1), device=config.device
         )
@@ -48,15 +58,16 @@ class AutoPGD_Attacker(Attacker):
         )
         x_adv = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper).clone()
         del grad
-        loss = self.robust_acc(x_adv, y)[0].sum().clone()
+        loss = self.robust_acc(x_adv, y).sum().clone()
 
-        for iter in range(2, config.iteration + 1):
+        for iter in range(1, config.iteration):
             checker = self.step_size_manager(iter, checker)
             grad = torch.autograd.grad(loss, [x_adv])[0].clone()
             self.num_backward += x_adv.shape[0]
             step_size = self.step_size[self.start : self.end, iter].view(-1, 1, 1, 1)
             logger.debug(
-                f"step_size ( {iter=} ) : {step_size.min():.4f} ~ {step_size.max():.4f}"
+                f"step_size ( iter={iter + 1} ) : "
+                + f"{step_size.min():.4f} ~ {step_size.max():.4f}"
             )
             z = (
                 (x_adv + step_size * torch.sign(grad))
@@ -71,7 +82,7 @@ class AutoPGD_Attacker(Attacker):
                 + (1 - config.alpha) * (x_adv - _x_adv)
             ).clamp(lower, upper).clone(), x_adv.detach().clone()
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
-            loss = self.robust_acc(x_adv, y)[0].sum().clone()
+            loss = self.robust_acc(x_adv, y).sum().clone()
         return x_adv
 
     @torch.inference_mode()

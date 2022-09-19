@@ -1,6 +1,6 @@
 attacker: AutoPGD
 
-n_examples: 100
+n_examples: 20
 norm: Linf
 epsilon: 0.03137254901960784
 iteration: 100
@@ -9,7 +9,7 @@ rho: 0.75
 alpha: 0.75
 
 criterion: cw
-dataset: cifar10
+dataset: imagenet
 model:
     robustbench:
-        Carmon2019Unlabeled: 100
+        Wong2020Fast: 20

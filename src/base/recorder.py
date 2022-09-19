@@ -25,16 +25,6 @@ class Recorder:
             dtype=torch.bool,
             device=config.device,
         )
-        self.best_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
-            dtype=torch.float16,
-            device=config.device,
-        )
-        self.current_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
-            dtype=torch.float16,
-            device=config.device,
-        )
         self.num_forward = 0
         self.num_backward = 0
         self._recorder()

@@ -12,6 +12,18 @@ class PGD_Attacker(Attacker):
 
     def __init__(self):
         super().__init__()
+    
+    def _recorder(self):
+        self.best_loss = torch.zeros(
+            (config.n_examples, config.iteration + 1),
+            dtype=torch.float16,
+            device=config.device,
+        )
+        self.current_loss = torch.zeros(
+            (config.n_examples, config.iteration + 1),
+            dtype=torch.float16,
+            device=config.device,
+        )
 
     def _attack(self, x, y):
         upper = (x + config.epsilon).clamp(0, 1).clone()
@@ -30,4 +42,4 @@ class PGD_Attacker(Attacker):
             )
             del grad
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
-            loss = self.robust_acc(x_adv, y)[0].sum().clone()
+            loss = self.robust_acc(x_adv, y).sum().clone()

@@ -3,14 +3,16 @@ attacker: GenAttack
 n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
-iteration: 10
-mutation: 1.0
-probability: 0.05
+iteration: 100
+rho: 0.05
+rho_min: 0.1
+alpha: 1.0
+alpha_min: 0.15
 population: 6
-temperature: tau
+temperature: 0.3
 
-criterion: cw
+criterion: fitness
 dataset: cifar10
 model:
     robustbench:
-        Carmon2019Unlabeled: 100
+        Carmon2019Unlabeled: 50

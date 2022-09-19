@@ -22,8 +22,8 @@ def load_imagenet(model_name: str, data_dir: str):
     label = list()
     for index in range(config.n_examples):
         x, y = dataset.__getitem__(index)[:2]
-        img.append(x.unsqueeze(0))
+        img.append(x)
         label.append(y)
-    img = torch.vstack(img)
+    img = torch.stack(img)
     label = torch.tensor(label)
     return img, label
