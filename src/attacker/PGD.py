@@ -12,7 +12,7 @@ class PGD_Attacker(Attacker):
 
     def __init__(self):
         super().__init__()
-    
+
     def _recorder(self):
         self.best_loss = torch.zeros(
             (config.n_examples, config.iteration + 1),

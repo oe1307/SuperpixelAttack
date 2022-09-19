@@ -25,13 +25,14 @@ class Recorder:
             dtype=torch.bool,
             device=config.device,
         )
+        self.success_iter = torch.zeros(
+            config.n_examples,
+            dtype=torch.uint8,
+            device=config.device,
+        )
         self.num_forward = 0
         self.num_backward = 0
         self._recorder()
-
-    def _recorder(self):
-        """This function for override."""
-        pass
 
     def record(self):
         """This function is for recording the information of the attacker."""
