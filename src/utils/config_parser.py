@@ -24,18 +24,18 @@ class ConfigParser:
             "sort_dicts": False,
         }
 
-    def read(self, path, args=None):
-        logger.debug(f"\n [ READ ] {path}")
-        obj = yaml.safe_load(open(path, mode="r"))
+    def read(self, path=None, args=None):
+        if path is not None:
+            logger.debug(f"\n [ READ ] {path}")
+            self.config.update(yaml.safe_load(open(path, mode="r")))
         if args is not None:
             args = vars(args)
             for k in args.keys():
-                if args[k] is None and k in obj.keys():
-                    args[k] = obj[k]
-            obj.update(args)
-        msg = pprint.pformat(obj, **self.log_format)
+                if args[k] is None and k in self.config.keys():
+                    args[k] = self.config[k]
+            self.config.update(args)
+        msg = pprint.pformat(self.config, **self.log_format)
         logger.debug(f"{msg}\n")
-        self.config.update(obj)
         return self.config
 
     def __call__(self):

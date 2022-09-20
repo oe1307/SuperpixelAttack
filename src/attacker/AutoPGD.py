@@ -131,10 +131,10 @@ class AutoPGD_Attacker(Attacker):
         self.step_size = self.step_size.cpu().numpy()
         self.num_forward = (
             self.num_forward * self.success_iter.sum() / (config.n_examples * 101)
-        )
+        ).to(torch.int16)
         self.num_backward = (
             self.num_backward * self.success_iter.sum() / (config.n_examples * 100)
-        )
+        ).to(torch.int16)
 
         np.save(f"{config.savedir}/step_size.npy", self.step_size)
 
