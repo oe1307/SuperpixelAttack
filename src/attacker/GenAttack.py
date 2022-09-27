@@ -10,12 +10,11 @@ config = config_parser()
 
 
 class GenAttacker(Attacker):
-    """GenAttacker"""
-
     def __init__(self):
         super().__init__()
 
     def _recorder(self):
+        # TODO: temporarily 3000
         self.best_loss = torch.zeros(
             (config.n_examples, 3000),
             dtype=torch.float16,
@@ -73,6 +72,7 @@ class GenAttacker(Attacker):
             for x_adv in population:
                 fitness.append(self.robust_acc(x_adv, y))
             fitness = torch.stack(fitness)
+            logger.debug(f"{fitness[0, :6]}")
 
             next_population = []
             # find the elite members
