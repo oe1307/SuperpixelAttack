@@ -1,6 +1,7 @@
 import heapq
 import math
 
+from halo import Halo
 import torch
 from torch import Tensor
 
@@ -95,22 +96,23 @@ class HALS_Attacker(Attacker):
         all_elements = (~is_upper).nonzero()
 
         # search in elementary
-        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
-        for batch in range(num_batch):
-            start = batch * self.model.batch_size
-            end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
-            elements = all_elements[start:end]
-            _is_upper = is_upper[elements[:, 0]].clone()
-            for i, (c, h, w) in enumerate(elements[:, 1:]):
-                assert _is_upper[i, c, h, w].item() is False
-                _is_upper[i, c, h, w] = True
-            _is_upper = _is_upper.repeat([1, 1, split, split])
-            x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
-            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
-            self.num_forward += x_adv.shape[0]
-            for i, (idx, c, h, w) in enumerate(elements.tolist()):
-                delta = (base_loss[idx] - loss[i]).item()
-                heapq.heappush(max_heap[idx], (delta, (c, h, w)))
+        with Halo(text="insert...", spinner="dots"):
+            num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+            for batch in range(num_batch):
+                start = batch * self.model.batch_size
+                end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
+                elements = all_elements[start:end]
+                _is_upper = is_upper[elements[:, 0]].clone()
+                for i, (c, h, w) in enumerate(elements[:, 1:]):
+                    assert _is_upper[i, c, h, w].item() is False
+                    _is_upper[i, c, h, w] = True
+                _is_upper = _is_upper.repeat([1, 1, split, split])
+                x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
+                loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
+                self.num_forward += x_adv.shape[0]
+                for i, (idx, c, h, w) in enumerate(elements.tolist()):
+                    delta = (base_loss[idx] - loss[i]).item()
+                    heapq.heappush(max_heap[idx], (delta, (c, h, w)))
 
         # update
         _is_upper = []
@@ -147,22 +149,23 @@ class HALS_Attacker(Attacker):
         all_elements = is_upper.nonzero()
 
         # search in elementary
-        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
-        for batch in range(num_batch):
-            start = batch * self.model.batch_size
-            end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
-            elements = all_elements[start:end]
-            _is_upper = is_upper[elements[:, 0]].clone()
-            for i, (c, h, w) in enumerate(elements[:, 1:]):
-                assert _is_upper[i, c, h, w].item() is True
-                _is_upper[i, c, h, w] = False
-            _is_upper = _is_upper.repeat([1, 1, split, split])
-            x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
-            loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
-            self.num_forward += x_adv.shape[0]
-            for i, (idx, c, h, w) in enumerate(elements.tolist()):
-                delta = (base_loss[idx] - loss[i]).item()
-                heapq.heappush(max_heap[idx], (delta, (c, h, w)))
+        with Halo(text="delete...", spinner="dots"):
+            num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+            for batch in range(num_batch):
+                start = batch * self.model.batch_size
+                end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
+                elements = all_elements[start:end]
+                _is_upper = is_upper[elements[:, 0]].clone()
+                for i, (c, h, w) in enumerate(elements[:, 1:]):
+                    assert _is_upper[i, c, h, w].item() is True
+                    _is_upper[i, c, h, w] = False
+                _is_upper = _is_upper.repeat([1, 1, split, split])
+                x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
+                loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
+                self.num_forward += x_adv.shape[0]
+                for i, (idx, c, h, w) in enumerate(elements.tolist()):
+                    delta = (base_loss[idx] - loss[i]).item()
+                    heapq.heappush(max_heap[idx], (delta, (c, h, w)))
 
         # update
         _is_upper = []
