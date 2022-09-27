@@ -42,9 +42,8 @@ def dlr_loss(logits: Tensor, y: Tensor) -> Tensor:
 
 def fitness(logits: Tensor, y: Tensor) -> Tensor:
     """fitness function for GenAttack"""
-    logits_sorted, idx_sorted = logits.sort(dim=1, descending=True)
-    target_logits = torch.where(
-        idx_sorted[:, 0] == y, logits_sorted[:, 1], logits_sorted[:, 0]
-    )
-    other_logits = torch.log(torch.exp(logits).sum(dim=1) - torch.exp(target_logits))
-    return target_logits - other_logits
+    idx_sorted = logits.sort(dim=1, descending=True)[1]
+    target = torch.where(idx_sorted[:, 0] == y, idx_sorted[:, 1], idx_sorted[:, 0])
+    first = logits[range(logits.shape[0]), target]
+    second = torch.log(torch.exp(logits).sum(1) - first)
+    return first - second

@@ -1,6 +1,6 @@
 attacker: AutoPGD
 
-n_examples: 20
+n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
 iteration: 100

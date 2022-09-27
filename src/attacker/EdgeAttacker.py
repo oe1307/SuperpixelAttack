@@ -8,8 +8,6 @@ config = config_parser()
 
 
 class Edge_Attacker(Attacker):
-    """Edge Attacker"""
-
     def __init__(self):
         super.__init__()
 

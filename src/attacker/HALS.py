@@ -1,8 +1,8 @@
 import heapq
 import math
 
-from halo import Halo
 import torch
+from halo import Halo
 from torch import Tensor
 
 from base import Attacker
@@ -107,7 +107,9 @@ class HALS_Attacker(Attacker):
                     assert _is_upper[i, c, h, w].item() is False
                     _is_upper[i, c, h, w] = True
                 _is_upper = _is_upper.repeat([1, 1, split, split])
-                x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
+                x_adv = torch.where(
+                    _is_upper, upper[elements[:, 0]], lower[elements[:, 0]]
+                )
                 loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
                 self.num_forward += x_adv.shape[0]
                 for i, (idx, c, h, w) in enumerate(elements.tolist()):
@@ -160,7 +162,9 @@ class HALS_Attacker(Attacker):
                     assert _is_upper[i, c, h, w].item() is True
                     _is_upper[i, c, h, w] = False
                 _is_upper = _is_upper.repeat([1, 1, split, split])
-                x_adv = torch.where(_is_upper, upper[elements[:, 0]], lower[elements[:, 0]])
+                x_adv = torch.where(
+                    _is_upper, upper[elements[:, 0]], lower[elements[:, 0]]
+                )
                 loss = self.criterion(self.model(x_adv), y[elements[:, 0]]).clone()
                 self.num_forward += x_adv.shape[0]
                 for i, (idx, c, h, w) in enumerate(elements.tolist()):
