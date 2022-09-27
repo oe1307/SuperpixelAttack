@@ -9,7 +9,7 @@ rho: 0.75
 alpha: 0.75
 
 criterion: cw
-dataset: imagenet
+dataset: cifar10
 model:
     robustbench:
-        Wong2020Fast: 20
+        Carmon2019Unlabeled: 100

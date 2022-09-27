@@ -1,6 +1,6 @@
 attacker: PGD
 
-n_examples: 1000
+n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
 iteration: 20
@@ -10,60 +10,4 @@ criterion: cw
 dataset: cifar10
 model:
     robustbench:
-        Andriushchenko2020Understanding: 3000
-        Carmon2019Unlabeled: 3000
-        Sehwag2020Hydra: 3000
-        Wang2020Improving: 3000
-        Hendrycks2019Using: 3000
-        Rice2020Overfitting: 3000
-        Zhang2019Theoretically: 3000
-        Engstrom2019Robustness: 3000
-        Chen2020Adversarial: 3000
-        Huang2020Self: 3000
-        Pang2020Boosting: 3000
-        Wong2020Fast: 3000
-        Ding2020MMA: 3000
-        Zhang2019You: 3000
-        Zhang2020Attacks: 3000
-        Wu2020Adversarial_extra: 3000
-        Wu2020Adversarial: 3000
-        Gowal2020Uncovering_70_16: 500
-        Gowal2020Uncovering_70_16_extra: 500
-        Gowal2020Uncovering_34_20: 500
-        Gowal2020Uncovering_28_10_extra: 500
-        Sehwag2021Proxy_R18: 3000
-        Sehwag2021Proxy_ResNest152: 500
-        Sitawarin2020Improving: 3000
-        Chen2020Efficient: 3000
-        Cui2020Learnable_34_20: 3000
-        Cui2020Learnable_34_10: 3000
-        Zhang2020Geometry: 3000
-        Rebuffi2021Fixing_28_10_cutmix_ddpm: 3000
-        Rebuffi2021Fixing_106_16_cutmix_ddpm: 250
-        Rebuffi2021Fixing_70_16_cutmix_ddpm: 250
-        Rebuffi2021Fixing_70_16_cutmix_extra: 250
-        Sridhar2021Robust: 3000
-        Sridhar2021Robust_34_15: 3000
-        Rebuffi2021Fixing_R18_ddpm: 3000
-        Rade2021Helper_R18_extra: 3000
-        Rade2021Helper_R18_ddpm: 3000
-        Rade2021Helper_extra: 3000
-        Rade2021Helper_ddpm: 3000
-        Huang2021Exploring: 3000
-        Huang2021Exploring_ema: 3000
-        Addepalli2021Towards_RN18: 3000
-        Addepalli2021Towards_WRN34: 3000
-        Gowal2021Improving_70_16_ddpm_100m: 500
-        Dai2021Parameterizing: 3000
-        Gowal2021Improving_28_10_ddpm_100m: 3000
-        Gowal2021Improving_R18_ddpm_100m: 3000
-        Chen2021LTD_WRN34_10: 3000
-        Chen2021LTD_WRN34_20: 3000
-        Standard: 3000
-        Jia2022LAS-AT_34_10: 3000
-        Jia2022LAS-AT_70_16: 500
-        Pang2022Robustness_WRN28_10: 3000
-        Pang2022Robustness_WRN70_16: 500
-        Addepalli2022Efficient_RN18: 3000
-        Addepalli2022Efficient_WRN_34_10: 3000
-
+        Carmon2019Unlabeled: 100
