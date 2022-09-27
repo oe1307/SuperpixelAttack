@@ -61,6 +61,6 @@ class _GenAttacker(Attacker):
         )
         with Halo(text="Attacking...", spinner="dots"):
             x_adv = attack(model, x, criterion, epsilons=[config.epsilon])[1][0]
-        self.num_forward += config.population * config.steps - config.n_examples
+        self.num_forward += x.shape[0] * (config.population * config.steps - 1)
         self.robust_acc(x_adv, y)
         return x_adv

@@ -191,3 +191,13 @@ class HALS_Attacker(Attacker):
         x_adv = torch.where(_is_upper, upper, lower).clone()
         loss = self.robust_acc(x_adv, y).clone()
         return is_upper, loss
+
+    def _record(self):
+        self.num_forward = (
+            self.num_forward
+            * self.success_iter.sum()
+            / (config.n_examples * (3 * config.iteration + 2))
+        ).to(torch.int32)
+        msg = f"num_forward = {self.num_forward} (※not exact)\n" + "num_backward = 0"
+        print(msg, file=open(config.savedir + "/summary.txt", "a"))
+        logger.info(msg + "\n")
