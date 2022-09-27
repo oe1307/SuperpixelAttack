@@ -43,3 +43,22 @@ class PGD_Attacker(Attacker):
             del grad
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             loss = self.robust_acc(x_adv, y).sum().clone()
+
+    def _record(self):
+        breakpoint()
+        self.num_forward = (
+            self.num_forward
+            * self.success_iter.sum()
+            / (config.n_examples * (config.iteration + 1))
+        ).to(torch.int16)
+        self.num_backward = (
+            self.num_backward
+            * self.success_iter.sum()
+            / (config.n_examples * (config.iteration + 1))
+        ).to(torch.int16)
+        msg = (
+            f"num_forward = {self.num_forward}\n"
+            + f"num_backward = {self.num_backward}"
+        )
+        print(msg, file=open(config.savedir + "/summary.txt", "a"))
+        logger.info(msg + "\n")

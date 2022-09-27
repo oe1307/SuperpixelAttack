@@ -198,6 +198,6 @@ class HALS_Attacker(Attacker):
             * self.success_iter.sum()
             / (config.n_examples * (3 * config.iteration + 2))
         ).to(torch.int32)
-        msg = f"num_forward = {self.num_forward} (※not exact)\n" + "num_backward = 0"
+        msg = f"num_forward = {self.num_forward} (warning: not exact)\n" + "num_backward = 0"
         print(msg, file=open(config.savedir + "/summary.txt", "a"))
         logger.info(msg + "\n")

@@ -26,7 +26,7 @@ class AutoPGD_Attacker(Attacker):
             device=config.device,
         )
         self.step_size = torch.zeros(
-            (config.n_examples, config.iteration + 1), device=config.device
+            (config.n_examples, config.iteration), device=config.device
         )
 
     def _attack(self, x, y):
@@ -137,7 +137,7 @@ class AutoPGD_Attacker(Attacker):
         self.num_backward = (
             self.num_backward
             * self.success_iter.sum()
-            / (config.n_examples * config.iteration)
+            / (config.n_examples * (config.iteration + 1))
         ).to(torch.int16)
 
         np.save(f"{config.savedir}/step_size.npy", self.step_size)
