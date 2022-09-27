@@ -14,14 +14,13 @@ class GenAttacker(Attacker):
         super().__init__()
 
     def _recorder(self):
-        # TODO: temporarily 3000
         self.best_loss = torch.zeros(
-            (config.n_examples, 3000),
+            (config.n_examples, config.population * config.iteration + 1),
             dtype=torch.float16,
             device=config.device,
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, 3000),
+            (config.n_examples, config.population * config.iteration + 1),
             dtype=torch.float16,
             device=config.device,
         )
@@ -72,7 +71,6 @@ class GenAttacker(Attacker):
             for x_adv in population:
                 fitness.append(self.robust_acc(x_adv, y))
             fitness = torch.stack(fitness)
-            logger.debug(f"{fitness[0, :6]}")
 
             next_population = []
             # find the elite members
@@ -124,3 +122,13 @@ class GenAttacker(Attacker):
         x_adv = population[0]
         assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
         return x_adv
+
+    def _record(self):
+        self.num_forward = (
+            self.num_forward
+            * self.success_iter.sum()
+            / (config.n_examples * (config.population * config.iteration + 1))
+        ).to(torch.int32)
+        msg = f"num_forward = {self.num_forward}\n" + "num_backward = 0"
+        print(msg, file=open(config.savedir + "/summary.txt", "a"))
+        logger.info(msg + "\n")
