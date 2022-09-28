@@ -92,7 +92,9 @@ class GenAttacker(Attacker):
                 parent2 = population[parent_idx[:, 1], torch.arange(x.shape[0])]
                 parent2_fitness = fitness[parent_idx[:, 1], torch.arange(x.shape[0])]
                 crossover_prob = parent1_fitness / (parent1_fitness + parent2_fitness)
-                crossover_prob = crossover_prob.view(-1, 1, 1, 1).repeat(1, 3, 32, 32)
+                crossover_prob = crossover_prob.view(-1, 1, 1, 1).repeat(
+                    1, x.shape[1], x.shape[2], x.shape[3]
+                )
                 child_idx = torch.rand_like(parent1) < crossover_prob
                 child = torch.where(child_idx, parent1, parent2)
 
