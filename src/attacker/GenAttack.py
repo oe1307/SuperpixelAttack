@@ -44,6 +44,7 @@ class GenAttacker(Attacker):
         Returns:
             Tensor: adversarial examples
         """
+        assert 0 <= config.rho <= 1
         rho = torch.ones(x.shape[0], device=config.device) * config.rho
         rho_min = torch.ones(x.shape[0], device=config.device) * config.rho_min
         alpha = (
