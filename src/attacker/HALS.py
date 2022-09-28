@@ -36,6 +36,10 @@ class HALS_Attacker(Attacker):
         lower = (x - config.epsilon).clamp(0, 1).clone()
 
         # initialize
+        if (config.dataset == "cifar10" and config.initial_split != 4) or (
+            config.dataset == "imagenet" and config.initial_split != 32
+        ):
+            logger.warning(f"{config.dataset}: split = {config.initial_split}")
         split = config.initial_split
         batch, c, h, w = x.shape
         is_upper = torch.zeros(
