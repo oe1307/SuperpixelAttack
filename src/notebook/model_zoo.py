@@ -10,19 +10,25 @@ from robustbench.utils import ThreatModel
 # In[ ]:
 
 
-print(list(models.cifar_10_models[ThreatModel.Linf].keys()))
+print("\n" + "-" * 10 + " cifar10 " + "-" * 10)
+for model in models.cifar_10_models[ThreatModel.Linf].keys():
+    print(model)
 
 
 # In[ ]:
 
 
-print(list(models.cifar_100_models[ThreatModel.Linf].keys()))
+print("\n" + "-" * 10 + " cifar100 " + "-" * 10)
+for model in models.cifar_100_models[ThreatModel.Linf].keys():
+    print(model)
 
 
 # In[ ]:
 
 
-print(list(models.imagenet_models[ThreatModel.Linf].keys()))
+print("\n" + "-" * 10 + " imagenet " + "-" * 10)
+for model in models.imagenet_models[ThreatModel.Linf].keys():
+    print(model)
 
 
 # In[ ]:

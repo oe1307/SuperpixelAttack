@@ -7,7 +7,7 @@ if [ $1 = "setup" ]; then
         scp ds:/data0/issa/dataset/imagenet.tar.gz imagenet.tar.gz
     fi
     if [ ! -e imagenet ]; then
-        tar -xzf imagenet.tar.gz && clear
+        tar -xzf imagenet.tar.gz
     else
         echo "-> imagenet already exists"
     fi
@@ -18,7 +18,7 @@ elif [ $1 = "install" ]; then
     pip freeze >uninstall.txt
     pip uninstall -r uninstall.txt -y
     rm uninstall.txt
-    pip install -r requirements.txt && clear
+    pip install -r requirements.txt
 
 elif [ $1 = "format" ]; then
     echo "\n----black-----"
