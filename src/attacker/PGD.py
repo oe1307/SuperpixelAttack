@@ -45,7 +45,6 @@ class PGD_Attacker(Attacker):
             loss = self.robust_acc(x_adv, y).sum().clone()
 
     def _record(self):
-        breakpoint()
         self.num_forward = (
             self.num_forward
             * self.success_iter.sum()
