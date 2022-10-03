@@ -9,7 +9,7 @@ import nbformat
 filename = sys.argv[1]
 base_name, extension = os.path.splitext(filename)
 if extension == ".ipynb":
-    subprocess.run(["jupyter", "nbconvert", "--to", "python", filename, "--show-input"])
+    subprocess.run(["jupyter", "nbconvert", "--to", "python", filename])
     subprocess.run(["black", base_name + ".py", "-q"])
     subprocess.run(["isort", base_name + ".py", "-q"])
 
@@ -23,7 +23,7 @@ elif extension == ".py":
         if line != "\n":
             if line.startswith("# In["):
                 nb["cells"].append(nbformat.v4.new_code_cell(""))
-            else:
+            elif nb["cells"] != []:
                 nb["cells"][-1]["source"] += line
     nbformat.write(nb, open(base_name + ".ipynb", "w"))
 
