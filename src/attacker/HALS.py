@@ -18,7 +18,8 @@ class HALS_Attacker(Attacker):
     def __init__(self):
         super().__init__()
 
-    def _recorder(self):
+    def recorder(self):
+        super().recorder()
         self.best_loss = torch.zeros(
             (config.n_examples, 3 * config.iteration + 2),
             dtype=torch.float16,
@@ -196,7 +197,8 @@ class HALS_Attacker(Attacker):
         loss = self.robust_acc(x_adv, y).clone()
         return is_upper, loss
 
-    def _record(self):
+    def record(self):
+        super().record()
         self.num_forward = (
             self.num_forward
             * self.success_iter.sum()

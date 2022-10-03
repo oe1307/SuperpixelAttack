@@ -14,7 +14,8 @@ class AutoPGD_Attacker(Attacker):
     def __init__(self):
         super().__init__()
 
-    def _recorder(self):
+    def recorder(self):
+        super().recorder()
         self.best_loss = torch.zeros(
             (config.n_examples, config.iteration + 1),
             dtype=torch.float16,
@@ -127,7 +128,8 @@ class AutoPGD_Attacker(Attacker):
             )
         return checker
 
-    def _record(self):
+    def record(self):
+        super().record()
         self.step_size = self.step_size.cpu().numpy()
         self.num_forward = (
             self.num_forward

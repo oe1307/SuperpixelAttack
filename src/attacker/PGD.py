@@ -13,7 +13,8 @@ class PGD_Attacker(Attacker):
     def __init__(self):
         super().__init__()
 
-    def _recorder(self):
+    def recorder(self):
+        super().recorder()
         self.best_loss = torch.zeros(
             (config.n_examples, config.iteration + 1),
             dtype=torch.float16,
@@ -44,7 +45,8 @@ class PGD_Attacker(Attacker):
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             loss = self.robust_acc(x_adv, y).sum().clone()
 
-    def _record(self):
+    def record(self):
+        super().record()
         self.num_forward = (
             self.num_forward
             * self.success_iter.sum()

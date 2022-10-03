@@ -14,7 +14,8 @@ class _GenAttacker(Attacker):
     def __init__(self):
         super().__init__()
 
-    def _recorder(self):
+    def recorder(self):
+        super().recorder()
         self.best_loss = torch.zeros(
             (config.n_examples, 2),
             dtype=torch.float16,

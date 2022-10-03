@@ -32,10 +32,11 @@ class Recorder:
         )
         self.num_forward = 0
         self.num_backward = 0
-        self._recorder()
 
     def record(self):
         """This function is for recording the information of the attacker."""
+        logger.info(f"Attack end at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
+
         self.total_time = time.time() - self.total_time
         self._clean_acc = self._clean_acc / config.n_examples * 100
         self._robust_acc = self._robust_acc.sum() / config.n_examples * 100
@@ -55,9 +56,3 @@ class Recorder:
         )
         print(msg, file=open(config.savedir + "/summary.txt", "w"))
         logger.info(msg)
-        self._record()
-        logger.info(f"Attack end at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
-
-    def _record(self):
-        """This function for override."""
-        pass
