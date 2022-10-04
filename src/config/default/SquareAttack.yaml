@@ -1,0 +1,14 @@
+attacker: SquareAttack
+
+n_examples: 100
+norm: Linf
+epsilon: 0.03137254901960784
+iteration: 100
+p_init: 0.8
+nb_restarts: 1
+
+criterion: ce
+dataset: cifar10
+model:
+    robustbench:
+        Carmon2019Unlabeled: 100
