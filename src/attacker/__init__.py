@@ -6,6 +6,7 @@ from .gen_attack2 import GenAttacker2
 from .hals import HALS
 from .pgd import PGD
 from .square_attack2 import SquareAttack2
+from .tabu_attack import TabuAttack
 
 config = config_parser()
 
@@ -23,6 +24,8 @@ def get_attacker():
         attacker = PGD()
     elif config.attacker == "SquareAttack2":
         attacker = SquareAttack2()
+    elif config.attacker == "TabuAttack":
+        attacker = TabuAttack()
     else:
         raise NotImplementedError(f"Attacker {config.attacker} is not implemented.")
 

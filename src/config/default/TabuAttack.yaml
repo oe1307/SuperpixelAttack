@@ -1,0 +1,14 @@
+attacker: TabuAttack
+
+n_examples: 100
+norm: Linf
+epsilon: 0.03137254901960784
+iteration: 1000
+restart: 2
+step_size: elementally
+
+criterion: cw
+dataset: cifar10
+model:
+    robustbench:
+        Carmon2019Unlabeled: 100
