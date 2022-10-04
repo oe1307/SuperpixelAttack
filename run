@@ -21,11 +21,11 @@ elif [ $1 = "install" ]; then
     pip install -r requirements.txt
 
 elif [ $1 = "format" ]; then
-    echo "\n----black-----"
+    echo && echo "----black-----"
     black $(dirname $0) -q
-    echo "\n----isort-----"
+    echo && echo "----isort-----"
     isort $(dirname $0) -s ./run
-    echo "\n----flake8----"
+    echo && echo "----flake8----"
     pflake8 $(dirname $0)
     echo
 
