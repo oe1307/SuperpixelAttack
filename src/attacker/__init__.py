@@ -1,10 +1,11 @@
 from utils import config_parser
 
-from .AutoPGD import AutoPGD
-from .GenAttack import GenAttacker
-from .GenAttack2 import GenAttacker2
-from .HALS import HALS
-from .PGD import PGD
+from .auto_pgd import AutoPGD
+from .gen_attack import GenAttacker
+from .gen_attack2 import GenAttacker2
+from .hals import HALS
+from .pgd import PGD
+from .square_attack import SquareAttack
 
 config = config_parser()
 
@@ -20,6 +21,8 @@ def get_attacker():
         attacker = HALS()
     elif config.attacker == "PGD":
         attacker = PGD()
+    elif config.attacker == "SquareAttack":
+        attacker = SquareAttack()
     else:
         raise NotImplementedError(f"Attacker {config.attacker} is not implemented.")
 
