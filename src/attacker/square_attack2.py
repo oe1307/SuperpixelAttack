@@ -47,7 +47,7 @@ class SquareAttack2(Attacker):
             p_init=config.p_init,
             nb_restarts=config.nb_restarts,
             batch_size=x.shape[0],
-            verbose=config.debug,
+            verbose=True,
         )
         x_adv = attack.generate(x.cpu().numpy(), y.cpu().numpy())
         x_adv = torch.from_numpy(x_adv).to(config.device)
