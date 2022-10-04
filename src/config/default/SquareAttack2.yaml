@@ -1,13 +1,13 @@
-attacker: SquareAttack
+attacker: SquareAttack2
 
 n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
 iteration: 100
 p_init: 0.8
-nb_restarts: 1
+nb_restarts: 2
 
-criterion: ce
+criterion: cw
 dataset: cifar10
 model:
     robustbench:

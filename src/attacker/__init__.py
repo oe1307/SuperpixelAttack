@@ -21,7 +21,7 @@ def get_attacker():
         attacker = HALS()
     elif config.attacker == "PGD":
         attacker = PGD()
-    elif config.attacker == "SquareAttack":
+    elif config.attacker == "SquareAttack2":
         attacker = SquareAttack2()
     else:
         raise NotImplementedError(f"Attacker {config.attacker} is not implemented.")
