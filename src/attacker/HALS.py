@@ -12,7 +12,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class HALS_Attacker(Attacker):
+class HALS(Attacker):
     """Hierarchical Accelerated Local Search"""
 
     def __init__(self):

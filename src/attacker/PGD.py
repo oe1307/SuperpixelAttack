@@ -7,7 +7,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class PGD_Attacker(Attacker):
+class PGD(Attacker):
     """Project Gradient Descent Attack"""
 
     def __init__(self):

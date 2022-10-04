@@ -8,9 +8,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class AutoPGD_Attacker(Attacker):
-    """AutoPGD"""
-
+class AutoPGD(Attacker):
     def __init__(self):
         super().__init__()
 

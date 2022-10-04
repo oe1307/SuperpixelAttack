@@ -10,7 +10,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class _GenAttacker(Attacker):
+class GenAttacker2(Attacker):
     def __init__(self):
         super().__init__()
 
