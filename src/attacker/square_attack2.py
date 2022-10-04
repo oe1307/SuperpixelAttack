@@ -29,6 +29,8 @@ class SquareAttack2(Attacker):
 
     @torch.inference_mode()
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
+        upper = (x + config.epsilon).clamp(0, 1).clone()
+        lower = (x - config.epsilon).clamp(0, 1).clone()
         if config.device != 0:
             logger.warning("adversarial robustness toolbox uses GPU 0")
         model = PyTorchClassifier(
@@ -49,6 +51,7 @@ class SquareAttack2(Attacker):
         )
         x_adv = attack.generate(x.cpu().numpy(), y.cpu().numpy())
         x_adv = torch.from_numpy(x_adv).to(config.device)
+        assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
         self.model = self.model.to(config.device)
         self.robust_acc(x_adv, y)
         return x_adv
