@@ -5,7 +5,7 @@ norm: Linf
 epsilon: 0.03137254901960784
 iteration: 1000
 restart: 2
-step_size: elementally
+tabu_size: 10
 
 criterion: cw
 dataset: cifar10

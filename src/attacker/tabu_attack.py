@@ -29,29 +29,29 @@ class TabuAttack(Attacker):
     def _attack(self, x: Tensor, y: Tensor):
         upper = (x + config.epsilon).clamp(0, 1).clone()
         lower = (x - config.epsilon).clamp(0, 1).clone()
-        x_adv = x.clone()
+        tabu_list = torch.zeros_like(x, dtype=torch.uint8)
 
-        for _ in range(config.restart):
-            for iter in range(config.iteration):
-                step_size = self.step_size_manager(iter, x[0].numel())
-                # self.robust_acc(x_adv, y)
+        is_upper_best = torch.randint_like(x, 0, 2, dtype=torch.bool)
+        x_best = torch.where(is_upper_best, upper, lower).clone()
+        self.robust_acc(x_best, y)
+        is_upper = is_upper_best.clone()
+        for iter in range(config.iteration):
+            delta = torch.randint(0, x[0].numel(), (x.shape[0],))
+            is_upper = is_upper.view(x.shape[0], -1)
+            is_upper[torch.arange(x.shape[0]), delta] = ~is_upper[
+                torch.arange(x.shape[0]), delta
+            ]
+            is_upper = is_upper.view(x.shape)
+            x_adv = torch.where(is_upper, upper, lower).clone()
+            self.robust_acc(x_adv, y)
+            updated = self.check(iter)
+            x_best[updated] = x_adv[updated]
+            breakpoint()
 
-        return x_adv
+        assert torch.all(lower <= x_best <= upper)
+        return x_best
 
-    def step_size_manager(self, iter: int, total: int) -> float:
-        """Step size manager for Tabu Attack.
-        Args:
-            iter (int): Current iteration.
-            total (int): Total number of pixels.
-        Returns:
-            step_size (float): Step size for current iteration.
-        Note:
-            step size means L1 norm
-        """
-        if config.step_size == "elementally":
-            step_size = 1
-        elif config.step_size == "linear":
-            step_size = int(total * (1 - iter / config.iteration))
-
-        logger.debug(f"step size: {step_size}")
-        return step_size
+    def check(self, iter):
+        current_loss = self.current_loss[self.start : self.end, iter + 2]
+        best_loss = self.best_loss[self.start : self.end, iter + 2]
+        return best_loss == current_loss
