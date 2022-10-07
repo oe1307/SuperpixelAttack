@@ -4,8 +4,9 @@ n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
 iteration: 1000
+
 restart: 2
-tabu_size: 10
+step_size: 0.5
 
 criterion: cw
 dataset: cifar10
