@@ -54,7 +54,6 @@ def main():
                 f"../result/{config.attacker}/{config.dataset}/{config.norm}/"
                 + f"{model_name}/{datetime.now().strftime('%Y-%m-%d_%H:%M')}/"
             )
-            config_parser.save(config.savedir + "config.json")
             data, label = load_dataset(model_name, data_dir="../storage/data")
             model = get_model(
                 model_container, model_name, batch_size, model_dir="../storage/model"

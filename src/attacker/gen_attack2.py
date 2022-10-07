@@ -46,6 +46,8 @@ class GenAttacker2(Attacker):
         Returns:
             Tensor: adversarial examples
         """
+        upper = (x + config.epsilon).clamp(0, 1).clone()
+        lower = (x - config.epsilon).clamp(0, 1).clone()
         model = fb.PyTorchModel(self.model, bounds=(0, 1), device=config.device)
 
         logits = self.model(x).detach().clone()
@@ -64,4 +66,5 @@ class GenAttacker2(Attacker):
             x_adv = attack(model, x, criterion, epsilons=[config.epsilon])[1][0]
         self.num_forward += x.shape[0] * (config.population * config.steps - 1)
         self.robust_acc(x_adv, y)
+        assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
         return x_adv

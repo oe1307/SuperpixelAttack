@@ -36,6 +36,7 @@ class Recorder:
     def record(self):
         """This function is for recording the information of the attacker."""
         logger.info(f"Attack end at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
+        config_parser.save(config.savedir + "config.json")
 
         self.total_time = time.time() - self.total_time
         self._clean_acc = self._clean_acc / config.n_examples * 100

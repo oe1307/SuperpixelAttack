@@ -63,6 +63,7 @@ class HALS(Attacker):
 
         _is_upper = is_upper.repeat([1, 1, split, split])
         x_adv = torch.where(_is_upper, upper, lower).clone()
+        assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
         return x_adv
 
     @torch.inference_mode()

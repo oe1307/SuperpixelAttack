@@ -48,7 +48,7 @@ class TabuAttack(Attacker):
             x_best[updated] = x_adv[updated]
             breakpoint()
 
-        assert torch.all(lower <= x_best <= upper)
+        assert torch.all(x_best <= upper + 1e-6) and torch.all(x_best >= lower - 1e-6)
         return x_best
 
     def check(self, iter):
