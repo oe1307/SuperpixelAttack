@@ -2,7 +2,7 @@ import heapq
 import math
 
 import torch
-from halo import Halo
+from yaspin import yaspin
 from torch import Tensor
 
 from base import Attacker
@@ -102,7 +102,7 @@ class HALS(Attacker):
         all_elements = (~is_upper).nonzero()
 
         # search in elementary
-        with Halo(text="insert...", spinner="dots"):
+        with yaspin(text="insert..."):
             num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
             for batch in range(num_batch):
                 start = batch * self.model.batch_size
@@ -157,7 +157,7 @@ class HALS(Attacker):
         all_elements = is_upper.nonzero()
 
         # search in elementary
-        with Halo(text="delete...", spinner="dots"):
+        with yaspin(text="delete..."):
             num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
             for batch in range(num_batch):
                 start = batch * self.model.batch_size

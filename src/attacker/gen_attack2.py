@@ -1,6 +1,6 @@
 import foolbox as fb
 import torch
-from halo import Halo
+from yaspin import yaspin
 from torch import Tensor
 
 from base import Attacker
@@ -62,7 +62,7 @@ class GenAttacker2(Attacker):
             mutation_range=config.mutation_range,
             sampling_temperature=config.sampling_temperature,
         )
-        with Halo(text="Attacking...", spinner="dots"):
+        with yaspin(text="Attacking..."):
             x_adv = attack(model, x, criterion, epsilons=[config.epsilon])[1][0]
         self.num_forward += x.shape[0] * (config.population * config.steps - 1)
         self.robust_acc(x_adv, y)

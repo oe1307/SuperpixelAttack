@@ -7,7 +7,7 @@ optuna
 
 # utils
 tqdm
-halo
+yaspin
 colorlog
 pyyaml
 ipython
