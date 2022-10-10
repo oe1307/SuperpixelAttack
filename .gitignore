@@ -1,11 +1,2 @@
-__pycache__/
-.python-version
-.ipynb_checkpoints
-.pytest_cache/
-*.pyc
-*.ipynb
-
-*.tar.gz
-
-/result
-run.sh
+result
+storage
