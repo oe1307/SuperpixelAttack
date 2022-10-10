@@ -62,7 +62,7 @@ class GenAttacker2(Attacker):
             mutation_range=config.mutation_range,
             sampling_temperature=config.sampling_temperature,
         )
-        with yaspin(text="Attacking..."):
+        with yaspin(text="Attacking...", color="cyan"):
             x_adv = attack(model, x, criterion, epsilons=[config.epsilon])[1][0]
         self.num_forward += x.shape[0] * (config.population * config.steps - 1)
         self.robust_acc(x_adv, y)

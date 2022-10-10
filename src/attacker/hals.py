@@ -102,7 +102,7 @@ class HALS(Attacker):
         all_elements = (~is_upper).nonzero()
 
         # search in elementary
-        with yaspin(text="insert..."):
+        with yaspin(text="insert...", color="cyan"):
             num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
             for batch in range(num_batch):
                 start = batch * self.model.batch_size
@@ -157,7 +157,7 @@ class HALS(Attacker):
         all_elements = is_upper.nonzero()
 
         # search in elementary
-        with yaspin(text="delete..."):
+        with yaspin(text="delete...", color="cyan"):
             num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
             for batch in range(num_batch):
                 start = batch * self.model.batch_size
