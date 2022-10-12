@@ -1,7 +1,7 @@
 import foolbox as fb
 import torch
-from yaspin import yaspin
 from torch import Tensor
+from yaspin import yaspin
 
 from base import Attacker
 from utils import config_parser, setup_logger

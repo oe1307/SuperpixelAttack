@@ -15,7 +15,7 @@ if [ $1 = "setup" ]; then
 elif [ $1 = "install" ]; then
     cd $(dirname $0)
     pip install --upgrade pip
-    pip freeze | xargs pip uninstall -y
+    pip freeze | grep -v @ | xargs pip uninstall -y
     pip install -r requirements.txt
 
 elif [ $1 = "format" ]; then

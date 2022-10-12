@@ -26,7 +26,7 @@ def argparser():
     parser.add_argument(
         "--thread",
         type=int,
-        required=True,
+        default=1,
     )
     parser.add_argument(
         "--debug",
@@ -35,7 +35,7 @@ def argparser():
     parser.add_argument(
         "--log_level",
         type=int,
-        default=20,
+        default=10,
         help="10:DEBUG,20:INFO,30:WARNING,40:ERROR,50:CRITICAL",
     )
     args = parser.parse_args()

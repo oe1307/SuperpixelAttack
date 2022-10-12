@@ -11,13 +11,13 @@ config = config_parser()
 
 def load_imagenet(model_name: str, data_dir: str):
     """Load ImageNet data."""
+    data_dir = os.path.join(data_dir, "imagenet/val")
     assert config.n_examples <= 5000
+    assert os.path.exists(data_dir)
     transform = get_preprocessing(
         BenchmarkDataset.imagenet, ThreatModel(config.norm), model_name, None
     )
-    dataset = CustomImageFolder(
-        os.path.join(data_dir, "imagenet/val"), transform=transform
-    )
+    dataset = CustomImageFolder(data_dir, transform=transform)
     img = list()
     label = list()
     for index in range(config.n_examples):

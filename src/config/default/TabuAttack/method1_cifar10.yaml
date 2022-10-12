@@ -1,15 +1,19 @@
-attacker: TabuAttack
+attacker: TabuAttack1
 
 n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
 iteration: 1000
 
-restart: 2
-step_size: 0.5
+tabu_size: 10
+alpha_min: 0.005
+alpha_max: 0.01
+alpha_plus: 0.0125
+beta: 0.01
 
 criterion: cw
 dataset: cifar10
 model:
     robustbench:
         Carmon2019Unlabeled: 100
+        # Salman2020Do_R18: 100

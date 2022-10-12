@@ -136,4 +136,4 @@ class GenAttacker(Attacker):
         ).to(torch.int32)
         msg = f"num_forward = {self.num_forward}\n" + "num_backward = 0"
         print(msg, file=open(config.savedir + "/summary.txt", "a"))
-        logger.info(msg + "\n")
+        logger.warning(msg + "\n")

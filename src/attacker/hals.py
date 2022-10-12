@@ -2,8 +2,8 @@ import heapq
 import math
 
 import torch
-from yaspin import yaspin
 from torch import Tensor
+from yaspin import yaspin
 
 from base import Attacker
 from utils import config_parser, setup_logger
@@ -210,4 +210,4 @@ class HALS(Attacker):
             + "num_backward = 0"
         )
         print(msg, file=open(config.savedir + "/summary.txt", "a"))
-        logger.info(msg + "\n")
+        logger.warning(msg + "\n")

@@ -147,4 +147,4 @@ class AutoPGD(Attacker):
             + f"num_backward = {self.num_backward}"
         )
         print(msg, file=open(config.savedir + "/summary.txt", "a"))
-        logger.info(msg + "\n")
+        logger.warning(msg + "\n")

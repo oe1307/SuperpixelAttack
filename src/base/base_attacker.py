@@ -28,7 +28,7 @@ class Attacker(Recorder):
             self.iter = 0
             self.clean_acc(x, y)
             self._attack(x, y)
-            logger.info(f"Robust accuracy : {self._robust_acc.sum()} / {self.end}")
+            logger.warning(f"Robust accuracy : {self._robust_acc.sum()} / {self.end}")
             torch.cuda.empty_cache()
         self.record()
 
@@ -42,7 +42,7 @@ class Attacker(Recorder):
         loss = self.criterion(logits, y).detach().clone()
         self.best_loss[self.start : self.end, 0] = loss
         self.current_loss[self.start : self.end, 0] = loss
-        logger.info(f"Clean accuracy : {self._clean_acc} / {self.end}")
+        logger.warning(f"Clean accuracy : {self._clean_acc} / {self.end}")
 
     def robust_acc(self, x_adv: Tensor, y: Tensor) -> Tensor:
         self.iter += 1

@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime as dt
 
 import numpy as np
 import torch
@@ -16,7 +16,7 @@ class Recorder:
 
     def recorder(self):
         """This function is for recording the information of the attacker."""
-        logger.info(f"Attack start at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
+        logger.warning(f"Attack start at {dt.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
         self.total_time = time.time()
         self._clean_acc = 0
@@ -35,7 +35,7 @@ class Recorder:
 
     def record(self):
         """This function is for recording the information of the attacker."""
-        logger.info(f"Attack end at {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}")
+        logger.warning(f"Attack end at {dt.now().strftime('%Y/%m/%d %H:%M:%S')}")
         config_parser.save(config.savedir + "config.json")
 
         self.total_time = time.time() - self.total_time
@@ -56,4 +56,4 @@ class Recorder:
             + f"total num_backward = {self.num_backward}"
         )
         print(msg, file=open(config.savedir + "/summary.txt", "w"))
-        logger.info(msg)
+        logger.warning(msg)
