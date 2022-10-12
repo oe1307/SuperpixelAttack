@@ -52,7 +52,7 @@ def main():
             reproducibility()
             config.savedir = (
                 f"../result/{config.attacker}/{config.dataset}/{config.norm}/"
-                + f"{model_name}/{datetime.now().strftime('%Y-%m-%d_%H:%M')}/"
+                + f"{model_name}/{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}/"
             )
             data, label = load_dataset(model_name, data_dir="../storage/data")
             model = get_model(
