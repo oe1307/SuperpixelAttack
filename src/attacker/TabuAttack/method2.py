@@ -9,16 +9,18 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuAttack1(Attacker):
+class TabuAttack2(Attacker):
     """
     - one-flip
     - flipすることを禁止
     - 最良移動戦略
     - 限定選択戦略
+    - 長期メモリ(未探索を優先)
     """
 
     def __init__(self):
         super().__init__()
+        config.exp = False
 
     def recorder(self):
         super().recorder()
@@ -40,6 +42,7 @@ class TabuAttack1(Attacker):
         _x_best: 近傍内で最も良かった探索点
         x_adv: 現在の探索点
 
+        is_upper_best: 過去の探索で最も良かった探索点
         is_upper: 現在の探索点
         _is_upper_best: 近傍内で最も良かった探索点
         _is_upper: 前反復の探索点
@@ -67,15 +70,17 @@ class TabuAttack1(Attacker):
             self.current_loss[self.idx, 1] = _loss
             self.best_loss[self.idx, 1] = _loss
             tabu_list = -config.tabu_size * torch.ones(x.numel(), dtype=torch.int32) - 1
+            memory = torch.ones(x.numel(), dtype=torch.int32) * config.memory
 
             for iter in range(2, config.iteration):
                 alpha = 0
                 _best_loss = -100
                 tabu = iter - tabu_list < config.tabu_size
-                flips = np.random.choice(
-                    np.where(~tabu)[0], int(config.alpha_max * x.numel())
-                )
-                for i, flip in enumerate(flips):
+                for i in range(int(config.alpha_max * x.numel())):
+                    flip = np.random.choice(
+                        np.where(~tabu)[0],
+                        p=(memory[~tabu] / (memory[~tabu].sum())).cpu().numpy(),
+                    )
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
                     x_adv = torch.where(is_upper, upper, lower).clone()
@@ -87,6 +92,8 @@ class TabuAttack1(Attacker):
                         _best_loss = loss
                     if _best_loss - _loss > config.beta:
                         alpha += 1
+                    else:
+                        memory[flip] = max(1, memory[flip] - config.penalty)
                     if (
                         alpha > config.alpha_plus * x.numel()
                         and i > config.alpha_min * x.numel()
@@ -113,6 +120,7 @@ class TabuAttack1(Attacker):
                 self.current_loss[self.idx, iter] = _best_loss
                 self.best_loss[self.idx, iter] = best_loss
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
+            breakpoint()
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)
         return x_adv_all

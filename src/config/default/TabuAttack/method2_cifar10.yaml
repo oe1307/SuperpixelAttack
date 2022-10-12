@@ -1,4 +1,4 @@
-attacker: TabuAttack1
+attacker: TabuAttack2
 
 n_examples: 100
 norm: Linf
@@ -11,9 +11,12 @@ alpha_min: 0.001
 alpha_max: 0.005
 alpha_plus: 0.001
 beta: 0.01
+memory: 100
+penalty: 1
 
 criterion: cw
-dataset: imagenet
+dataset: cifar10
 model:
     robustbench:
-        Salman2020Do_R18: 100
+        Carmon2019Unlabeled: 100
+        # Salman2020Do_R18: 100

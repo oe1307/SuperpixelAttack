@@ -9,16 +9,16 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuAttack1(Attacker):
+class TabuAttack3(Attacker):
     """
     - one-flip
     - flipすることを禁止
-    - 最良移動戦略
-    - 限定選択戦略
+    - 局所移動戦略
     """
 
     def __init__(self):
         super().__init__()
+        config.exp = False
 
     def recorder(self):
         super().recorder()
@@ -69,13 +69,10 @@ class TabuAttack1(Attacker):
             tabu_list = -config.tabu_size * torch.ones(x.numel(), dtype=torch.int32) - 1
 
             for iter in range(2, config.iteration):
-                alpha = 0
                 _best_loss = -100
                 tabu = iter - tabu_list < config.tabu_size
-                flips = np.random.choice(
-                    np.where(~tabu)[0], int(config.alpha_max * x.numel())
-                )
-                for i, flip in enumerate(flips):
+                flips = np.random.choice(np.where(~tabu)[0], config.search)
+                for flip in flips:
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
                     x_adv = torch.where(is_upper, upper, lower).clone()
@@ -85,16 +82,10 @@ class TabuAttack1(Attacker):
                         _is_upper_best = is_upper.clone()
                         _x_best = x_adv.clone()
                         _best_loss = loss
-                    if _best_loss - _loss > config.beta:
-                        alpha += 1
-                    if (
-                        alpha > config.alpha_plus * x.numel()
-                        and i > config.alpha_min * x.numel()
-                    ):
+                    if _best_loss > _loss:
                         break
                     logger.debug(
-                        f"( iter={iter} ) loss={loss:.4f} "
-                        + f"best_loss={_best_loss:.4f} alpha={alpha}"
+                        f"( iter={iter} ) loss={loss:.4f} best_loss={_best_loss:.4f}"
                     )
 
                 # end for
