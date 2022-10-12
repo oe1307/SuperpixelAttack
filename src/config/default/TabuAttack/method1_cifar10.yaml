@@ -3,12 +3,12 @@ attacker: TabuAttack1
 n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
-iteration: 1000
+iteration: 3000
 
 tabu_size: 10
-alpha_min: 0.005
-alpha_max: 0.01
-alpha_plus: 0.0125
+alpha_min: 0.001
+alpha_max: 0.005
+alpha_plus: 0.001
 beta: 0.01
 
 criterion: cw

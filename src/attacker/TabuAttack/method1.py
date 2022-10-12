@@ -24,12 +24,12 @@ class TabuAttack1(Attacker):
     def recorder(self):
         super().recorder()
         self.best_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
+            (config.n_examples, config.iteration),
             dtype=torch.float16,
             device=config.device,
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
+            (config.n_examples, config.iteration),
             dtype=torch.float16,
             device=config.device,
         )
@@ -67,9 +67,11 @@ class TabuAttack1(Attacker):
             x_best = torch.where(is_upper_best, upper, lower)
             _loss = self.robust_acc(x_best, y).item()
             best_loss = _loss
+            self.current_loss[self.idx, 1] = _loss
+            self.best_loss[self.idx, 1] = _loss
             tabu_list = -config.tabu_size * torch.ones(x.numel(), dtype=torch.int32) - 1
 
-            for iter in range(1, config.iteration):
+            for iter in range(2, config.iteration):
                 alpha = 0
                 _best_loss = -100
                 tabu = iter - tabu_list < config.tabu_size
@@ -111,9 +113,7 @@ class TabuAttack1(Attacker):
                     x_best = _x_best.clone()
                     best_loss = _loss
                 self.current_loss[self.idx, iter] = _best_loss
-                self.best_loss[self.idx, iter] = max(
-                    _best_loss, self.best_loss[self.idx, iter - 1]
-                )
+                self.best_loss[self.idx, iter] = best_loss
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)
