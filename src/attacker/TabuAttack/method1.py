@@ -106,6 +106,7 @@ class TabuAttack1(Attacker):
                 tabu_list[_flip] = iter
 
                 if not config.exp and _loss > 0:
+                    logger.info(f"idx={self.idx} iter={iter} success")
                     break
 
                 if _best_loss > best_loss:  # 過去の最良点
