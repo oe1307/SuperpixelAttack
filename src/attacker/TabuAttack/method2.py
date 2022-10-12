@@ -20,7 +20,6 @@ class TabuAttack2(Attacker):
 
     def __init__(self):
         super().__init__()
-        config.exp = False
 
     def recorder(self):
         super().recorder()
@@ -94,15 +93,15 @@ class TabuAttack2(Attacker):
                         alpha += 1
                     else:
                         memory[flip] = max(1, memory[flip] - config.penalty)
+                    logger.debug(
+                        f"( iter={iter} ) loss={loss:.4f} "
+                        + f"best_loss={_best_loss:.4f} alpha={alpha}"
+                    )
                     if (
                         alpha > config.alpha_plus * x.numel()
                         and i > config.alpha_min * x.numel()
                     ):
                         break
-                    logger.debug(
-                        f"( iter={iter} ) loss={loss:.4f} "
-                        + f"best_loss={_best_loss:.4f} alpha={alpha}"
-                    )
 
                 # end for
                 _is_upper = _is_upper_best.clone()
@@ -113,12 +112,13 @@ class TabuAttack2(Attacker):
                     x_best = _x_best.clone()
                     best_loss = _loss
 
+                self.current_loss[self.idx, iter] = _best_loss
+                self.best_loss[self.idx, iter] = best_loss
+
                 if not config.exp and _loss > 0:
                     logger.info(f"idx={self.idx} iter={iter} success")
                     break
 
-                self.current_loss[self.idx, iter] = _best_loss
-                self.best_loss[self.idx, iter] = best_loss
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             breakpoint()
             x_adv_all.append(x_best)

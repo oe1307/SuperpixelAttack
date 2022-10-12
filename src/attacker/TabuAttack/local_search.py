@@ -9,12 +9,8 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuAttack3(Attacker):
-    """
-    - one-flip
-    - flipすることを禁止
-    - 局所移動戦略
-    """
+class LocalSearch(Attacker):
+    """method3 との比較用"""
 
     def __init__(self):
         super().__init__()
@@ -34,26 +30,6 @@ class TabuAttack3(Attacker):
 
     @torch.inference_mode()
     def _attack(self, x_all: Tensor, y_all: Tensor):
-        """
-        x_best: 過去の探索で最も良かった探索点
-        _x_best: 近傍内で最も良かった探索点
-        x_adv: 現在の探索点
-
-        is_upper: 現在の探索点
-        _is_upper_best: 近傍内で最も良かった探索点
-        _is_upper: 前反復の探索点
-
-        best_loss: 過去の探索で最も良かったloss
-        loss: 現在のloss
-        _best_loss: 近傍内で最も良かったloss
-        _loss: 前反復のloss
-
-        flip: 探索するindex
-        _flip: tabuに入れるindex
-
-        TODO:
-            batch処理
-        """
         x_adv_all = []
         for self.idx, (x, y) in enumerate(zip(x_all, y_all)):
             # initialize
@@ -61,45 +37,33 @@ class TabuAttack3(Attacker):
             lower = (x - config.epsilon).clamp(0, 1).clone()
             _is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)
             x_best = torch.where(_is_upper, upper, lower)
-            _loss = self.robust_acc(x_best, y).item()
-            best_loss = _loss
-            self.current_loss[self.idx, 1] = _loss
-            self.best_loss[self.idx, 1] = _loss
-            tabu_list = -config.tabu_size * torch.ones(x.numel(), dtype=torch.int32) - 1
+            best_loss = self.robust_acc(x_best, y).item()
+            self.current_loss[self.idx, 1] = best_loss
+            self.best_loss[self.idx, 1] = best_loss
 
             for iter in range(2, config.iteration):
-                _best_loss = -100
-                tabu = iter - tabu_list < config.tabu_size
-                flips = np.random.choice(np.where(~tabu)[0], config.search)
+                flips = np.arange(x.numel())
+                np.random.shuffle(flips)
                 for flip in flips:
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
                     x_adv = torch.where(is_upper, upper, lower).clone()
                     loss = self.robust_acc(x_adv, y).item()
-                    if loss > _best_loss:  # 近傍内の最良点
-                        _flip = flip
-                        _is_upper_best = is_upper.clone()
-                        _x_best = x_adv.clone()
-                        _best_loss = loss
                     logger.debug(
-                        f"( iter={iter} ) loss={loss:.4f} best_loss={_best_loss:.4f}"
+                        f"( iter={iter} ) loss={loss:.4f} best_loss={best_loss:.4f}"
                     )
-                    if _best_loss > _loss:
+                    if loss > best_loss:
                         break
+                else:
+                    break
 
                 # end for
-                _is_upper = _is_upper_best.clone()
-                _loss = _best_loss
-                tabu_list[_flip] = iter
-
-                if _best_loss > best_loss:  # 過去の最良点
-                    x_best = _x_best.clone()
-                    best_loss = _loss
-
-                self.current_loss[self.idx, iter] = _best_loss
+                _is_upper = is_upper.clone()
+                best_loss = loss
+                x_best = x_adv.clone()
                 self.best_loss[self.idx, iter] = best_loss
 
-                if not config.exp and _loss > 0:
+                if not config.exp and loss > 0:
                     logger.info(f"idx={self.idx} iter={iter} success")
                     break
 

@@ -1,13 +1,10 @@
-attacker: TabuAttack3
+attacker: LocalSearch
 
 n_examples: 100
 norm: Linf
 epsilon: 0.03137254901960784
-iteration: 3000
+iteration: 10_000
 exp: False
-
-tabu_size: 10
-search: 1000
 
 criterion: cw
 dataset: cifar10
