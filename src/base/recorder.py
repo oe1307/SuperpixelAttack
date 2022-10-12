@@ -45,6 +45,7 @@ class Recorder:
 
         np.save(config.savedir + "best_loss.npy", self.best_loss.cpu().numpy())
         np.save(config.savedir + "current_loss.npy", self.best_loss.cpu().numpy())
+        np.save(config.savedir + "success_iter.npy", self.success_iter.cpu().numpy())
 
         msg = (
             "\n"
