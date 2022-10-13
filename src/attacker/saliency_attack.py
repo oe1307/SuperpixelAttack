@@ -19,14 +19,10 @@ class Saliency(Attacker):
     def recorder(self):
         super().recorder()
         self.best_loss = torch.zeros(
-            (config.n_examples, 3 * config.iteration + 2),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, 3 * config.iteration + 2), device=config.device
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, 3 * config.iteration + 2),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, 3 * config.iteration + 2), device=config.device
         )
 
     @torch.inference_mode()
@@ -202,7 +198,7 @@ class Saliency(Attacker):
             self.num_forward
             * self.success_iter.sum()
             / (config.n_examples * (3 * config.iteration + 2))
-        ).to(torch.int32)
+        )
         msg = (
             f"num_forward = {self.num_forward} (warning: not exact)\n"
             + "num_backward = 0"

@@ -17,12 +17,10 @@ class GenAttacker(Attacker):
         super().recorder()
         self.best_loss = torch.zeros(
             (config.n_examples, config.population * config.iteration + 1),
-            dtype=torch.float16,
             device=config.device,
         )
         self.current_loss = torch.zeros(
             (config.n_examples, config.population * config.iteration + 1),
-            dtype=torch.float16,
             device=config.device,
         )
 
@@ -48,15 +46,9 @@ class GenAttacker(Attacker):
         assert 0 <= config.rho <= 1
         rho = torch.ones(x.shape[0], device=config.device) * config.rho
         rho_min = torch.ones(x.shape[0], device=config.device) * config.rho_min
-        alpha = (
-            torch.ones(x.shape[0], dtype=torch.float16, device=config.device)
-            * config.alpha
-        )
-        alpha_min = (
-            torch.ones(x.shape[0], dtype=torch.float16, device=config.device)
-            * config.alpha_min
-        )
-        num_plateaus = torch.zeros(x.shape[0], dtype=torch.int8, device=config.device)
+        alpha = torch.ones(x.shape[0], device=config.device) * config.alpha
+        alpha_min = torch.ones(x.shape[0], device=config.device) * config.alpha_min
+        num_plateaus = torch.zeros(x.shape[0], device=config.device)
         upper = (x + config.epsilon).clamp(0, 1).clone()
         lower = (x - config.epsilon).clamp(0, 1).clone()
 
@@ -101,11 +93,7 @@ class GenAttacker(Attacker):
 
                 # Apply mutations and clipping
                 mutation_direction = (
-                    2
-                    * torch.randint_like(
-                        x, 0, 2, dtype=torch.int8, device=config.device
-                    )
-                    - 1
+                    2 * torch.randint_like(x, 0, 2, device=config.device) - 1
                 )
                 next_population.append(
                     (
@@ -133,7 +121,7 @@ class GenAttacker(Attacker):
             self.num_forward
             * self.success_iter.sum()
             / (config.n_examples * (config.population * config.iteration + 1))
-        ).to(torch.int32)
+        )
         msg = f"num_forward = {self.num_forward}\n" + "num_backward = 0"
         print(msg, file=open(config.savedir + "/summary.txt", "a"))
         logger.warning(msg + "\n")

@@ -22,14 +22,10 @@ class TabuAttack3(Attacker):
     def recorder(self):
         super().recorder()
         self.best_loss = torch.zeros(
-            (config.n_examples, config.iteration),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration), device=config.device
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, config.iteration),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration), device=config.device
         )
 
     @torch.inference_mode()
@@ -65,7 +61,7 @@ class TabuAttack3(Attacker):
             best_loss = _loss
             self.current_loss[self.idx, 1] = _loss
             self.best_loss[self.idx, 1] = _loss
-            tabu_list = -config.tabu_size * torch.ones(x.numel(), dtype=torch.int32) - 1
+            tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
 
             for iter in range(2, config.iteration):
                 _best_loss = -100

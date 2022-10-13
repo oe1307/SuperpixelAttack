@@ -16,16 +16,8 @@ class GenAttacker2(Attacker):
 
     def recorder(self):
         super().recorder()
-        self.best_loss = torch.zeros(
-            (config.n_examples, 2),
-            dtype=torch.float16,
-            device=config.device,
-        )
-        self.current_loss = torch.zeros(
-            (config.n_examples, 2),
-            dtype=torch.float16,
-            device=config.device,
-        )
+        self.best_loss = torch.zeros((config.n_examples, 2), device=config.device)
+        self.current_loss = torch.zeros((config.n_examples, 2), device=config.device)
 
     @torch.inference_mode()
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:

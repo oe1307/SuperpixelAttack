@@ -18,14 +18,10 @@ class LocalSearch(Attacker):
     def recorder(self):
         super().recorder()
         self.best_loss = torch.zeros(
-            (config.n_examples, config.iteration),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration), device=config.device
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, config.iteration),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration), device=config.device
         )
 
     @torch.inference_mode()

@@ -25,11 +25,7 @@ class Recorder:
             dtype=torch.bool,
             device=config.device,
         )
-        self.success_iter = torch.zeros(
-            config.n_examples,
-            dtype=torch.int16,
-            device=config.device,
-        )
+        self.success_iter = torch.zeros(config.n_examples, device=config.device)
         self.num_forward = 0
         self.num_backward = 0
 

@@ -15,14 +15,10 @@ class AutoPGD(Attacker):
     def recorder(self):
         super().recorder()
         self.best_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration + 1), device=config.device
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration + 1), device=config.device
         )
         self.step_size = torch.zeros(
             (config.n_examples, config.iteration), device=config.device
@@ -40,9 +36,7 @@ class AutoPGD(Attacker):
             "checkpoint_decay": int(0.03 * config.iteration),
             "checkpoint_min": int(0.06 * config.iteration),
             "previous_checkpoint": 0,
-            "loss_update": torch.zeros(
-                x.shape[0], dtype=torch.uint8, device=config.device
-            ),
+            "loss_update": torch.zeros(x.shape[0], device=config.device),
         }
 
         _x_adv = x.clone()
@@ -113,7 +107,7 @@ class AutoPGD(Attacker):
                 checker["checkpoint"] + checker["checkpoint_interval"]
             )
             checker["loss_update"] = torch.zeros(
-                self.end - self.start, dtype=torch.uint8, device=config.device
+                self.end - self.start, device=config.device
             )
 
         else:
@@ -133,12 +127,12 @@ class AutoPGD(Attacker):
             self.num_forward
             * self.success_iter.sum()
             / (config.n_examples * (config.iteration + 1))
-        ).to(torch.int16)
+        )
         self.num_backward = (
             self.num_backward
             * self.success_iter.sum()
             / (config.n_examples * (config.iteration + 1))
-        ).to(torch.int16)
+        )
 
         np.save(f"{config.savedir}/step_size.npy", self.step_size)
 

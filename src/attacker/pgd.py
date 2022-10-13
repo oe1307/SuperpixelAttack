@@ -16,14 +16,10 @@ class PGD(Attacker):
     def recorder(self):
         super().recorder()
         self.best_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration + 1), device=config.device
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, config.iteration + 1),
-            dtype=torch.float16,
-            device=config.device,
+            (config.n_examples, config.iteration + 1), device=config.device
         )
 
     def _attack(self, x, y):
@@ -51,12 +47,12 @@ class PGD(Attacker):
             self.num_forward
             * self.success_iter.sum()
             / (config.n_examples * (config.iteration + 1))
-        ).to(torch.int16)
+        )
         self.num_backward = (
             self.num_backward
             * self.success_iter.sum()
             / (config.n_examples * (config.iteration + 1))
-        ).to(torch.int16)
+        )
         msg = (
             f"num_forward = {self.num_forward}\n"
             + f"num_backward = {self.num_backward}"

@@ -1,0 +1,11 @@
+attacker: FGSM
+
+n_examples: 100
+norm: Linf
+epsilon: 0.03137254901960784
+
+criterion: cw
+dataset: cifar10
+model:
+    robustbench:
+        Carmon2019Unlabeled: 100

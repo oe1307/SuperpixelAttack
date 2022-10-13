@@ -1,6 +1,7 @@
 from utils import config_parser
 
 from .auto_pgd import AutoPGD
+from .fgsm import FGSM
 from .gen_attack import GenAttacker
 from .gen_attack2 import GenAttacker2
 from .hals import HALS
@@ -19,6 +20,8 @@ config = config_parser()
 def get_attacker():
     if config.attacker == "AutoPGD":
         attacker = AutoPGD()
+    elif config.attacker == "FGSM":
+        attacker = FGSM()
     elif config.attacker == "GenAttack":
         attacker = GenAttacker()
     elif config.attacker == "GenAttack2":
