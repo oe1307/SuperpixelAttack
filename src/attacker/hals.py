@@ -36,7 +36,7 @@ class HALS(Attacker):
         if (config.dataset == "cifar10" and config.initial_split != 4) or (
             config.dataset == "imagenet" and config.initial_split != 32
         ):
-            logger.warning(f"{config.dataset}: split = {config.initial_split}")
+            logger.critical(f"{config.dataset}: split = {config.initial_split}")
         split = config.initial_split
         batch, c, h, w = x.shape
         is_upper = torch.zeros(
@@ -54,7 +54,7 @@ class HALS(Attacker):
                 # split block
                 is_upper = is_upper.repeat([1, 1, 2, 2])
                 if split % 2 == 1:
-                    logger.warning(f"split is not even: {split}")
+                    logger.critical(f"split is not even: {split}")
                 split //= 2
 
         _is_upper = is_upper.repeat([1, 1, split, split])
