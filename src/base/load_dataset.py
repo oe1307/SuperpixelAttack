@@ -29,12 +29,15 @@ def load_dataset(model_name, data_dir):
     ), f"{model_name} not in robustbench[{config.dataset}][{config.norm}]"
 
     if config.dataset == "cifar10":
+        assert config.n_examples <= 10000
         config.num_classes = 10
         img, label = load_cifar10(config.n_examples, data_dir)
     elif config.dataset == "cifar100":
+        assert config.n_examples <= 10000
         config.num_classes = 100
         img, label = load_cifar100(config.n_examples, data_dir)
     elif config.dataset == "imagenet":
+        assert config.n_examples <= 5000
         config.num_classes = 1000
         img, label = load_imagenet(model_name, data_dir)
     else:
