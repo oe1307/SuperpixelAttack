@@ -116,7 +116,6 @@ class TabuAttack2(Attacker):
                     break
 
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
-            breakpoint()
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)
         return x_adv_all
