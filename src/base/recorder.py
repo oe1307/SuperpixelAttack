@@ -18,7 +18,7 @@ class Recorder:
         """This function is for recording the information of the attacker."""
         logger.warning(f"Attack start at {dt.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
-        self.total_time = time.time()
+        self.timekeeper = time.time()
         self._clean_acc = 0
         self._robust_acc = torch.zeros(
             config.n_examples,
@@ -30,14 +30,13 @@ class Recorder:
         self.num_backward = 0
 
     def record(self):
-        """This function is for recording the information of the attacker."""
-        logger.warning(f"Attack end at {dt.now().strftime('%Y/%m/%d %H:%M:%S')}")
+        """This function is for recording the information of the attacker"""
         config_parser.save(config.savedir + "config.json")
 
-        self.total_time = time.time() - self.total_time
-        self._clean_acc = self._clean_acc / config.n_examples * 100
-        self._robust_acc = self._robust_acc.sum() / config.n_examples * 100
-        self.ASR = 100 - self._robust_acc
+        total_time = time.time() - self.timekeeper
+        clean_acc = self._clean_acc / config.n_examples * 100
+        robust_acc = self._robust_acc.sum() / config.n_examples * 100
+        ASR = 100 - self._robust_acc
 
         np.save(config.savedir + "best_loss.npy", self.best_loss.cpu().numpy())
         np.save(config.savedir + "current_loss.npy", self.best_loss.cpu().numpy())
@@ -45,12 +44,12 @@ class Recorder:
 
         msg = (
             "\n"
-            + f"total time (sec) = {self.total_time:.2f}s\n"
-            + f"clean acc (%) = {self._clean_acc:.2f}\n"
-            + f"robust acc (%) = {self._robust_acc:.2f}\n"
-            + f"ASR (%) = {self.ASR:.2f}\n"
+            + f"total time (sec) = {total_time:.2f}s\n"
+            + f"clean acc (%) = {clean_acc:.2f}\n"
+            + f"robust acc (%) = {robust_acc:.2f}\n"
+            + f"ASR (%) = {ASR:.2f}\n"
             + f"total num_forward = {self.num_forward}\n"
             + f"total num_backward = {self.num_backward}"
         )
         print(msg, file=open(config.savedir + "/summary.txt", "w"))
-        logger.warning(msg)
+        logger.info(msg)

@@ -34,10 +34,12 @@ def load_cifar10_easy(n_examples: int, data_dir: str):
     index = os.path.join(data_dir, "cifar10.json")
     assert os.path.exists(index)
     index = json.load(open(index))["easy"]
+    assert n_examples <= len(index)
     img = [all_img[index[i]] for i in range(n_examples)]
     label = [all_label[index[i]] for i in range(n_examples)]
     img = torch.stack(img)
     label = torch.tensor(label)
+    config.dataset = "cifar10"
     return img, label
 
 
@@ -46,8 +48,10 @@ def load_cifar10_hard(n_examples: int, data_dir: str):
     index = os.path.join(data_dir, "cifar10.json")
     assert os.path.exists(index)
     index = json.load(open(index))["hard"]
+    assert n_examples <= len(index)
     img = [all_img[index[i]] for i in range(n_examples)]
     label = [all_label[index[i]] for i in range(n_examples)]
     img = torch.stack(img)
     label = torch.tensor(label)
+    config.dataset = "cifar10"
     return img, label

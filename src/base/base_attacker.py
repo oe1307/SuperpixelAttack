@@ -1,4 +1,5 @@
 import math
+from datetime import datetime as dt
 
 import torch
 from torch import Tensor
@@ -30,7 +31,8 @@ class Attacker(Recorder):
             self._attack(x, y)
             logger.warning(f"Robust accuracy : {self._robust_acc.sum()} / {self.end}")
             torch.cuda.empty_cache()
-        self.record()
+            self.record()
+        logger.warning(f"Attack end at {dt.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
     @torch.inference_mode()
     def clean_acc(self, x: Tensor, y: Tensor):
