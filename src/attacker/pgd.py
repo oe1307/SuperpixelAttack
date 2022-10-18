@@ -43,19 +43,16 @@ class PGD(Attacker):
 
     def record(self):
         super().record()
-        self.num_forward = (
+        num_forward = (
             self.num_forward
             * self.success_iter.sum()
             / (config.n_examples * (config.iteration + 1))
         )
-        self.num_backward = (
+        num_backward = (
             self.num_backward
             * self.success_iter.sum()
             / (config.n_examples * (config.iteration + 1))
         )
-        msg = (
-            f"num_forward = {self.num_forward}\n"
-            + f"num_backward = {self.num_backward}"
-        )
+        msg = f"num_forward = {num_forward}\n" + f"num_backward = {num_backward}"
         print(msg, file=open(config.savedir + "/summary.txt", "a"))
         logger.warning(msg + "\n")
