@@ -36,7 +36,7 @@ class Recorder:
         total_time = time.time() - self.timekeeper
         clean_acc = self._clean_acc / config.n_examples * 100
         robust_acc = self._robust_acc.sum() / config.n_examples * 100
-        ASR = 100 - self._robust_acc
+        ASR = 100 - robust_acc
 
         np.save(config.savedir + "best_loss.npy", self.best_loss.cpu().numpy())
         np.save(config.savedir + "current_loss.npy", self.best_loss.cpu().numpy())
