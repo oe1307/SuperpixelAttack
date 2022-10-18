@@ -44,6 +44,7 @@ class Recorder:
 
         msg = (
             "\n"
+            + f"num_img = {self.end}"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"clean acc (%) = {clean_acc:.2f}\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
