@@ -31,9 +31,8 @@ def load_imagenet(model_name: str, data_dir: str):
 
 def load_cifar10_easy(n_examples: int, data_dir: str):
     all_img, all_label = load_cifar10(10000, data_dir)
-    index = os.path.join(data_dir, "cifar10.json")
-    assert os.path.exists(index)
-    index = json.load(open(index))["easy"]
+    assert os.path.exists("base/cifar10.json")
+    index = json.load(open("base/cifar10.json"))["easy"]
     assert n_examples <= len(index)
     img = [all_img[index[i]] for i in range(n_examples)]
     label = [all_label[index[i]] for i in range(n_examples)]
@@ -46,8 +45,8 @@ def load_cifar10_easy(n_examples: int, data_dir: str):
 def load_cifar10_hard(n_examples: int, data_dir: str):
     all_img, all_label = load_cifar10(10000, data_dir)
     index = os.path.join(data_dir, "cifar10.json")
-    assert os.path.exists(index)
-    index = json.load(open(index))["hard"]
+    assert os.path.exists("base/cifar10.json")
+    index = json.load(open("base/cifar10.json"))["hard"]
     assert n_examples <= len(index)
     img = [all_img[index[i]] for i in range(n_examples)]
     label = [all_label[index[i]] for i in range(n_examples)]

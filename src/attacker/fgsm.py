@@ -29,11 +29,12 @@ class FGSM(Attacker):
 
         loss = self.criterion(self.model(x_adv), y).sum().clone()
         self.num_forward += x_adv.shape[0]
+        step_size = config.epsilon / config.iteration
         for _ in range(config.iteration):
             grad = torch.autograd.grad(loss, [x_adv])[0].clone()
             self.num_backward += x_adv.shape[0]
             x_adv = (
-                (x_adv + 2 * config.epsilon * torch.sign(grad))
+                (x_adv + step_size * torch.sign(grad))
                 .clamp(lower, upper)
                 .clone()
             )
