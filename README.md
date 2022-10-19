@@ -1,4 +1,7 @@
 # AdEx_BlackBox
 
-## TODO
-- [ ] LazyGreedy BlackBox attack の実装
+## setup
+```
+./run setup
+./run install
+```
