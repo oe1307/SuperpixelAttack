@@ -39,6 +39,7 @@ def load_cifar10_easy(n_examples: int, data_dir: str):
     img = torch.stack(img)
     label = torch.tensor(label)
     config.dataset = "cifar10"
+    config.select = "easy"
     return img, label
 
 
@@ -53,4 +54,5 @@ def load_cifar10_hard(n_examples: int, data_dir: str):
     img = torch.stack(img)
     label = torch.tensor(label)
     config.dataset = "cifar10"
+    config.select = "hard"
     return img, label
