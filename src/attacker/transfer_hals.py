@@ -27,7 +27,7 @@ class TransferHALS(Transfer):
             (config.n_examples, 3 * config.iteration + 2), device=config.device
         )
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def _attack(self, x: Tensor, y: Tensor):
         upper = (x + config.epsilon).clamp(0, 1).clone()
         lower = (x - config.epsilon).clamp(0, 1).clone()
