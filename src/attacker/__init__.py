@@ -17,6 +17,7 @@ from .TabuAttack.method3 import TabuAttack3
 # transfer attack
 from .TabuAttack.method5 import TabuAttack5
 from .transfer_gen_attack import GenAttacker3
+from .transfer_hals import TransferHALS
 
 config = config_parser()
 
@@ -48,6 +49,8 @@ def get_attacker():
         attacker = TabuAttack5()
     elif config.attacker == "GenAttack3":
         attacker = GenAttacker3()
+    elif config.attacker == "TransferHALS":
+        attacker = TransferHALS()
     else:
         raise NotImplementedError(f"Attacker {config.attacker} is not implemented.")
 

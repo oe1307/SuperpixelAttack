@@ -1,9 +1,9 @@
 attacker: TabuAttack2
 
-n_examples: 100
+n_examples: 482
 norm: Linf
 epsilon: 0.03137254901960784
-iteration: 3000
+iteration: 1000
 exp: False
 
 tabu_size: 10
@@ -15,8 +15,8 @@ memory: 100
 penalty: 1
 
 criterion: cw
-dataset: cifar10
+dataset: cifar10_hard
 model:
     robustbench:
-        Carmon2019Unlabeled: 100
-        # Salman2020Do_R18: 100
+        Carmon2019Unlabeled: 482
+

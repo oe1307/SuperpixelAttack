@@ -3,13 +3,13 @@ attacker: TabuAttack5
 n_examples: 2235
 norm: Linf
 epsilon: 0.03137254901960784
-iteration: 3000
+iteration: 1000
 exp: False
 
 transfer:
     model_container: robustbench
     model: Zhang2019Theoretically
-    batch_size: 2235
+    batch_size: 1000
 
 tabu_size: 10
 search: 1000
@@ -18,4 +18,4 @@ criterion: cw
 dataset: cifar10_easy
 model:
     robustbench:
-        Carmon2019Unlabeled: 2235
+        Carmon2019Unlabeled: 1000

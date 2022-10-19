@@ -26,7 +26,7 @@ def argparser():
     parser.add_argument(
         "--thread",
         type=int,
-        default=1,
+        default=10,
     )
     parser.add_argument(
         "--debug",
