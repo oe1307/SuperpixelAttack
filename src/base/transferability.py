@@ -13,21 +13,21 @@ class Transfer(Attacker):
     def __init__(self):
         super().__init__()
 
-    @torch.enable_grad()
-    def transfer(self, x, y):
-        assert hasattr(config, "transfer_model")
-        model = get_model(
-            config.transfer_model_container,
-            config.transfer_model,
-            x.shape[0],
+        assert hasattr(config, "transfer")
+        self.transfer_model = get_model(
+            config.transfer.model_container,
+            config.transfer.model,
+            config.transfer.batch_size,
             model_dir="../storage/model",
         )
 
+    @torch.enable_grad()
+    def transfer(self, x, y):
         upper = (x + config.epsilon).clamp(0, 1).clone()
         lower = (x - config.epsilon).clamp(0, 1).clone()
         x_adv = x.clone().requires_grad_()
 
-        loss = self.criterion(model(x_adv), y).sum().clone()
+        loss = self.criterion(self.transfer_model(x_adv), y).sum().clone()
         self.num_forward += x_adv.shape[0]
         grad = torch.autograd.grad(loss, [x_adv])[0].clone()
         self.num_backward += x_adv.shape[0]

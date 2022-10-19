@@ -6,8 +6,10 @@ epsilon: 0.03137254901960784
 iteration: 3000
 exp: False
 
-transfer_model_container: robustbench
-transfer_model: Carmon2019Unlabeled
+transfer:
+    model_container: robustbench
+    model: Carmon2019Unlabeled
+    batch_size: 2235
 
 tabu_size: 10
 search: 1000
