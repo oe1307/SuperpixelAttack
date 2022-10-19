@@ -14,6 +14,8 @@ class Transfer(Attacker):
         super().__init__()
 
         assert hasattr(config, "transfer")
+        for model_container in config.model:
+            assert config.transfer.model not in config.model[model_container].keys()
         self.transfer_model = get_model(
             config.transfer.model_container,
             config.transfer.model,
