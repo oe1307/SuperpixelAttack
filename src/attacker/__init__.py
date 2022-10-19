@@ -13,6 +13,7 @@ from .TabuAttack.local_search import LocalSearch
 from .TabuAttack.method1 import TabuAttack1
 from .TabuAttack.method2 import TabuAttack2
 from .TabuAttack.method3 import TabuAttack3
+from .TabuAttack.method5 import TabuAttack5
 
 config = config_parser()
 
@@ -40,6 +41,8 @@ def get_attacker():
         attacker = TabuAttack2()
     elif config.attacker == "TabuAttack3":
         attacker = TabuAttack3()
+    elif config.attacker == "TabuAttack5":
+        attacker = TabuAttack5()
     else:
         raise NotImplementedError(f"Attacker {config.attacker} is not implemented.")
 

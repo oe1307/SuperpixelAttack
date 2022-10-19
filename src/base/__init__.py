@@ -2,5 +2,6 @@ from .base_attacker import Attacker
 from .criterion import get_criterion
 from .get_model import get_model
 from .load_dataset import load_dataset
+from .transferability import Transfer
 
-__all__ = ["get_model", "load_dataset", "Attacker", "get_criterion"]
+__all__ = ["get_model", "load_dataset", "Attacker", "get_criterion", "Transfer"]
