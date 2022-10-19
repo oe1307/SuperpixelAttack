@@ -1,3 +1,5 @@
+import json
+
 from robustbench.data import load_cifar10, load_cifar100
 
 from utils import config_parser
@@ -23,9 +25,11 @@ def load_dataset(model_name, data_dir):
         config.num_classes = 1000
         img, label = load_imagenet(model_name, data_dir)
     elif config.dataset == "cifar10_easy":
+        assert config.n_examples <= len(json.load(open("./base/cifar10.json"))["easy"])
         config.num_classes = 10
         img, label = load_cifar10_easy(config.n_examples, data_dir)
     elif config.dataset == "cifar10_hard":
+        assert config.n_examples <= len(json.load(open("./base/cifar10.json"))["hard"])
         config.num_classes = 10
         img, label = load_cifar10_hard(config.n_examples, data_dir)
     else:

@@ -25,6 +25,7 @@ class Transfer(Attacker):
 
     @torch.enable_grad()
     def transfer(self, x, y, iter=1):
+        assert x.dim() == 4, f"x.dim() = {x.dim()}"
         upper = (x + config.epsilon).clamp(0, 1).clone()
         lower = (x - config.epsilon).clamp(0, 1).clone()
         x_adv = x.clone().requires_grad_()
@@ -39,5 +40,5 @@ class Transfer(Attacker):
             )
             del grad
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
-            loss = self.robust_acc(x_adv, y).sum().clone()
+            loss = super().robust_acc(x_adv, y).sum().clone()
         return x_adv.detach().clone()

@@ -8,7 +8,7 @@ exp: False
 
 transfer:
     model_container: robustbench
-    model: Carmon2019Unlabeled
+    model: Zhang2019Theoretically
     batch_size: 2235
 
 tabu_size: 10
@@ -19,4 +19,3 @@ dataset: cifar10_easy
 model:
     robustbench:
         Carmon2019Unlabeled: 2235
-        # Salman2020Do_R18: 100
