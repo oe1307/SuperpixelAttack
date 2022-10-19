@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import torch
 from torch import Tensor
@@ -16,11 +18,21 @@ class GenAttacker3(Transfer):
     def recorder(self):
         super().recorder()
         self.best_loss = torch.zeros(
-            (config.n_examples, config.population * config.iteration + 1),
+            (
+                config.n_examples,
+                config.population * config.iteration
+                + 1
+                + math.factorial(config.population),
+            ),
             device=config.device,
         )
         self.current_loss = torch.zeros(
-            (config.n_examples, config.population * config.iteration + 1),
+            (
+                config.n_examples,
+                config.population * config.iteration
+                + 1
+                + math.factorial(config.population),
+            ),
             device=config.device,
         )
 
