@@ -9,6 +9,7 @@ from .pgd import PGD
 from .square_attack2 import SquareAttack2
 
 # TabuAttack
+from .TabuAttack.advanced import AdvancedTabuAttack
 from .TabuAttack.local_search import LocalSearch
 from .TabuAttack.method1 import TabuAttack1
 from .TabuAttack.method2 import TabuAttack2
@@ -39,6 +40,8 @@ def get_attacker():
         attacker = SquareAttack2()
     elif config.attacker == "LocalSearch":
         attacker = LocalSearch()
+    elif config.attacker == "AdvancedTabuAttack":
+        attacker = AdvancedTabuAttack()
     elif config.attacker == "TabuAttack1":
         attacker = TabuAttack1()
     elif config.attacker == "TabuAttack2":

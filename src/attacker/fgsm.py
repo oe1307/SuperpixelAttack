@@ -33,11 +33,7 @@ class FGSM(Attacker):
         for _ in range(config.iteration):
             grad = torch.autograd.grad(loss, [x_adv])[0].clone()
             self.num_backward += x_adv.shape[0]
-            x_adv = (
-                (x_adv + step_size * torch.sign(grad))
-                .clamp(lower, upper)
-                .clone()
-            )
+            x_adv = (x_adv + step_size * torch.sign(grad)).clamp(lower, upper).clone()
             del grad
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             loss = self.robust_acc(x_adv, y).sum().clone()

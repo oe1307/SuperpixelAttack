@@ -2,18 +2,19 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from base import Transfer
+from base import Attacker
 from utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuAttack5(Transfer):
+class AdvancedTabuAttack(Attacker):
     """
-    - one-flip
+    - N-flip
     - flipすることを禁止
-    - 局所移動戦略
+    - 最良移動戦略
+    - 特別選択基準
     """
 
     def __init__(self):
@@ -28,7 +29,7 @@ class TabuAttack5(Transfer):
             (config.n_examples, config.iteration), device=config.device
         )
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def _attack(self, x_all: Tensor, y_all: Tensor):
         """
         x_best: 過去の探索で最も良かった探索点
@@ -55,19 +56,21 @@ class TabuAttack5(Transfer):
             # initialize
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
-            x_best = self.transfer(x.unsqueeze(0), y).squeeze(0).clone()
-            _is_upper = (x_best == upper).clone()
+            _is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)
+            x_best = torch.where(_is_upper, upper, lower)
             _loss = self.robust_acc(x_best, y).item()
             best_loss = _loss
             self.current_loss[self.idx, 1] = _loss
             self.best_loss[self.idx, 1] = _loss
+            N_flip = config.N_flip
             tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
 
             for iter in range(2, config.iteration):
+                alpha = 0
                 _best_loss = -100
                 tabu = iter - tabu_list < config.tabu_size
-                flips = np.random.choice(np.where(~tabu)[0], config.search)
-                for flip in flips:
+                for i in range(int(config.alpha_max * x.numel())):
+                    flip = np.random.choice(np.where(~tabu)[0], N_flip)
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
                     x_adv = torch.where(is_upper, upper, lower).clone()
@@ -77,10 +80,13 @@ class TabuAttack5(Transfer):
                         _is_upper_best = is_upper.clone()
                         _x_best = x_adv.clone()
                         _best_loss = loss
-                    logger.debug(
-                        f"( iter={iter} ) loss={loss:.4f} best_loss={_best_loss:.4f}"
-                    )
-                    if _best_loss > _loss:
+                    if _best_loss - _loss > config.beta:
+                        alpha += 1
+                    logger.debug(f"( {iter=} ) {loss=:.4f} {best_loss=:.4f} {N_flip=}")
+                    if (
+                        alpha > config.alpha_plus * x.numel()
+                        and i > config.alpha_min * x.numel()
+                    ):
                         break
 
                 # end for
@@ -91,6 +97,9 @@ class TabuAttack5(Transfer):
                 if _best_loss > best_loss:  # 過去の最良点
                     x_best = _x_best.clone()
                     best_loss = _loss
+
+                if iter > 10 and self.best_loss[self.idx, iter - 10] >= best_loss:
+                    N_flip = max(int(N_flip / 2), 1)
 
                 self.current_loss[self.idx, iter] = _best_loss
                 self.best_loss[self.idx, iter] = best_loss
