@@ -16,8 +16,6 @@ def get_criterion() -> Callable[[Tensor, Tensor], Tensor]:
         return CrossEntropyLoss(reduction="none")
     elif config.criterion == "dlr":
         return DLRLoss()
-    elif config.criterion == "fitness":
-        return Fitness()
     else:
         raise NotImplementedError
 
@@ -46,17 +44,3 @@ class DLRLoss(Module):
 
     def forward(self, logits: Tensor, y: Tensor) -> Tensor:
         raise NotImplementedError("DLRLoss is not implemented yet.")
-
-
-class Fitness(Module):
-    """fitness function for GenAttack"""
-
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, logits: Tensor, y: Tensor) -> Tensor:
-        idx_sorted = logits.sort(dim=1, descending=True)[1]
-        target = torch.where(idx_sorted[:, 0] == y, idx_sorted[:, 1], idx_sorted[:, 0])
-        first = logits[range(logits.shape[0]), target]
-        second = torch.log(torch.exp(logits).sum(1) - first)
-        return first - second

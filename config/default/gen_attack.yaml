@@ -1,0 +1,14 @@
+attacker: GenAttack
+
+epsilon: 0.03137254901960784
+dataset: cifar10_easy
+model:
+    robustbench:
+        Carmon2019Unlabeled: 2235
+
+# hyperparameter
+steps: 1000
+population: 10
+mutation_probability: 0.10
+mutation_range: 0.15
+sampling_temperature: 0.3

@@ -20,7 +20,7 @@ def load_imagenet(model_name: str, data_dir: str):
     dataset = CustomImageFolder(data_dir, transform=transform)
     img = list()
     label = list()
-    for index in range(config.n_examples):
+    for index in range(5000):
         x, y = dataset.__getitem__(index)[:2]
         img.append(x)
         label.append(y)
@@ -29,30 +29,40 @@ def load_imagenet(model_name: str, data_dir: str):
     return img, label
 
 
-def load_cifar10_easy(n_examples: int, data_dir: str):
+def load_cifar10_easy(model_name: str, data_dir: str):
     all_img, all_label = load_cifar10(10000, data_dir)
-    assert os.path.exists("base/cifar10.json")
-    index = json.load(open("base/cifar10.json"))["easy"]
-    assert n_examples <= len(index)
-    img = [all_img[index[i]] for i in range(n_examples)]
-    label = [all_label[index[i]] for i in range(n_examples)]
+    index = os.path.join(data_dir, model_name, "cifar10.json")
+    index = json.load(open(index))["easy"]
+    img = [all_img[i] for i in index]
+    label = [all_label[i] for i in index]
     img = torch.stack(img)
     label = torch.tensor(label)
     config.dataset = "cifar10"
-    config.select = "easy"
+    config.target = "easy"
     return img, label
 
 
-def load_cifar10_hard(n_examples: int, data_dir: str):
+def load_cifar10_hard(model_name: str, data_dir: str):
     all_img, all_label = load_cifar10(10000, data_dir)
-    index = os.path.join(data_dir, "cifar10.json")
-    assert os.path.exists("base/cifar10.json")
-    index = json.load(open("base/cifar10.json"))["hard"]
-    assert n_examples <= len(index)
-    img = [all_img[index[i]] for i in range(n_examples)]
-    label = [all_label[index[i]] for i in range(n_examples)]
+    index = os.path.join(data_dir, model_name, "cifar10.json")
+    index = json.load(open(index))["hard"]
+    img = [all_img[i] for i in index]
+    label = [all_label[i] for i in index]
     img = torch.stack(img)
     label = torch.tensor(label)
     config.dataset = "cifar10"
-    config.select = "hard"
+    config.target = "hard"
+    return img, label
+
+
+def load_cifar10_fail(model_name: str, data_dir: str):
+    all_img, all_label = load_cifar10(10000, data_dir)
+    index = os.path.join(data_dir, model_name, "cifar10.json")
+    index = json.load(open(index))["fail"]
+    img = [all_img[i] for i in index]
+    label = [all_label[i] for i in index]
+    img = torch.stack(img)
+    label = torch.tensor(label)
+    config.dataset = "cifar10"
+    config.target = "fail"
     return img, label

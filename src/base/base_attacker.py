@@ -1,24 +1,22 @@
 import math
-from datetime import datetime as dt
+import time
 
 import torch
 from torch import Tensor
 
 from utils import config_parser, setup_logger
 
-from .recorder import Recorder
-
 logger = setup_logger(__name__)
 config = config_parser()
 
 
-class Attacker(Recorder):
+class Attacker:
     def __init__(self):
-        super().__init__()
+        self.timekeeper = time.time()
+        self.robust_acc = 0
 
-    def attack(self, model, data, label, criterion):
+    def attack(self, model, data: Tensor, label: Tensor):
         self.model = model
-        self.criterion = criterion
 
         num_batch = math.ceil(data.shape[0] / model.batch_size)
         for i in range(num_batch):
@@ -26,43 +24,23 @@ class Attacker(Recorder):
             self.end = min((i + 1) * model.batch_size, config.n_examples)
             x = data[self.start : self.end].to(config.device)
             y = label[self.start : self.end].to(config.device)
-            self.iter = 0
-            self.clean_acc(x, y)
             self._attack(x, y)
-            logger.warning(f"Robust accuracy : {self._robust_acc.sum()} / {self.end}")
             torch.cuda.empty_cache()
-            self.record()
-        logger.warning(f"Attack end at {dt.now().strftime('%Y/%m/%d %H:%M:%S')}")
 
-    @torch.inference_mode()
-    def clean_acc(self, x: Tensor, y: Tensor):
-        logits = self.model(x).detach().clone()
-        acc = logits.argmax(dim=1) == y
-        self._clean_acc += acc.sum().item()
-        self._robust_acc[self.start : self.end] = acc
-        self.success_iter[self.start : self.end] = acc
-        loss = self.criterion(logits, y).detach().clone()
-        self.best_loss[self.start : self.end, 0] = loss
-        self.current_loss[self.start : self.end, 0] = loss
-        logger.warning(f"Clean accuracy : {self._clean_acc} / {self.end}")
+        total_num_forward = data.shape[0] * self.num_forward
+        total_time = time.time() - self.timekeeper
+        robust_acc = self.robust_acc / data.shape[0] * 100
+        ASR = 100 - robust_acc
 
-    def robust_acc(self, x_adv: Tensor, y: Tensor) -> Tensor:
-        self.iter += 1
-        logits = self.model(x_adv).clone()
-        self.num_forward += x_adv.shape[0]
-        self._robust_acc[self.start : self.end] = torch.logical_and(
-            self._robust_acc[self.start : self.end], logits.argmax(dim=1) == y
+        msg = (
+            "\n"
+            + f"num_img = {self.end}\n"
+            + f"total time (sec) = {total_time:.2f}s\n"
+            + f"robust acc (%) = {robust_acc:.2f}\n"
+            + f"ASR (%) = {ASR:.2f}\n"
+            + f"num_forward = {self.num_forward}\n"
+            + f"total num_backward = {total_num_forward}"
         )
-        self.success_iter[self.start : self.end] += self._robust_acc[
-            self.start : self.end
-        ]
-        loss = self.criterion(logits, y).clone()
-        self.current_loss[self.start : self.end, self.iter] = loss.detach().clone()
-        self.best_loss[self.start : self.end, self.iter] = torch.max(
-            loss.detach().clone(), self.best_loss[self.start : self.end, self.iter - 1]
-        )
-        logger.debug(
-            f"Robust accuracy ( iter={self.iter} ) :"
-            + f" {self._robust_acc.sum()} / {self.end}"
-        )
-        return loss
+
+        print(msg, file=open(config.savedir + "/summary.txt", "w"))
+        logger.info(msg)
