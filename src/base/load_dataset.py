@@ -4,7 +4,7 @@ from utils import config_parser
 
 from ._load_dataset import (
     load_cifar10_easy,
-    load_cifar10_fail,
+    load_cifar10_easy_hard,
     load_cifar10_hard,
     load_imagenet,
 )
@@ -30,9 +30,9 @@ def load_dataset(model_name, data_dir):
     elif config.dataset == "cifar10_hard":
         config.num_classes = 10
         img, label = load_cifar10_hard(model_name, data_dir)
-    elif config.dataset == "cifar10_fail":
+    elif config.dataset == "cifar10_easy_hard":
         config.num_classes = 10
-        img, label = load_cifar10_fail(model_name, data_dir)
+        img, label = load_cifar10_easy_hard(model_name, data_dir)
     else:
         raise ValueError("Dataset not supported")
 
