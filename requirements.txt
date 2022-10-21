@@ -1,7 +1,6 @@
 git+https://github.com/RobustBench/robustbench.git
 --find-links https://download.pytorch.org/whl/cu116/torch_stable.html
 torch
-optuna
 
 # attacker
 foolbox
