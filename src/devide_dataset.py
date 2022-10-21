@@ -71,7 +71,6 @@ def main():
         x = data[start:end].to(config.device)
         y = label[start:end].to(config.device)
         success_iter[start:end] = pgd(model, criterion, x, y)
-        breakpoint()
         torch.cuda.empty_cache()
 
     savefile = f"../storage/data/{config.dataset}/{config.model}.json"

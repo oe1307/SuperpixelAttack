@@ -9,7 +9,6 @@ advertorch
 
 
 # utils
-tqdm
 yaspin
 colorlog
 pyyaml
