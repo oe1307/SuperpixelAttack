@@ -73,12 +73,12 @@ def main():
         success_iter[start:end] = pgd(model, criterion, x, y)
         torch.cuda.empty_cache()
 
-    savefile = f"../storage/data/{config.dataset}/{config.model}.json"
+    savefile = f"../data/{config.dataset}/{config.model}.json"
     success_iter = success_iter.cpu().numpy()
     index = {
         "clean": np.where(success_iter == 0)[0].tolist(),  # 元々誤分類
         "easy": np.where(success_iter == 1)[0].tolist(),  # 1回で成功
-        "hard": np.where(np.logical_and(1 < success_iter, success_iter < config.step))[
+        "hard": np.where(np.logical_and(1 < success_iter, success_iter <= config.step))[
             0
         ].tolist(),  # 2回目以降で成功
         "fail": np.where(success_iter == config.step + 1)[0].tolist(),  # 失敗
@@ -115,6 +115,7 @@ def pgd(model, criterion, x: Tensor, y: Tensor) -> Tensor:
 if __name__ == "__main__":
     config = config_parser.read(args=argparser())
     config.criterion = "cw"
+    config.norm = "Linf"
     reproducibility()
     main()
 
