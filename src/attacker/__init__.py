@@ -2,6 +2,8 @@ from utils import config_parser
 
 from .gen_attack_foolbox import FoolboxGenAttacker
 
+# proposed method
+
 config = config_parser()
 
 

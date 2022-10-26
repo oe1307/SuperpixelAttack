@@ -11,9 +11,11 @@ config = config_parser()
 
 
 class FoolboxGenAttacker(Attacker):
+    def __init__(self):
+        super().__init__()
+        self.num_forward = config.steps * config.population
+
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
-        upper = (x + config.epsilon).clamp(0, 1).clone()
-        lower = (x - config.epsilon).clamp(0, 1).clone()
         model = fb.PyTorchModel(self.model, bounds=(0, 1), device=config.device)
 
         # set target class
@@ -33,7 +35,4 @@ class FoolboxGenAttacker(Attacker):
         with yaspin(text="Attacking...", color="cyan"):
             x_adv = attack(model, x, criterion, epsilons=[config.epsilon])[1][0]
 
-        # calculate the accuracy
-        assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
-        logits = self.model(x_adv).clone()
-        self.robust_acc += logits.argmax(dim=1) == y
+        return x_adv

@@ -1,4 +1,5 @@
 import math
+import os
 import time
 
 import torch
@@ -24,12 +25,18 @@ class Attacker:
             self.end = min((i + 1) * model.batch_size, config.n_examples)
             x = data[self.start : self.end].to(config.device)
             y = label[self.start : self.end].to(config.device)
-            self._attack(x, y)
+            x_adv = self._attack(x, y)
+            upper = (x + config.epsilon).clamp(0, 1).clone()
+            lower = (x - config.epsilon).clamp(0, 1).clone()
+            assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
+            logits = self.model(x_adv).clone()
+            self.robust_acc += logits.argmax(dim=1) == y
+            logger.info(f"Robust accuracy : {self.robust_acc.sum()} / {self.end}")
             torch.cuda.empty_cache()
 
         total_num_forward = data.shape[0] * self.num_forward
         total_time = time.time() - self.timekeeper
-        robust_acc = self.robust_acc / data.shape[0] * 100
+        robust_acc = self.robust_acc.sum() / data.shape[0] * 100
         ASR = 100 - robust_acc
 
         msg = (
@@ -42,5 +49,6 @@ class Attacker:
             + f"total num_backward = {total_num_forward}"
         )
 
+        os.makedirs(config.savedir, exist_ok=True)
         print(msg, file=open(config.savedir + "/summary.txt", "w"))
         logger.info(msg)

@@ -8,7 +8,6 @@ foolbox
 adversarial-robustness-toolbox
 advertorch
 
-
 # utils
 yaspin
 colorlog

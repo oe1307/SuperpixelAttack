@@ -39,7 +39,6 @@ def argparser():
 
 def main():
     torch.set_num_threads(config.thread)
-    criterion = get_criterion()
     for model_container, models in config.model.items():
         for model_name, batch_size in models.items():
             print(f"{model_name}")
@@ -53,7 +52,7 @@ def main():
                 model_container, model_name, batch_size, model_dir="../storage/model"
             )
             attacker = get_attacker()
-            attacker.attack(model, data, label, criterion)
+            attacker.attack(model, data, label)
 
 
 if __name__ == "__main__":

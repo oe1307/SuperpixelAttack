@@ -26,12 +26,13 @@ def load_imagenet(model_name: str, data_dir: str):
         label.append(y)
     img = torch.stack(img)
     label = torch.tensor(label)
+    config.n_examples = 5000
     return img, label
 
 
 def load_cifar10_easy(model_name: str, data_dir: str):
     all_img, all_label = load_cifar10(10000, data_dir)
-    index = os.path.join(data_dir, model_name, "cifar10.json")
+    index = os.path.join("../data/cifar10", f"{model_name}.json")
     index = json.load(open(index))["easy"]
     img = [all_img[i] for i in index]
     label = [all_label[i] for i in index]
@@ -39,12 +40,13 @@ def load_cifar10_easy(model_name: str, data_dir: str):
     label = torch.tensor(label)
     config.dataset = "cifar10"
     config.target = "easy"
+    config.n_examples = len(index)
     return img, label
 
 
 def load_cifar10_hard(model_name: str, data_dir: str):
     all_img, all_label = load_cifar10(10000, data_dir)
-    index = os.path.join(data_dir, model_name, "cifar10.json")
+    index = os.path.join("../data/cifar10", f"{model_name}.json")
     index = json.load(open(index))["hard"]
     img = [all_img[i] for i in index]
     label = [all_label[i] for i in index]
@@ -52,12 +54,13 @@ def load_cifar10_hard(model_name: str, data_dir: str):
     label = torch.tensor(label)
     config.dataset = "cifar10"
     config.target = "hard"
+    config.n_examples = len(index)
     return img, label
 
 
 def load_cifar10_easy_hard(model_name: str, data_dir: str):
     all_img, all_label = load_cifar10(10000, data_dir)
-    index = os.path.join(data_dir, model_name, "cifar10.json")
+    index = os.path.join("../data/cifar10", f"{model_name}.json")
     index = json.load(open(index))["easy"] | json.load(open(index))["hard"]
     img = [all_img[i] for i in index]
     label = [all_label[i] for i in index]
@@ -65,4 +68,5 @@ def load_cifar10_easy_hard(model_name: str, data_dir: str):
     label = torch.tensor(label)
     config.dataset = "cifar10"
     config.target = "easy_hard"
+    config.n_examples = len(index)
     return img, label
