@@ -6,7 +6,6 @@ torchvision
 # attacker
 foolbox
 adversarial-robustness-toolbox
-advertorch
 
 # utils
 yaspin

@@ -1,4 +1,4 @@
-attacker: FoolboxGenAttacker
+attacker: GenAttacker
 
 epsilon: 0.03137254901960784
 norm: Linf
@@ -8,7 +8,7 @@ model:
         Carmon2019Unlabeled: 2235
 
 # hyperparameter
-steps: 30
+steps: 10
 population: 10
 mutation_probability: 0.10
 mutation_range: 0.15
