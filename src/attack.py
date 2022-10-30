@@ -4,7 +4,7 @@ from datetime import datetime
 import torch
 
 from attacker import get_attacker
-from base import get_criterion, get_model, load_dataset
+from base import get_model, load_dataset
 from utils import config_parser, reproducibility, setup_logger
 
 

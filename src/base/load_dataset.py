@@ -2,12 +2,7 @@ from robustbench.data import load_cifar10, load_cifar100
 
 from utils import config_parser
 
-from ._load_dataset import (
-    load_cifar10_easy,
-    load_cifar10_easy_hard,
-    load_cifar10_hard,
-    load_imagenet,
-)
+from ._load_dataset import load_cifar10_easy, load_cifar10_hard, load_imagenet
 
 config = config_parser()
 
@@ -30,9 +25,6 @@ def load_dataset(model_name, data_dir):
     elif config.dataset == "cifar10_hard":
         config.num_classes = 10
         img, label = load_cifar10_hard(model_name, data_dir)
-    elif config.dataset == "cifar10_easy_hard":
-        config.num_classes = 10
-        img, label = load_cifar10_easy_hard(model_name, data_dir)
     else:
         raise ValueError("Dataset not supported")
 

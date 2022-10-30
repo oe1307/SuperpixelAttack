@@ -56,17 +56,3 @@ def load_cifar10_hard(model_name: str, data_dir: str):
     config.target = "hard"
     config.n_examples = len(index)
     return img, label
-
-
-def load_cifar10_easy_hard(model_name: str, data_dir: str):
-    all_img, all_label = load_cifar10(10000, data_dir)
-    index = os.path.join("../data/cifar10", f"{model_name}.json")
-    index = json.load(open(index))["easy"] | json.load(open(index))["hard"]
-    img = [all_img[i] for i in index]
-    label = [all_label[i] for i in index]
-    img = torch.stack(img)
-    label = torch.tensor(label)
-    config.dataset = "cifar10"
-    config.target = "easy_hard"
-    config.n_examples = len(index)
-    return img, label
