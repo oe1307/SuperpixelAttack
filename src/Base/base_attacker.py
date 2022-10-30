@@ -41,14 +41,21 @@ class Attacker:
 
         msg = (
             "\n"
+            + f"attacker = {config.attacker}\n"
+            + f"norm = {config.norm}\n"
+            + f"epsilon = {config.epsilon}\n"
+            + f"dataset = {config.dataset}\n"
+            + f"target = {config.target}\n"
+            + f"model = {self.model.name}\n"
+            + "\n"
             + f"num_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
             + f"ASR (%) = {ASR:.2f}\n"
             + f"num_forward = {self.num_forward}\n"
-            + f"total num_forward = {total_num_forward}"
+            + f"total num_forward = {total_num_forward}\n"
         )
 
-        os.makedirs(config.savedir, exist_ok=True)
-        print(msg, file=open(config.savedir + "/summary.txt", "w"))
+        os.makedirs("../result", exist_ok=True)
+        print(msg, file=open(f"../result/{config.datetime}.txt", "w"))
         logger.info(msg)
