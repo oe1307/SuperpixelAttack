@@ -3,14 +3,14 @@ import torch
 from torch import Tensor
 from yaspin import yaspin
 
-from base import Attacker
-from utils import config_parser, setup_logger
+from Base import Attacker
+from Utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
 
 
-class GenAttacker(Attacker):
+class FoolboxGenAttacker(Attacker):
     def __init__(self):
         super().__init__()
         self.num_forward = config.steps * config.population

@@ -1,3 +1,6 @@
+[tool.poetry.dependencies]
+python = "=3.9"
+
 [tool.black]
 line-length = 88
 

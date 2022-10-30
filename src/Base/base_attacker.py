@@ -5,7 +5,7 @@ import time
 import torch
 from torch import Tensor
 
-from utils import config_parser, setup_logger
+from Utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -46,7 +46,7 @@ class Attacker:
             + f"robust acc (%) = {robust_acc:.2f}\n"
             + f"ASR (%) = {ASR:.2f}\n"
             + f"num_forward = {self.num_forward}\n"
-            + f"total num_backward = {total_num_forward}"
+            + f"total num_forward = {total_num_forward}"
         )
 
         os.makedirs(config.savedir, exist_ok=True)

@@ -3,9 +3,9 @@ from datetime import datetime
 
 import torch
 
-from attacker import get_attacker
-from base import get_model, load_dataset
-from utils import config_parser, reproducibility, setup_logger
+from Attacker import get_attacker
+from Base import get_model, load_dataset
+from Utils import config_parser, reproducibility, setup_logger
 
 
 def argparser():
@@ -43,10 +43,7 @@ def main():
         for model_name, batch_size in models.items():
             print(f"{model_name}")
             reproducibility()
-            config.savedir = (
-                f"../result/{config.attacker}/{config.dataset}/{config.norm}/"
-                + f"{model_name}/{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}/"
-            )
+            config.savefile = f"{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.txt"
             data, label = load_dataset(model_name, data_dir="../storage/data")
             model = get_model(
                 model_container, model_name, batch_size, model_dir="../storage/model"

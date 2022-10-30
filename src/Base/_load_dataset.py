@@ -5,7 +5,7 @@ import torch
 from robustbench.data import CustomImageFolder, get_preprocessing, load_cifar10
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from utils import config_parser
+from Utils import config_parser
 
 config = config_parser()
 

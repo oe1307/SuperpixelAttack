@@ -1,6 +1,6 @@
 from robustbench.data import load_cifar10, load_cifar100
 
-from utils import config_parser
+from Utils import config_parser
 
 from ._load_dataset import load_cifar10_easy, load_cifar10_hard, load_imagenet
 

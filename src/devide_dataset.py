@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from base import get_criterion, get_model, load_dataset
-from utils import config_parser, pbar, reproducibility, setup_logger
+from Base import get_criterion, get_model, load_dataset
+from Utils import config_parser, pbar, reproducibility, setup_logger
 
 
 def argparser():

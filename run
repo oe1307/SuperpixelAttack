@@ -27,15 +27,6 @@ elif [ $1 = "format" ]; then
     pflake8 $(dirname $0)
     echo
 
-elif [ $1 = "test" ]; then
-    if [ $# = 2 ]; then
-        cd $(dirname $0)/src
-        python attack.py -c config/default/AutoPGD.yaml -g $2 --thread 10 --log_level 10
-    else
-        echo "Usage: $0 test [gpu]"
-        exit 1
-    fi
-
 else
     echo "Usage: $0 [setup|install|format|test]"
 fi
