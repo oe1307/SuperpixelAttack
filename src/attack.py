@@ -43,7 +43,7 @@ def main():
         for model_name, batch_size in models.items():
             print(f"{model_name}")
             reproducibility()
-            config.savefile = f"{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.txt"
+            config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
             data, label = load_dataset(model_name, data_dir="../storage/data")
             model = get_model(
                 model_container, model_name, batch_size, model_dir="../storage/model"
