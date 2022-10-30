@@ -84,7 +84,7 @@ def main():
         "fail": np.where(success_iter == config.step + 1)[0].tolist(),  # 失敗
     }
     os.makedirs(os.path.dirname(savefile), exist_ok=True)
-    json.dump(index, open(savefile, "w"))
+    json.dump(index, open(savefile, "w"), indent=4)
 
 
 def pgd(model, criterion, x: Tensor, y: Tensor) -> Tensor:
