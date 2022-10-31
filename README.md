@@ -25,7 +25,7 @@ install modules
 
     Parsimonious Black-Box Adversarial Attacks via Efficient Combinatorial Optimization
 
-#### GenAttack (foolbox, advertorch)
+#### GenAttack (foolbox)
 
     GenAttack: practical black-box attacks with gradient-free optimization
 

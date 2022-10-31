@@ -39,15 +39,11 @@ class Attacker:
         robust_acc = self.robust_acc.sum() / data.shape[0] * 100
         ASR = 100 - robust_acc
 
-        msg = (
+        msg = ""
+        for k, v in config.items():
+            msg += f"{k} = {v}"
+        msg += (
             "\n"
-            + f"attacker = {config.attacker}\n"
-            + f"norm = {config.norm}\n"
-            + f"epsilon = {config.epsilon}\n"
-            + f"dataset = {config.dataset}\n"
-            + f"target = {config.target}\n"
-            + f"model = {self.model.name}\n"
-            + "\n"
             + f"num_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
