@@ -33,7 +33,7 @@ install modules
 
     Square Attack: A Query-Efficient Black-Box Adversarial Attack via Random Search
 
-#### Boundary Attack (foolbox, Art)
+#### Boundary Attack (Art)
 
     Decision-Based Adversarial Attacks: Reliable Attacks Against Black-Box Machine Learning Models
 
