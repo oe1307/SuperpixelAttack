@@ -1,10 +1,8 @@
 from Base import Attacker
 from Utils import config_parser
 
-from .boundary_attack_art import ArtBoundaryAttack
-from .boundary_attack_foolbox import FoolboxBoundaryAttack
-from .gen_attack_advertorch import AdvertorchGenAttack
-from .gen_attack_foolbox import FoolboxGenAttacker
+from .boundary_attack import BoundaryAttack
+from .gen_attack import GenAttack
 from .gradient_estimation import GradientEstimation
 from .hals import HALS
 from .square_attack import SquareAttack
@@ -14,14 +12,10 @@ config = config_parser()
 
 
 def get_attacker() -> Attacker:
-    if config.attacker == "ArtBoundaryAttack":
-        return ArtBoundaryAttack()
-    elif config.attacker == "FoolboxBoundaryAttack":
-        return FoolboxBoundaryAttack()
-    elif config.attacker == "AdvertorchGenAttack":
-        return AdvertorchGenAttack()
-    elif config.attacker == "FoolboxGenAttack":
-        return FoolboxGenAttacker()
+    if config.attacker == "BoundaryAttack":
+        return BoundaryAttack()
+    elif config.attacker == "GenAttack":
+        return GenAttack()
     elif config.attacker == "GradientEstimation":
         return GradientEstimation()
     elif config.attacker == "HALS":

@@ -10,7 +10,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class FoolboxGenAttacker(Attacker):
+class GenAttack(Attacker):
     def __init__(self):
         super().__init__()
         self.num_forward = config.steps * config.population

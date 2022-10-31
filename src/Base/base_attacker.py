@@ -26,6 +26,7 @@ class Attacker:
             x = data[self.start : self.end].to(config.device)
             y = label[self.start : self.end].to(config.device)
             x_adv = self._attack(x, y)
+
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
@@ -41,7 +42,7 @@ class Attacker:
 
         msg = ""
         for k, v in config.items():
-            msg += f"{k} = {v}"
+            msg += f"{k} = {v}\n"
         msg += (
             "\n"
             + f"num_img = {self.end}\n"

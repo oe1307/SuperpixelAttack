@@ -1,4 +1,4 @@
-attacker: FoolboxGenAttack
+attacker: GenAttack
 
 norm: Linf
 epsilon: 0.03137254901960784
