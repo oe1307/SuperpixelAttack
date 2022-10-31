@@ -11,7 +11,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class ArtBoundaryAttack(Attacker):
+class BoundaryAttack(Attacker):
     def __init__(self):
         super().__init__()
         self.num_forward = config.steps
@@ -47,5 +47,9 @@ class ArtBoundaryAttack(Attacker):
         )
         with yaspin(text="Attacking...", color="cyan"):
             x_adv = attack.generate(x.cpu().numpy(), target.cpu().numpy())
-        breakpoint()
+
+        x_adv = torch.from_numpy(x_adv).to(config.device)
+        upper = (x + config.epsilon).clamp(0, 1).clone()
+        lower = (x - config.epsilon).clamp(0, 1).clone()
+        x_adv = x_adv.clamp(lower, upper)
         return x_adv
