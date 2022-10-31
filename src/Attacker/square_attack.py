@@ -6,7 +6,7 @@ from torch import Tensor
 from yaspin import yaspin
 
 from Base import Attacker
-from Utils import config_parser, setup_logger
+from Utils import change_level, config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -18,11 +18,13 @@ class SquareAttack(Attacker):
         self.num_forward = config.steps
 
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
+        change_level("art", 40)
         model = PyTorchClassifier(
             self.model,
             ClassifierMixin,
             input_shape=x.shape[1:],
             nb_classes=config.num_classes,
+            clip_values=(0, 1),
         )
 
         attack = art.attacks.evasion.SquareAttack(
