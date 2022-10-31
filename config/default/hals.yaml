@@ -1,0 +1,13 @@
+attacker: HALS
+
+norm: Linf
+epsilon: 0.03137254901960784
+dataset: cifar10_easy
+model:
+    robustbench:
+        Carmon2019Unlabeled: 3000
+
+# hyperparameter
+criterion: cw
+initial_split: 4
+steps: 100

@@ -5,14 +5,13 @@ epsilon: 0.03137254901960784
 dataset: cifar10_easy
 model:
     robustbench:
-        Carmon2019Unlabeled: 100
+        Carmon2019Unlabeled: 3000
 
 # hyperparameter
-criterion: cw
 orthogonal_step_size: 0.01
 target_step_size: 0.01
 step_adaptation: 0.667
-steps: 10
-num_trial: 3
-sample_size: 3
-init_size: 5
+steps: 2
+num_trial: 2
+sample_size: 2
+init_size: 2
