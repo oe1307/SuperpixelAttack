@@ -16,6 +16,7 @@ class Attacker:
         self.timekeeper = time.time()
         self.robust_acc = 0
 
+    @torch.inference_mode()
     def attack(self, model, data: Tensor, label: Tensor):
         self.model = model
 
@@ -31,19 +32,22 @@ class Attacker:
             lower = (x - config.epsilon).clamp(0, 1).clone()
             assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
             logits = self.model(x_adv).clone()
-            self.robust_acc += logits.argmax(dim=1) == y
-            logger.info(f"Robust accuracy : {self.robust_acc.sum()} / {self.end}")
+            self.robust_acc += (logits.argmax(dim=1) == y).sum().item()
+            logger.info(f"Robust accuracy : {self.robust_acc} / {self.end}")
             torch.cuda.empty_cache()
 
         total_num_forward = data.shape[0] * self.num_forward
         total_time = time.time() - self.timekeeper
-        robust_acc = self.robust_acc.sum() / data.shape[0] * 100
+        robust_acc = self.robust_acc / data.shape[0] * 100
         ASR = 100 - robust_acc
 
+        os.makedirs("../result", exist_ok=True)
         msg = ""
         for k, v in config.items():
             msg += f"{k} = {v}\n"
-        msg += (
+        print(msg, file=open(f"../result/{config.datetime}.txt", "w"))
+
+        msg = (
             "\n"
             + f"num_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
@@ -52,7 +56,5 @@ class Attacker:
             + f"num_forward = {self.num_forward}\n"
             + f"total num_forward = {total_num_forward}\n"
         )
-
-        os.makedirs("../result", exist_ok=True)
-        print(msg, file=open(f"../result/{config.datetime}.txt", "w"))
+        print(msg, file=open(f"../result/{config.datetime}.txt", "a"))
         logger.info(msg)

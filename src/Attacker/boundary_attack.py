@@ -1,10 +1,10 @@
 import art
 import torch
-from art.estimators.classification import PyTorchClassifier
+from art.estimators.classification import ClassifierMixin, PyTorchClassifier
 from torch import Tensor
 from yaspin import yaspin
 
-from Base import Attacker, get_criterion
+from Base import Attacker
 from Utils import change_level, config_parser, setup_logger
 
 logger = setup_logger(__name__)
@@ -18,23 +18,17 @@ class BoundaryAttack(Attacker):
 
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
         change_level("art", 40)
-        criterion = get_criterion()
         model = PyTorchClassifier(
             self.model,
-            criterion,
+            ClassifierMixin,
             input_shape=x.shape[1:],
             nb_classes=config.num_classes,
         )
 
-        # set target class
-        logits = self.model(x).detach().clone()
-        idx_sorted = logits.sort(dim=1, descending=True)[1]
-        target = torch.where(idx_sorted[:, 0] == y, idx_sorted[:, 1], idx_sorted[:, 0])
-
         attack = art.attacks.evasion.BoundaryAttack(
             estimator=model,
             batch_size=x.shape[0],
-            targeted=True,
+            targeted=False,
             delta=config.orthogonal_step_size,
             epsilon=config.target_step_size,
             step_adapt=config.step_adaptation,
@@ -46,7 +40,7 @@ class BoundaryAttack(Attacker):
             verbose=False,
         )
         with yaspin(text="Attacking...", color="cyan"):
-            x_adv = attack.generate(x.cpu().numpy(), target.cpu().numpy())
+            x_adv = attack.generate(x.cpu().numpy())
 
         x_adv = torch.from_numpy(x_adv).to(config.device)
         upper = (x + config.epsilon).clamp(0, 1).clone()
