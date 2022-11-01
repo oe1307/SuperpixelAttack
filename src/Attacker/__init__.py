@@ -3,7 +3,7 @@ from Utils import config_parser
 
 from .boundary_attack import BoundaryAttack
 from .gen_attack import GenAttack
-from .gradient_estimation import GradientEstimation
+from .gradient_approximation import GradientApproximation
 from .hals import HALS
 from .square_attack import SquareAttack
 from .tabu_attack import TabuAttack
@@ -16,8 +16,8 @@ def get_attacker() -> Attacker:
         return BoundaryAttack()
     elif config.attacker == "GenAttack":
         return GenAttack()
-    elif config.attacker == "GradientEstimation":
-        return GradientEstimation()
+    elif config.attacker == "GradientApproximation":
+        return GradientApproximation()
     elif config.attacker == "HALS":
         return HALS()
     elif config.attacker == "SquareAttack":

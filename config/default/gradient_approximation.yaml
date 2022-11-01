@@ -1,0 +1,15 @@
+attacker: GradientApproximation
+
+norm: Linf
+epsilon: 0.03137254901960784
+dataset: cifar10_easy
+model:
+    robustbench:
+        Carmon2019Unlabeled: 3000
+
+# hyperparameter
+sampling: 10
+estimation_step_size: 0.01
+steps: 10
+step_size: 0.01568627450980392
+random_initialize: True

@@ -16,7 +16,7 @@ class Attacker:
         self.timekeeper = time.time()
         self.robust_acc = 0
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def attack(self, model, data: Tensor, label: Tensor):
         self.model = model
 
