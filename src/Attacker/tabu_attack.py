@@ -42,16 +42,18 @@ class TabuAttack(Attacker):
             lower = (x - config.epsilon).clamp(0, 1)
             _is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)
             x_best = torch.where(_is_upper, upper, lower).unsqueeze(0)
-            _loss = self.criterion(self.model(x_best), y)
-            best_loss = _loss.clone()
+            _loss = self.criterion(self.model(x_best), y).item()
+            best_loss = _loss
             tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
             self.forward = 1
+            iteration = 0
 
-            for iter in range(1, config.steps):
+            while True:
                 if self.forward >= config.forward:
                     break
                 _best_loss = -100
-                tabu = iter - tabu_list < config.tabu_size
+                iteration += 1
+                tabu = iteration - tabu_list < config.tabu_size
 
                 for search in range(config.neighbor_search):
                     if self.forward >= config.forward:
@@ -60,22 +62,23 @@ class TabuAttack(Attacker):
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
                     x_adv = torch.where(is_upper, upper, lower).unsqueeze(0)
-                    loss = self.criterion(self.model(x_adv), y)
+                    loss = self.criterion(self.model(x_adv), y).item()
+                    self.forward += 1
                     assert loss > -100
                     if loss > _best_loss:  # 近傍内の最良点
                         _flip = flip
                         _is_upper_best = is_upper.clone()
                         _x_best = x_adv.clone()
-                        _best_loss = loss.clone()
-                    logger.debug(f"( {iter=} ) {loss=:.4f} {best_loss=:.4f}")
+                        _best_loss = loss
+                    logger.debug(f"( {iteration=} ) {loss=:.4f} {best_loss=:.4f}")
                 # end neighbor search
 
                 _is_upper = _is_upper_best.clone()
                 _loss = _best_loss
-                tabu_list[_flip] = iter
+                tabu_list[_flip] = iteration
                 if _best_loss > best_loss:  # 過去の最良点
                     x_best = _x_best.clone()
-                    best_loss = _loss.clone()
+                    best_loss = _loss
 
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)

@@ -11,5 +11,5 @@ model:
 criterion: cw
 forward: 1000
 tabu_size: 20
-neighbor_search: 5
+neighbor_search: 3
 N_flip: 20
