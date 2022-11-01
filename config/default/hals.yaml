@@ -8,7 +8,7 @@ model:
         Carmon2019Unlabeled: 3000
 
 # hyperparameter
+forward: 10000
 criterion: cw
 initial_split: 4
-steps: 30000
 local_search_iteration: 1

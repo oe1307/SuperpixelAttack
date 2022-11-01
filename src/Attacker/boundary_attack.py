@@ -14,7 +14,7 @@ config = config_parser()
 class BoundaryAttack(Attacker):
     def __init__(self):
         super().__init__()
-        self.num_forward = config.steps
+        self.num_forward = 0
 
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
         change_level("art", 40)

@@ -20,7 +20,7 @@ class HALS(Attacker):
         ):
             logger.warning(f"{config.dataset}: split = {config.initial_split}")
         self.criterion = get_criterion()
-        self.num_forward = config.steps
+        self.num_forward = config.forward
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
@@ -43,7 +43,7 @@ class HALS(Attacker):
 
             while True:
                 is_upper, loss = self.local_search(is_upper, loss, y)
-                if self.forward >= self.num_forward:
+                if self.forward >= config.forward:
                     break
                 elif self.split > 1:
                     is_upper = is_upper.repeat(1, 2, 2)
@@ -60,16 +60,16 @@ class HALS(Attacker):
     ) -> Union[Tensor, Tensor]:
         for iter in range(config.local_search_iteration):
 
-            if self.forward >= self.num_forward:
+            if self.forward >= config.forward:
                 break
             is_upper, loss = self.insert(is_upper, loss, y)
 
-            if self.forward >= self.num_forward:
+            if self.forward >= config.forward:
                 break
             is_upper, loss = self.deletion(is_upper, loss, y)
 
         # argmax {S, S \ V}
-        if self.forward < self.num_forward:
+        if self.forward < config.forward:
             _is_upper = is_upper.repeat(1, self.split, self.split)
             x_adv_inverse = torch.where(_is_upper, self.lower, self.upper).unsqueeze(0)
             loss_inverse = self.criterion(self.model(x_adv_inverse), y)
@@ -87,7 +87,7 @@ class HALS(Attacker):
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for batch in range(num_batch):
-            if self.forward >= self.num_forward:
+            if self.forward >= config.forward:
                 break
             start = batch * self.model.batch_size
             end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
@@ -97,7 +97,7 @@ class HALS(Attacker):
                 assert _is_upper[i, c, h, w].item() is False
                 _is_upper[i, c, h, w] = True
                 self.forward += 1
-                if self.forward >= self.num_forward:
+                if self.forward >= config.forward:
                     break
             _is_upper = _is_upper.repeat(1, 1, self.split, self.split)
             x_adv = torch.where(_is_upper, self.upper, self.lower)
@@ -132,7 +132,7 @@ class HALS(Attacker):
         # search in elementary
         num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for batch in range(num_batch):
-            if self.forward >= self.num_forward:
+            if self.forward >= config.forward:
                 break
             start = batch * self.model.batch_size
             end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
@@ -142,7 +142,7 @@ class HALS(Attacker):
                 assert _is_upper[i, c, h, w].item() is True
                 _is_upper[i, c, h, w] = False
                 self.forward += 1
-                if self.forward >= self.num_forward:
+                if self.forward >= config.forward:
                     break
             _is_upper = _is_upper.repeat(1, 1, self.split, self.split)
             x_adv = torch.where(_is_upper, self.upper, self.lower)
