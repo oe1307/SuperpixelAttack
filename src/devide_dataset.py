@@ -76,6 +76,18 @@ def main():
     savefile = f"../data/{config.dataset}/{config.model}.json"
     success_iter = success_iter.cpu().numpy()
     index = {
+        "step": config.step,
+        "epsilon": config.epsilon,
+        "num_image": {
+            "clean": len(np.where(success_iter == 0)[0].tolist()),
+            "easy": len(np.where(success_iter == 1)[0].tolist()),
+            "hard": len(
+                np.where(np.logical_and(1 < success_iter, success_iter <= config.step))[
+                    0
+                ].tolist()
+            ),
+            "fail": len(np.where(success_iter == config.step + 1)[0].tolist()),
+        },
         "clean": np.where(success_iter == 0)[0].tolist(),  # 元々誤分類
         "easy": np.where(success_iter == 1)[0].tolist(),  # 1回で成功
         "hard": np.where(np.logical_and(1 < success_iter, success_iter <= config.step))[
