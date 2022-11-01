@@ -30,7 +30,8 @@ class Attacker:
 
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
-            assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
+            assert torch.all(x_adv <= upper + 1e-10)
+            assert torch.all(x_adv >= lower - 1e-10)
             logits = self.model(x_adv).clone()
             self.robust_acc += (logits.argmax(dim=1) == y).sum().item()
             logger.info(f"Robust accuracy : {self.robust_acc} / {self.end}")

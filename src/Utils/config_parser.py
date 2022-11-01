@@ -26,7 +26,7 @@ class ConfigParser:
 
     def read(self, path=None, args=None):
         if path is not None:
-            logger.debug(f"\n [ READ ] {path}")
+            logger.info(f"\n [ READ ] {path}")
             self.config.update(yaml.safe_load(open(path, mode="r")))
         if args is not None:
             args = vars(args)
@@ -35,7 +35,7 @@ class ConfigParser:
                     args[k] = self.config[k]
             self.config.update(args)
         msg = pprint.pformat(self.config, **self.log_format)
-        logger.debug(f"{msg}\n")
+        logger.info(f"{msg}\n")
         return self.config
 
     def __call__(self):

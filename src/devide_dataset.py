@@ -104,7 +104,7 @@ def pgd(model, criterion, x: Tensor, y: Tensor) -> Tensor:
             (x_adv + 2 * config.epsilon * torch.sign(grad)).clamp(lower, upper).clone()
         )
         del grad
-        assert torch.all(x_adv <= upper + 1e-6) and torch.all(x_adv >= lower - 1e-6)
+        assert torch.all(x_adv <= upper + 1e-10) and torch.all(x_adv >= lower - 1e-10)
         logits = model(x_adv).clone()
         robust_acc = torch.logical_and(robust_acc, (logits.argmax(dim=1) == y)).clone()
         success_iter += robust_acc
