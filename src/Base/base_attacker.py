@@ -18,6 +18,7 @@ class Attacker:
 
     @torch.no_grad()
     def attack(self, model, data: Tensor, label: Tensor):
+        assert not model.training
         self.model = model
 
         num_batch = math.ceil(data.shape[0] / model.batch_size)
