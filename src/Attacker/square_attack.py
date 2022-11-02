@@ -19,6 +19,7 @@ class SquareAttack(Attacker):
 
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
         change_level("art", 40)
+        torch.cuda.current_device = lambda: config.device
         model = PyTorchClassifier(
             self.model,
             ClassifierMixin,
@@ -26,6 +27,7 @@ class SquareAttack(Attacker):
             nb_classes=config.num_classes,
             clip_values=(0, 1),
         )
+        model._device = torch.device(config.device)
 
         attack = art.attacks.evasion.SquareAttack(
             estimator=model,

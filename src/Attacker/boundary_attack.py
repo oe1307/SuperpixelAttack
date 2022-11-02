@@ -18,12 +18,14 @@ class BoundaryAttack(Attacker):
 
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
         change_level("art", 40)
+        torch.cuda.current_device = lambda: config.device
         model = PyTorchClassifier(
             self.model,
             ClassifierMixin,
             input_shape=x.shape[1:],
             nb_classes=config.num_classes,
         )
+        model._device = torch.device(config.device)
 
         attack = art.attacks.evasion.BoundaryAttack(
             estimator=model,
