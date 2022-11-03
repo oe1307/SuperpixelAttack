@@ -61,8 +61,8 @@ class TabuAttack(Attacker):
                     flip = np.random.choice(np.where(~tabu)[0], config.N_flip)
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
-                    x_adv = torch.where(is_upper, upper, lower).unsqueeze(0)
-                    loss = self.criterion(self.model(x_adv), y).item()
+                    x_adv = torch.where(is_upper, upper, lower)
+                    loss = self.criterion(self.model(x_adv.unsqueeze(0)), y).item()
                     self.forward += 1
                     assert loss > -100
                     if loss > _best_loss:  # 近傍内の最良点
