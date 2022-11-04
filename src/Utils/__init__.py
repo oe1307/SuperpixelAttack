@@ -1,5 +1,6 @@
 from .config_parser import config_parser
 from .confirmation import confirmation, ssl_certificate
+from .counter import counter, timer
 from .logging import change_level, setup_logger
 from .processbar import pbar
 from .read_gurobi_log import read_log
@@ -13,6 +14,8 @@ __all__ = [
     "config_parser",
     "confirmation",
     "ssl_certificate",
+    "counter",
+    "timer",
     "change_level",
     "setup_logger",
     "pbar",

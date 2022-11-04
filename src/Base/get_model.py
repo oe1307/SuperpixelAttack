@@ -2,7 +2,7 @@ from robustbench import load_model
 from torch.nn import Module
 from torchvision import models
 
-from Utils import config_parser
+from Utils import config_parser, counter
 
 config = config_parser()
 
@@ -19,6 +19,7 @@ def get_model(
     model.eval()
     model.name = model_name
     model.batch_size = batch_size
+    model.forward = counter(model.forward)
     return model
 
 
