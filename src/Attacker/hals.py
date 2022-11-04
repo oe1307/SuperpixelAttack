@@ -37,36 +37,51 @@ class HALS(Attacker):
                 dtype=torch.bool,
                 device=config.device,
             )
-            x_adv = self.lower.unsqueeze(0).clone()
-            loss = self.criterion(self.model(x_adv), y).clone()
+            is_upper_best = is_upper.clone()
+            x_adv = self.lower.unsqueeze(0)
+            loss = self.criterion(self.model(x_adv), y)
+            best_loss = loss.clone()
             self.forward = 1
 
             while True:
-                is_upper, loss = self.local_search(is_upper, loss, y)
+                is_upper, loss, is_upper_best, best_loss = self.local_search(
+                    is_upper, loss, y, is_upper_best, best_loss
+                )
                 if self.forward >= config.forward:
                     break
                 elif self.split > 1:
                     is_upper = is_upper.repeat(1, 2, 2)
                     self.split //= 2
 
-            _is_upper = is_upper.repeat(1, self.split, self.split)
-            x_adv = torch.where(_is_upper, self.upper, self.lower)
+            _is_upper_best = is_upper_best.repeat(1, self.split, self.split)
+            x_adv = torch.where(_is_upper_best, self.upper, self.lower)
             x_adv_all.append(x_adv)
         x_adv_all = torch.stack(x_adv_all)
         return x_adv_all
 
     def local_search(
-        self, is_upper: Tensor, loss: Tensor, y: Tensor
+        self,
+        is_upper: Tensor,
+        loss: Tensor,
+        y: Tensor,
+        is_upper_best: Tensor,
+        best_loss: Tensor,
     ) -> Union[Tensor, Tensor]:
         for iter in range(config.local_search_iteration):
 
             if self.forward >= config.forward:
                 break
             is_upper, loss = self.insert(is_upper, loss, y)
+            if loss > best_loss:
+                is_upper_best = is_upper.clone()
+                best_loss = loss.clone()
 
             if self.forward >= config.forward:
                 break
             is_upper, loss = self.deletion(is_upper, loss, y)
+            if loss > best_loss:
+                is_upper_best = is_upper.clone()
+                best_loss = loss.clone()
 
         # argmax {S, S \ V}
         if self.forward < config.forward:
@@ -76,7 +91,7 @@ class HALS(Attacker):
             if loss_inverse > loss:
                 is_upper = ~is_upper
                 loss = loss_inverse
-        return is_upper, loss
+        return is_upper, loss, is_upper_best, best_loss
 
     def insert(
         self, is_upper: Tensor, base_loss: Tensor, y: Tensor
