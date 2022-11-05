@@ -50,6 +50,7 @@ class HALS(Attacker):
                     break
                 elif self.split > 1:
                     is_upper = is_upper.repeat(1, 2, 2)
+                    is_upper_best = is_upper_best.repeat(1, 2, 2)
                     self.split //= 2
 
             _is_upper_best = is_upper_best.repeat(1, self.split, self.split)
