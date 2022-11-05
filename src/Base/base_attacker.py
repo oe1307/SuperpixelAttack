@@ -5,7 +5,7 @@ import time
 import torch
 from torch import Tensor
 
-from Utils import config_parser, setup_logger
+from Utils import config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -23,6 +23,7 @@ class Attacker:
 
         num_batch = math.ceil(data.shape[0] / model.batch_size)
         for i in range(num_batch):
+            pbar(i + 1, num_batch)
             self.start = i * model.batch_size
             self.end = min((i + 1) * model.batch_size, config.n_examples)
             x = data[self.start : self.end].to(config.device)

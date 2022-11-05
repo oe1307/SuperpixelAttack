@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 
 from Base import Attacker, get_criterion
-from Utils import config_parser, pbar, setup_logger
+from Utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -25,7 +25,6 @@ class HALS(Attacker):
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
         for idx, (x, y) in enumerate(zip(x_all, y_all)):
-            pbar(idx + 1, x_all.shape[0])
 
             # initialize
             self.upper = (x + config.epsilon).clamp(0, 1).clone()
