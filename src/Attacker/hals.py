@@ -90,6 +90,9 @@ class HALS(Attacker):
             if loss_inverse > loss:
                 is_upper = ~is_upper
                 loss = loss_inverse
+            if loss > best_loss:
+                is_upper_best = is_upper.clone()
+                best_loss = loss.clone()
         return is_upper, loss, is_upper_best, best_loss
 
     def insert(
