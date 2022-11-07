@@ -1,0 +1,18 @@
+attacker: BoundaryAttack
+
+norm: Linf
+epsilon: 0.03137254901960784
+dataset: cifar10_easy
+model:
+    robustbench:
+        Carmon2019Unlabeled: 3000
+
+# hyperparameter
+orthogonal_step_size: 0.01
+target_step_size: 0.01
+step_adaptation: 0.667
+steps: 100
+num_trial: 10
+sample_size: 10
+init_size: 1
+
