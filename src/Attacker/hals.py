@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 
 from Base import Attacker, get_criterion
-from Utils import config_parser, pbar, setup_logger
+from Utils import config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -25,7 +25,6 @@ class HALS(Attacker):
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
         for idx, (x, y) in enumerate(zip(x_all, y_all)):
-            pbar(idx + 1, x_all.shape[0])
 
             # initialize
             self.upper = (x + config.epsilon).clamp(0, 1).clone()
@@ -51,6 +50,7 @@ class HALS(Attacker):
                     break
                 elif self.split > 1:
                     is_upper = is_upper.repeat(1, 2, 2)
+                    is_upper_best = is_upper_best.repeat(1, 2, 2)
                     self.split //= 2
 
             _is_upper_best = is_upper_best.repeat(1, self.split, self.split)
@@ -91,6 +91,9 @@ class HALS(Attacker):
             if loss_inverse > loss:
                 is_upper = ~is_upper
                 loss = loss_inverse
+            if loss > best_loss:
+                is_upper_best = is_upper.clone()
+                best_loss = loss.clone()
         return is_upper, loss, is_upper_best, best_loss
 
     def insert(
