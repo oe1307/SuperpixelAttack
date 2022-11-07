@@ -2,7 +2,7 @@ attacker: GenAttack
 
 norm: Linf
 epsilon: 0.03137254901960784
-dataset: cifar10_hard
+dataset: cifar10_easy
 model:
     robustbench:
         Carmon2019Unlabeled: 3000
