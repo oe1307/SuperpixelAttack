@@ -40,8 +40,8 @@ class TabuAttack(Attacker):
             upper = (x + config.epsilon).clamp(0, 1)
             lower = (x - config.epsilon).clamp(0, 1)
             _is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)
-            x_best = torch.where(_is_upper, upper, lower).unsqueeze(0)
-            _loss = self.criterion(self.model(x_best), y).item()
+            x_best = torch.where(_is_upper, upper, lower)
+            _loss = self.criterion(self.model(x_best.unsqueeze(0)), y).item()
             best_loss = _loss
             tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
             self.forward = 1
@@ -49,6 +49,8 @@ class TabuAttack(Attacker):
 
             while True:
                 if self.forward >= config.forward:
+                    break
+                elif config.exp and best_loss > 0:
                     break
                 _best_loss = -100
                 iteration += 1
@@ -78,8 +80,6 @@ class TabuAttack(Attacker):
                 if _best_loss > best_loss:  # 過去の最良点
                     x_best = _x_best.clone()
                     best_loss = _loss
-                if config.exp and best_loss > 0:
-                    break
 
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)
