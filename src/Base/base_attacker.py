@@ -1,7 +1,10 @@
 import math
 import os
+import socket
 import time
+from datetime import datetime
 
+import git
 import torch
 from torch import Tensor
 
@@ -52,6 +55,10 @@ class Attacker:
 
         msg = (
             "\n"
+            + f"datetime = {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}"
+            + f"hostname = {socket.gethostname()}"
+            + f"git_hash = {git.cmd.Git('./').rev_parse('HEAD')[:7]}"
+            + "\n"
             + f"num_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
