@@ -2,7 +2,7 @@ attacker: TabuAttack
 
 norm: Linf
 epsilon: 0.03137254901960784
-dataset: cifar10_hard
+dataset: cifar10_easy
 model:
     robustbench:
         Carmon2019Unlabeled: 1
@@ -12,4 +12,4 @@ criterion: cw
 forward: 100
 tabu_size: 20
 neighbor_search: 3
-N_flip: 20
+N_flip: 100

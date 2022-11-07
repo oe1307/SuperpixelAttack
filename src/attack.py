@@ -33,6 +33,10 @@ def argparser():
         default=10,
         help="10:DEBUG,20:INFO,30:WARNING,40:ERROR,50:CRITICAL",
     )
+    parser.add_argument(
+        "--exp",
+        action="store_true",
+    )
     args = parser.parse_args()
     return args
 

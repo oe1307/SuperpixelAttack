@@ -24,9 +24,9 @@ class Attacker:
         assert not model.training
         self.model = model
 
-        num_batch = math.ceil(data.shape[0] / model.batch_size)
-        for i in range(num_batch):
-            pbar(i + 1, num_batch)
+        n_batch = math.ceil(data.shape[0] / model.batch_size)
+        for i in range(n_batch):
+            pbar(i + 1, n_batch)
             self.start = i * model.batch_size
             self.end = min((i + 1) * model.batch_size, config.n_examples)
             x = data[self.start : self.end].to(config.device)
@@ -42,7 +42,7 @@ class Attacker:
             logger.info(f"Robust accuracy : {self.robust_acc} / {self.end}")
             torch.cuda.empty_cache()
 
-        total_num_forward = data.shape[0] * self.num_forward
+        total_n_forward = data.shape[0] * self.n_forward
         total_time = time.time() - self.timekeeper
         robust_acc = self.robust_acc / data.shape[0] * 100
         ASR = 100 - robust_acc
@@ -59,12 +59,12 @@ class Attacker:
             + f"hostname = {socket.gethostname()}\n"
             + f"git_hash = {git.cmd.Git('./').rev_parse('HEAD')[:7]}\n"
             + "\n"
-            + f"num_img = {self.end}\n"
+            + f"n_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
             + f"ASR (%) = {ASR:.2f}\n"
-            + f"num_forward = {self.num_forward}\n"
-            + f"total num_forward = {total_num_forward}"
+            + f"n_forward = {self.n_forward}\n"
+            + f"total n_forward = {total_n_forward}"
         )
         print(msg, file=open(f"../result/{config.datetime}.txt", "a"))
         logger.info(msg)

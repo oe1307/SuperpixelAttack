@@ -13,7 +13,7 @@ class TabuAttack(Attacker):
     def __init__(self):
         super().__init__()
         self.criterion = get_criterion()
-        self.num_forward = config.forward
+        self.n_forward = config.forward
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         """
@@ -78,6 +78,8 @@ class TabuAttack(Attacker):
                 if _best_loss > best_loss:  # 過去の最良点
                     x_best = _x_best.clone()
                     best_loss = _loss
+                if config.exp and best_loss > 0:
+                    break
 
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)

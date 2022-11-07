@@ -20,7 +20,7 @@ class HALS(Attacker):
         ):
             logger.warning(f"{config.dataset}: split = {config.initial_split}")
         self.criterion = get_criterion()
-        self.num_forward = config.forward
+        self.n_forward = config.forward
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
@@ -103,8 +103,8 @@ class HALS(Attacker):
         all_elements = (~is_upper).nonzero()
 
         # search in elementary
-        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
-        for batch in range(num_batch):
+        n_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+        for batch in range(n_batch):
             if self.forward >= config.forward:
                 break
             start = batch * self.model.batch_size
@@ -148,8 +148,8 @@ class HALS(Attacker):
         all_elements = is_upper.nonzero()
 
         # search in elementary
-        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
-        for batch in range(num_batch):
+        n_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+        for batch in range(n_batch):
             if self.forward >= config.forward:
                 break
             start = batch * self.model.batch_size
