@@ -8,10 +8,10 @@ model:
         Carmon2019Unlabeled: 3000
 
 # hyperparameter
-orthogonal_step_size: 0.01 # 垂直方向へのstep size
-target_step_size: 0.01 # target画像へのstep size
-step_adaptation: 0.667 # step sizeの調整 hyperparameter
-steps: 10 # 最大ステップ回数
-num_trial: 5 # 1回のステップで S1 と S2 を試行する最大回数
-sample_size: 2 # S1 のサンプル数
-init_size: 1 # 初期点探索
+orthogonal_step_size: 0.01
+target_step_size: 0.01
+step_adaptation: 0.667
+steps: 10
+num_trial: 5
+sample_size: 2
+init_size: 1
