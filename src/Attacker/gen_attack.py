@@ -13,7 +13,7 @@ config = config_parser()
 class GenAttack(Attacker):
     def __init__(self):
         super().__init__()
-        self.num_forward = config.steps * config.population
+        self.n_forward = config.steps * config.population
 
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
         model = fb.PyTorchModel(self.model, bounds=(0, 1), device=config.device)

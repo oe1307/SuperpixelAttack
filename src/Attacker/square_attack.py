@@ -15,7 +15,7 @@ config = config_parser()
 class SquareAttack(Attacker):
     def __init__(self):
         super().__init__()
-        self.num_forward = config.restart * config.steps
+        self.n_forward = config.restart * config.steps
 
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:
         change_level("art", 40)
@@ -24,7 +24,7 @@ class SquareAttack(Attacker):
             self.model,
             ClassifierMixin,
             input_shape=x.shape[1:],
-            nb_classes=config.num_classes,
+            nb_classes=config.n_classes,
             clip_values=(0, 1),
         )
         model._device = torch.device(config.device)

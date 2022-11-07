@@ -14,7 +14,7 @@ config = config_parser()
 class BoundaryAttack(Attacker):
     def __init__(self):
         super().__init__()
-        self.num_forward = (
+        self.n_forward = (
             config.steps * config.num_trial * config.sample_size + config.init_size
         )
 

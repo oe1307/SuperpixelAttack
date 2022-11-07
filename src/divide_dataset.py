@@ -64,8 +64,8 @@ def main():
     )
     success_iter = torch.zeros(data.shape[0], device=config.device)
 
-    num_batch = math.ceil(data.shape[0] / model.batch_size)
-    for i in range(num_batch):
+    n_batch = math.ceil(data.shape[0] / model.batch_size)
+    for i in range(n_batch):
         start = i * model.batch_size
         end = min((i + 1) * model.batch_size, data.shape[0])
         x = data[start:end].to(config.device)
@@ -78,7 +78,7 @@ def main():
     index = {
         "step": config.step,
         "epsilon": config.epsilon,
-        "num_image": {
+        "n_image": {
             "clean": len(np.where(success_iter == 0)[0].tolist()),
             "easy": len(np.where(success_iter == 1)[0].tolist()),
             "hard": len(

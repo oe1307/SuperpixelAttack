@@ -13,7 +13,7 @@ config = config_parser()
 class GradientApproximation(Attacker):
     def __init__(self):
         super().__init__()
-        self.num_forward = config.sampling * config.steps
+        self.n_forward = config.sampling * config.steps
 
     @torch.enable_grad()
     def _attack(self, x: Tensor, y: Tensor) -> Tensor:

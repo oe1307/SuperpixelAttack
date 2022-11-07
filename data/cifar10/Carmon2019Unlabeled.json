@@ -1,7 +1,7 @@
 {
     "step": 100,
     "epsilon": 0.03137254901960784,
-    "num_image": {
+    "n_image": {
         "clean": 1031,
         "easy": 2235,
         "hard": 479,
