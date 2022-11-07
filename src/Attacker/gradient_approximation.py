@@ -31,4 +31,5 @@ class GradientApproximation(Attacker):
         )
         with yaspin(text="Attacking...", color="cyan"):
             x_adv = attack.perturb(x, y)
+        torch.cuda.empty_cache()
         return x_adv
