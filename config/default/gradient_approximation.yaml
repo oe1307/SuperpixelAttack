@@ -8,8 +8,8 @@ model:
         Carmon2019Unlabeled: 100
 
 # hyperparameter
-sampling: 10
+sampling: 100
 estimation_step_size: 0.01
-steps: 10
+steps: 1
 step_size: 0.01568627450980392
 random_initialize: True
