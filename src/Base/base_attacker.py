@@ -55,16 +55,16 @@ class Attacker:
 
         msg = (
             "\n"
-            + f"datetime = {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}"
-            + f"hostname = {socket.gethostname()}"
-            + f"git_hash = {git.cmd.Git('./').rev_parse('HEAD')[:7]}"
+            + f"datetime = {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}\n"
+            + f"hostname = {socket.gethostname()}\n"
+            + f"git_hash = {git.cmd.Git('./').rev_parse('HEAD')[:7]}\n"
             + "\n"
             + f"num_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
             + f"ASR (%) = {ASR:.2f}\n"
             + f"num_forward = {self.num_forward}\n"
-            + f"total num_forward = {total_num_forward}\n"
+            + f"total num_forward = {total_num_forward}"
         )
         print(msg, file=open(f"../result/{config.datetime}.txt", "a"))
         logger.info(msg)
