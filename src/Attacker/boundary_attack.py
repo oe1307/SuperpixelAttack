@@ -25,7 +25,7 @@ class BoundaryAttack(Attacker):
             self.model,
             ClassifierMixin,
             input_shape=x.shape[1:],
-            nb_classes=config.num_classes,
+            nb_classes=config.n_classes,
         )
         model._device = torch.device(config.device)
 

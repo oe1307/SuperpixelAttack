@@ -1,10 +1,7 @@
 import math
 import os
-import socket
 import time
-from datetime import datetime
 
-import git
 import torch
 from torch import Tensor
 
@@ -47,18 +44,24 @@ class Attacker:
         robust_acc = self.robust_acc / data.shape[0] * 100
         ASR = 100 - robust_acc
 
-        os.makedirs("../result", exist_ok=True)
+        os.makedirs(
+            f"../result/{config.attacker}/{config.dataset}_{config.target}",
+            exist_ok=True,
+        )
         msg = ""
         for k, v in config.items():
             msg += f"{k} = {v}\n"
-        print(msg, file=open(f"../result/{config.datetime}.txt", "w"))
+        print(
+            msg,
+            file=open(
+                f"../result/{config.attacker}/{config.dataset}_{config.target}"
+                + f"/{config.datetime}.txt",
+                "w",
+            ),
+        )
 
         msg = (
-            "\n"
-            + f"datetime = {datetime.now().strftime('%Y/%m/%d %H:%M:%S')}\n"
-            + f"hostname = {socket.gethostname()}\n"
-            + f"git_hash = {git.cmd.Git('./').rev_parse('HEAD')[:7]}\n"
-            + "\n"
+            +"\n"
             + f"n_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
@@ -66,5 +69,12 @@ class Attacker:
             + f"n_forward = {self.n_forward}\n"
             + f"total n_forward = {total_n_forward}"
         )
-        print(msg, file=open(f"../result/{config.datetime}.txt", "a"))
+        print(
+            msg,
+            file=open(
+                f"../result/{config.attacker}/{config.dataset}_{config.target}"
+                + f"/{config.datetime}.txt",
+                "a",
+            ),
+        )
         logger.info(msg)

@@ -1,6 +1,8 @@
+import socket
 from argparse import ArgumentParser
 from datetime import datetime
 
+import git
 import torch
 
 from Attacker import get_attacker
@@ -42,6 +44,9 @@ def argparser():
 
 
 def main():
+    config.hostname = socket.gethostname()
+    config.git_hash = git.cmd.Git("./").rev_parse("HEAD")[:7]
+
     torch.set_num_threads(config.thread)
     for model_container, models in config.model.items():
         for model_name, batch_size in models.items():
