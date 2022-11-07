@@ -5,7 +5,7 @@ epsilon: 0.03137254901960784
 dataset: cifar10_easy
 model:
     robustbench:
-        Carmon2019Unlabeled: 3000
+        Carmon2019Unlabeled: 100
 
 # hyperparameter
 sampling: 100
