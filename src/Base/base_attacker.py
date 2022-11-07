@@ -61,7 +61,7 @@ class Attacker:
         )
 
         msg = (
-            +"\n"
+            "\n"
             + f"n_img = {self.end}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"robust acc (%) = {robust_acc:.2f}\n"
