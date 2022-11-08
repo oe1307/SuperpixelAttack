@@ -40,8 +40,8 @@ class HALS(Attacker):
             )
             is_upper_best = is_upper.clone()
             x_adv = self.lower.unsqueeze(0)
-            loss = self.criterion(self.model(x_adv), y)
-            best_loss = loss.clone()
+            loss = self.criterion(self.model(x_adv), y).item()
+            best_loss = loss
             self.forward = 1
 
             while True:
@@ -50,7 +50,7 @@ class HALS(Attacker):
                 )
                 if self.forward >= config.forward:
                     break
-                elif config.exp and best_loss > 0:
+                elif config.exp and best_loss > 1e-6:
                     break
                 elif self.split > 1:
                     is_upper = is_upper.repeat(1, 2, 2)
@@ -75,33 +75,33 @@ class HALS(Attacker):
 
             if self.forward >= config.forward:
                 break
-            elif config.exp and best_loss > 0:
+            elif config.exp and best_loss > 1e-6:
                 break
             is_upper, loss = self.insert(is_upper, loss, y)
             if loss > best_loss:
                 is_upper_best = is_upper.clone()
-                best_loss = loss.clone()
+                best_loss = loss
 
             if self.forward >= config.forward:
                 break
-            elif config.exp and best_loss > 0:
+            elif config.exp and best_loss > 1e-6:
                 break
             is_upper, loss = self.deletion(is_upper, loss, y)
             if loss > best_loss:
                 is_upper_best = is_upper.clone()
-                best_loss = loss.clone()
+                best_loss = loss
 
         # argmax {S, S \ V}
         if self.forward < config.forward:
             _is_upper = is_upper.repeat(1, self.split, self.split)
             x_adv_inverse = torch.where(_is_upper, self.lower, self.upper).unsqueeze(0)
-            loss_inverse = self.criterion(self.model(x_adv_inverse), y)
+            loss_inverse = self.criterion(self.model(x_adv_inverse), y).item()
             if loss_inverse > loss:
                 is_upper = ~is_upper
                 loss = loss_inverse
             if loss > best_loss:
                 is_upper_best = is_upper.clone()
-                best_loss = loss.clone()
+                best_loss = loss
         return is_upper, loss, is_upper_best, best_loss
 
     def insert(
@@ -127,7 +127,7 @@ class HALS(Attacker):
                     break
             _is_upper = _is_upper.repeat(1, 1, self.split, self.split)
             x_adv = torch.where(_is_upper, self.upper, self.lower)
-            loss = self.criterion(self.model(x_adv), y).clone()
+            loss = self.criterion(self.model(x_adv), y)
             for i, (c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss - loss[i]).item()
                 heapq.heappush(max_heap, (delta, (c, h, w)))
@@ -146,7 +146,7 @@ class HALS(Attacker):
                     heapq.heappush(max_heap, (delta_hat, element_hat))
         _is_upper = is_upper.repeat([1, self.split, self.split])
         x_adv = torch.where(_is_upper, self.upper, self.lower).unsqueeze(0)
-        loss = self.criterion(self.model(x_adv), y).clone()
+        loss = self.criterion(self.model(x_adv), y).item()
         return is_upper, loss
 
     def deletion(
@@ -172,7 +172,7 @@ class HALS(Attacker):
                     break
             _is_upper = _is_upper.repeat(1, 1, self.split, self.split)
             x_adv = torch.where(_is_upper, self.upper, self.lower)
-            loss = self.criterion(self.model(x_adv), y).clone()
+            loss = self.criterion(self.model(x_adv), y)
             for i, (c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss - loss[i]).item()
                 heapq.heappush(max_heap, (delta, (c, h, w)))
@@ -191,5 +191,5 @@ class HALS(Attacker):
                     heapq.heappush(max_heap, (delta_hat, element_hat))
         _is_upper = is_upper.repeat([1, self.split, self.split])
         x_adv = torch.where(_is_upper, self.upper, self.lower).unsqueeze(0)
-        loss = self.criterion(self.model(x_adv), y).clone()
+        loss = self.criterion(self.model(x_adv), y).item()
         return is_upper, loss

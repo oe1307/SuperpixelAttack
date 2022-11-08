@@ -52,7 +52,7 @@ class TabuAttack(Attacker):
             while True:
                 if self.forward >= config.forward:
                     break
-                elif config.exp and best_loss > 0:
+                elif config.exp and best_loss > 1e-6:
                     break
                 _best_loss = -100
                 iteration += 1
