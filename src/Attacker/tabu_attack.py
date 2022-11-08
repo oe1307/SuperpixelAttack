@@ -35,7 +35,6 @@ class TabuAttack(Attacker):
         flip: 探索するindex
         _flip: tabuに入れるindex
         """
-        assert x_all[0].numel() > config.tabu_size * config.N_flip
         x_adv_all = []
         for x, y in zip(x_all, y_all):
 
@@ -58,11 +57,17 @@ class TabuAttack(Attacker):
                 _best_loss = -100
                 iteration += 1
                 tabu = iteration - tabu_list < config.tabu_size
+                if (~tabu).sum() < config.N_flip:
+                    logger.warning("clear tabu list")
+                    tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
+                    tabu = torch.zeros_like(tabu, dtype=torch.bool)
 
                 for search in range(config.neighbor_search):
                     if self.forward >= config.forward:
                         break
-                    flip = np.random.choice(np.where(~tabu)[0], config.N_flip)
+                    flip = np.random.choice(
+                        np.where(~tabu)[0], config.N_flip, replace=False
+                    )
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
                     x_adv = torch.where(is_upper, upper, lower)
