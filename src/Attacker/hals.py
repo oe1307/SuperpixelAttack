@@ -131,8 +131,6 @@ class HALS(Attacker):
             for i, (c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss - loss[i]).item()
                 heapq.heappush(max_heap, (delta, (c, h, w)))
-            if loss > 0:
-                break
 
         # update
         for delta, (c, h, w) in max_heap:
@@ -178,8 +176,6 @@ class HALS(Attacker):
             for i, (c, h, w) in enumerate(elements.tolist()):
                 delta = (base_loss - loss[i]).item()
                 heapq.heappush(max_heap, (delta, (c, h, w)))
-            if loss > 0:
-                break
 
         # update
         for delta, (c, h, w) in max_heap:
