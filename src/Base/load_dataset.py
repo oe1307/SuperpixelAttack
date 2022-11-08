@@ -2,7 +2,13 @@ from robustbench.data import load_cifar10, load_cifar100
 
 from Utils import config_parser, setup_logger
 
-from ._load_dataset import load_cifar10_easy, load_cifar10_hard, load_imagenet
+from ._load_dataset import (
+    load_cifar10_easy,
+    load_cifar10_hard,
+    load_imagenet,
+    load_imagenet_easy,
+    load_imagenet_hard,
+)
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -36,6 +42,16 @@ def load_dataset(model_name, data_dir):
         if config.epsilon != 8 / 255:
             logger.warning(f"dataset={config.dataset} epsilon={config.epsilon}")
         img, label = load_cifar10_hard(model_name, data_dir)
+    elif config.dataset == "imagenet_easy":
+        config.n_classes = 1000
+        if config.epsilon != 4 / 255:
+            logger.warning(f"dataset={config.dataset} epsilon={config.epsilon}")
+        img, label = load_imagenet_easy(model_name, data_dir)
+    elif config.dataset == "imagenet_hard":
+        config.n_classes = 1000
+        if config.epsilon != 4 / 255:
+            logger.warning(f"dataset={config.dataset} epsilon={config.epsilon}")
+        img, label = load_imagenet_hard(model_name, data_dir)
     else:
         raise ValueError("Dataset not supported")
 

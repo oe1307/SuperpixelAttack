@@ -56,3 +56,29 @@ def load_cifar10_hard(model_name: str, data_dir: str):
     config.target = "hard"
     config.n_examples = len(index)
     return img, label
+
+def load_imagenet_easy(model_name: str, data_dir: str):
+    all_img, all_label = load_imagenet(5000, data_dir)
+    index = os.path.join("../data/imagenet", f"{model_name}.json")
+    index = json.load(open(index))["easy"]
+    img = [all_img[i] for i in index]
+    label = [all_label[i] for i in index]
+    img = torch.stack(img)
+    label = torch.tensor(label)
+    config.dataset = "imagenet"
+    config.target = "easy"
+    config.n_examples = len(index)
+    return img, label
+
+def load_imagenet_hard(model_name: str, data_dir: str):
+    all_img, all_label = load_imagenet(5000, data_dir)
+    index = os.path.join("../data/imagenet", f"{model_name}.json")
+    index = json.load(open(index))["hard"]
+    img = [all_img[i] for i in index]
+    label = [all_label[i] for i in index]
+    img = torch.stack(img)
+    label = torch.tensor(label)
+    config.dataset = "imagenet"
+    config.target = "hard"
+    config.n_examples = len(index)
+    return img, label
