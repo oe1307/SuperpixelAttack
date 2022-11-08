@@ -35,6 +35,7 @@ class TabuAttack(Attacker):
         flip: 探索するindex
         _flip: tabuに入れるindex
         """
+        assert x_all[0].numel() > config.tabu_size * config.N_flip
         x_adv_all = []
         for x, y in zip(x_all, y_all):
 
