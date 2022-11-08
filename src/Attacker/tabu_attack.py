@@ -36,7 +36,7 @@ class TabuAttack(Attacker):
         _flip: tabuに入れるindex
         """
         x_adv_all = []
-        for idx, (x, y) in enumerate(zip(x_all, y_all)):
+        for x, y in zip(x_all, y_all):
 
             # initialize
             upper = (x + config.epsilon).clamp(0, 1)

@@ -26,7 +26,7 @@ class HALS(Attacker):
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
-        for idx, (x, y) in enumerate(zip(x_all, y_all)):
+        for x, y in zip(x_all, y_all):
 
             # initialize
             self.upper = (x + config.epsilon).clamp(0, 1).clone()
