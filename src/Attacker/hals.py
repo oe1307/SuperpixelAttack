@@ -19,6 +19,8 @@ class HALS(Attacker):
             config.dataset == "imagenet" and config.initial_split != 32
         ):
             logger.warning(f"{config.dataset}: split = {config.initial_split}")
+        if config.exp:
+            logger.warning("exp mode")
         self.criterion = get_criterion()
         self.n_forward = config.forward
 
@@ -48,6 +50,8 @@ class HALS(Attacker):
                 )
                 if self.forward >= config.forward:
                     break
+                elif config.exp and best_loss > 0:
+                    break
                 elif self.split > 1:
                     is_upper = is_upper.repeat(1, 2, 2)
                     is_upper_best = is_upper_best.repeat(1, 2, 2)
@@ -71,12 +75,16 @@ class HALS(Attacker):
 
             if self.forward >= config.forward:
                 break
+            elif config.exp and best_loss > 0:
+                break
             is_upper, loss = self.insert(is_upper, loss, y)
             if loss > best_loss:
                 is_upper_best = is_upper.clone()
                 best_loss = loss.clone()
 
             if self.forward >= config.forward:
+                break
+            elif config.exp and best_loss > 0:
                 break
             is_upper, loss = self.deletion(is_upper, loss, y)
             if loss > best_loss:
@@ -106,6 +114,8 @@ class HALS(Attacker):
         n_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for batch in range(n_batch):
             if self.forward >= config.forward:
+                break
+            elif loss > 0:
                 break
             start = batch * self.model.batch_size
             end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])
@@ -151,6 +161,8 @@ class HALS(Attacker):
         n_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
         for batch in range(n_batch):
             if self.forward >= config.forward:
+                break
+            elif loss > 0:
                 break
             start = batch * self.model.batch_size
             end = min((batch + 1) * self.model.batch_size, all_elements.shape[0])

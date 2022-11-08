@@ -12,6 +12,8 @@ config = config_parser()
 class TabuAttack(Attacker):
     def __init__(self):
         super().__init__()
+        if config.exp:
+            logger.warning("exp mode")
         self.criterion = get_criterion()
         self.n_forward = config.forward
 
