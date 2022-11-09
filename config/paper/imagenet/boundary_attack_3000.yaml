@@ -1,0 +1,17 @@
+attacker: BoundaryAttack
+
+norm: Linf
+epsilon: 0.01568627450980392
+dataset: imagenet_easy
+model:
+    robustbench:
+        Salman2020Do_R18: 1156
+
+# hyperparameter
+orthogonal_step_size: 0.01
+target_step_size: 0.01
+step_adaptation: 0.667
+steps: 60
+num_trial: 5
+sample_size: 10
+init_size: 1
