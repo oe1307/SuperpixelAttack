@@ -16,6 +16,7 @@ class TabuAttack(Attacker):
             logger.warning("exp mode")
         self.criterion = get_criterion()
         self.n_forward = config.forward
+        assert config.strategy in ("fist-fit", "best-fit")
         if config.strategy == "fist-fit":
             logger.warning("strategy = fist-fit")
 
