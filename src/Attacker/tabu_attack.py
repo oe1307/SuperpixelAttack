@@ -16,6 +16,8 @@ class TabuAttack(Attacker):
             logger.warning("exp mode")
         self.criterion = get_criterion()
         self.n_forward = config.forward
+        if config.strategy == "fist-fit":
+            logger.warning("strategy = fist-fit")
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         """
@@ -84,6 +86,8 @@ class TabuAttack(Attacker):
                         _is_upper_best = is_upper.clone()
                         _x_best = x_adv.clone()
                         _best_loss = loss
+                    if config.strategy == "fist-fit" and loss > best_loss:
+                        break
                     logger.debug(f"( {iteration=} ) {loss=:.4f} {best_loss=:.4f}")
                 # end neighbor search
 
