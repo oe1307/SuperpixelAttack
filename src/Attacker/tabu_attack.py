@@ -57,7 +57,7 @@ class TabuAttack(Attacker):
                 _best_loss = -100
                 iteration += 1
                 tabu = iteration - tabu_list < config.tabu_size
-                if (~tabu).sum() < config.N_flip:
+                if tabu.sum() > x.numel() / 2:
                     logger.warning("clear tabu list")
                     tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
                     tabu = torch.zeros_like(tabu, dtype=torch.bool)
