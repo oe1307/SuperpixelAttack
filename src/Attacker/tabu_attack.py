@@ -1,3 +1,6 @@
+import bisect
+import math
+
 import numpy as np
 import torch
 from torch import Tensor
@@ -51,7 +54,6 @@ class TabuAttack(Attacker):
             tabu_list = -config.tabu_size * torch.ones(x.numel()) - 2
             self.forward = 0
             iteration = 0
-            N_flip = config.N_flip
             phase = -1
 
             while True:
@@ -70,12 +72,13 @@ class TabuAttack(Attacker):
                 for search in range(config.neighbor_search):
                     if self.forward >= config.forward:
                         break
-                    if self.forward % 10 == 0:
-                        phase += 1
-                        logger.info(f"{phase = }")
-                    flip = np.random.choice(
-                        np.where(~tabu)[0], N_flip[phase], replace=False
+                    percentage_of_elements = self._get_percentage_of_elements()
+                    height_tile = max(
+                        int(round(math.sqrt(percentage_of_elements * x.numel() / 3))),
+                        1,
                     )
+                    N_flip = (height_tile**2) * 3
+                    flip = np.random.choice(np.where(~tabu)[0], N_flip, replace=False)
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
                     x_adv = torch.where(is_upper, upper, lower)
@@ -102,3 +105,10 @@ class TabuAttack(Attacker):
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)
         return x_adv_all
+
+    def _get_percentage_of_elements(self) -> float:  # TODO: hard code
+        i_p = self.forward / config.forward
+        intervals = [0.001, 0.005, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8]
+        p_ratio = [0.5**i for i in range(len(intervals))]
+        i_ratio = bisect.bisect_left(intervals, i_p)
+        return config.p_init * p_ratio[i_ratio]

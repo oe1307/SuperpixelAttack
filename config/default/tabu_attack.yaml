@@ -9,10 +9,9 @@ model:
 
 # hyperparameter
 criterion: cw
-forward: 10
+forward: 100
 strategy: best-fit
 tabu_size: 7
 neighbor_search: 3
-N_flip:
-    - 600
-    - 200
+p_init: 0.8
+
