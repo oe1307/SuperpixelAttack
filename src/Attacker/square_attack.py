@@ -41,6 +41,6 @@ class SquareAttack(Attacker):
         )
         with yaspin(text="Attacking...", color="cyan"):
             x_adv = attack.generate(x.cpu().numpy())
-        np.save(f"../result/square_adv_{config.steps}.npy", x_adv)
+        # np.save(f"../result/square_{config.steps}.npy", x_adv)
         x_adv = torch.from_numpy(x_adv).to(config.device)
         return x_adv

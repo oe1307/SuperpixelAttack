@@ -103,6 +103,7 @@ class TabuAttack(Attacker):
 
             x_adv_all.append(x_best)
         x_adv_all = torch.stack(x_adv_all)
+        # np.save(f"../result/tabu_{config.forward}.npy", x_adv_all.clone().cpu().numpy())
         return x_adv_all
 
     def _get_percentage_of_elements(self) -> float:  # TODO: hard code
