@@ -54,7 +54,6 @@ class TabuAttack(Attacker):
             tabu_list = -config.tabu_size * torch.ones(x.numel()) - 2
             self.forward = 0
             iteration = 0
-            phase = -1
 
             while True:
                 if self.forward >= config.forward:
@@ -109,6 +108,6 @@ class TabuAttack(Attacker):
     def _get_percentage_of_elements(self) -> float:  # TODO: hard code
         i_p = self.forward / config.forward
         intervals = [0.001, 0.005, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8]
-        p_ratio = [0.5**i for i in range(len(intervals))]
+        p_ratio = [0.5**i for i in range(len(intervals) + 1)]
         i_ratio = bisect.bisect_left(intervals, i_p)
         return config.p_init * p_ratio[i_ratio]
