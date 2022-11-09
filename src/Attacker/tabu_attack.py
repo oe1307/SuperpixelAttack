@@ -45,9 +45,11 @@ class TabuAttack(Attacker):
             x_best = torch.where(_is_upper, upper, lower)
             _loss = self.criterion(self.model(x_best.unsqueeze(0)), y).item()
             best_loss = _loss
-            tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
-            self.forward = 1
+            tabu_list = -config.tabu_size * torch.ones(x.numel()) - 2
+            self.forward = 0
             iteration = 0
+            N_flip = config.N_flip
+            phase = -1
 
             while True:
                 if self.forward >= config.forward:
@@ -59,14 +61,17 @@ class TabuAttack(Attacker):
                 tabu = iteration - tabu_list < config.tabu_size
                 if tabu.sum() > x.numel() / 2:
                     logger.warning("clear tabu list")
-                    tabu_list = -config.tabu_size * torch.ones(x.numel()) - 1
+                    tabu_list = -config.tabu_size * torch.ones(x.numel()) - 2
                     tabu = torch.zeros_like(tabu, dtype=torch.bool)
 
                 for search in range(config.neighbor_search):
                     if self.forward >= config.forward:
                         break
+                    if self.forward % 10 == 0:
+                        phase += 1
+                        logger.info(f"{phase = }")
                     flip = np.random.choice(
-                        np.where(~tabu)[0], config.N_flip, replace=False
+                        np.where(~tabu)[0], N_flip[phase], replace=False
                     )
                     is_upper = _is_upper.clone()
                     is_upper.view(-1)[flip] = ~is_upper.view(-1)[flip]
