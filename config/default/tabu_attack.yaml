@@ -14,4 +14,4 @@ strategy: best-fit
 tabu_size: 7
 neighbor_search: 3
 p_init: 0.8
-
+clear_tabu: 4
