@@ -59,6 +59,7 @@ class TabuAttack(Attacker):
                 if self.forward >= config.forward:
                     break
                 elif config.exp and best_loss > 1e-6:
+                    assert config.criterion == "cw"
                     break
                 _best_loss = -100
                 iteration += 1
