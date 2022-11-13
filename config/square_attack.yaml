@@ -6,9 +6,9 @@ dataset: imagenet
 
 model:
     robustbench:
-        Salman2020Do_R18: 3000
+        Salman2020Do_R18: 5000
 
 # hyperparameter
-steps: 100
+steps: 1000
 p_init: 0.8
 restart: 1
