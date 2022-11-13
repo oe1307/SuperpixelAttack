@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 import numpy as np
 from matplotlib import pyplot as plt
-from PIL import Image
 
-# In[13]:
+# In[ ]:
 
 
 x_adv = np.load("/data1/issa/AdEx_BlackBox/result/square_imagenet_easy_5000.npy")

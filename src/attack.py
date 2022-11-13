@@ -2,12 +2,11 @@ import socket
 from argparse import ArgumentParser
 from datetime import datetime
 
-import git
 import torch
 
 from Attacker import get_attacker
-from Base import get_model, load_dataset
-from Utils import config_parser, reproducibility, setup_logger
+from base import get_model, load_dataset
+from utils import config_parser, reproducibility, setup_logger
 
 
 def argparser():
@@ -36,17 +35,14 @@ def argparser():
         help="10:DEBUG,20:INFO,30:WARNING,40:ERROR,50:CRITICAL",
     )
     parser.add_argument(
-        "--exp",
-        action="store_true",
+        "--export_level",
+        default=10,
     )
     args = parser.parse_args()
     return args
 
 
 def main():
-    config.hostname = socket.gethostname()
-    config.git_hash = git.cmd.Git("./").rev_parse("HEAD")[:7]
-
     torch.set_num_threads(config.thread)
     for model_container, models in config.model.items():
         for model_name, batch_size in models.items():
