@@ -1,0 +1,12 @@
+attacker: ProposedMethod
+
+norm: Linf
+epsilon: 0.01568627450980392
+dataset: imagenet
+
+model:
+    robustbench:
+        Salman2020Do_R18: 3000
+
+# hyperparameter
+forward: 100
