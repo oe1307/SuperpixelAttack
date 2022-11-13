@@ -1,20 +1,19 @@
+from typing import Union
+
 from robustbench.data import load_cifar10, load_cifar100
+from torch import Tensor
 
 from utils import config_parser, setup_logger
 
-from ._load_dataset import (
-    load_cifar10_easy,
-    load_cifar10_hard,
-    load_imagenet,
-    load_imagenet_easy,
-    load_imagenet_hard,
-)
+from ._load_dataset import load_imagenet
 
 logger = setup_logger(__name__)
 config = config_parser()
 
 
-def load_dataset(model_name, data_dir):
+def load_dataset(
+    model_name: str, data_dir: str = "../storage/data"
+) -> Union[Tensor, Tensor]:
     """Load dataset for the given model"""
 
     if config.dataset == "cifar10":

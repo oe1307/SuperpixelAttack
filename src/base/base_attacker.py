@@ -4,7 +4,7 @@ import time
 import torch
 from torch import Tensor
 
-from utils import config_parser, setup_logger, rename_dir
+from utils import config_parser, rename_dir, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()

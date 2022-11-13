@@ -1,4 +1,3 @@
-import socket
 from argparse import ArgumentParser
 from datetime import datetime
 
@@ -49,10 +48,8 @@ def main():
             print(f"{model_name}")
             reproducibility()
             config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-            data, label = load_dataset(model_name, data_dir="../storage/data")
-            model = get_model(
-                model_container, model_name, batch_size, model_dir="../storage/model"
-            )
+            data, label = load_dataset(model_name)
+            model = get_model(model_container, model_name, batch_size)
             attacker = get_attacker()
             attacker.attack(model, data, label)
 

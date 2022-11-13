@@ -7,7 +7,10 @@ config = config_parser()
 
 
 def get_model(
-    model_container: str, model_name: str, batch_size: int, model_dir: str
+    model_container: str,
+    model_name: str,
+    batch_size: int,
+    model_dir: str = "../storage/model",
 ) -> Module:
     """Get model from robustbench and set batch size."""
     model = load_model(model_name, model_dir, config.dataset)

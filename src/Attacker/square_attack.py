@@ -1,5 +1,3 @@
-import math
-
 import art
 import numpy as np
 import torch
@@ -8,7 +6,7 @@ from torch import Tensor
 from yaspin import yaspin
 
 from base import Attacker
-from utils import change_level, config_parser, setup_logger, pbar
+from utils import change_level, config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -39,8 +37,10 @@ class SquareAttack(Attacker):
             batch_size=model.batch_size,
             verbose=False,
         )
-        x_adv = attack.generate(x.cpu().numpy())
+        with yaspin(text="Attacking...", color="cyan"):
+            x_adv = attack.generate(x.cpu().numpy())
 
+        assert x_adv.shape == x.shape
         upper = (x + config.epsilon).clamp(0, 1).clone()
         lower = (x - config.epsilon).clamp(0, 1).clone()
         assert torch.all(x_adv <= upper + 1e-10)
