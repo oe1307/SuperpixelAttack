@@ -1,7 +1,6 @@
 import art
-import numpy as np
 import torch
-from art.estimators.classification import ClassifierMixin, PyTorchClassifier
+from art.estimators.classification import PyTorchClassifier
 from torch import Tensor
 from yaspin import yaspin
 
@@ -21,29 +20,24 @@ class SquareAttack(Attacker):
         torch.cuda.current_device = lambda: config.device
         model = PyTorchClassifier(
             self.model,
-            ClassifierMixin,
+            loss=None,
             input_shape=x.shape[1:],
             nb_classes=config.n_classes,
             clip_values=(0, 1),
         )
         model._device = torch.device(config.device)
+
         attack = art.attacks.evasion.SquareAttack(
             estimator=model,
-            norm=np.inf,
-            max_iter=config.steps,
             eps=config.epsilon,
+            batch_size=self.model.batch_size,
+            verbose=False,
+            # hyperparameter
+            max_iter=config.steps,
             p_init=config.p_init,
             nb_restarts=config.restart,
-            batch_size=model.batch_size,
-            verbose=False,
         )
         with yaspin(text="Attacking...", color="cyan"):
             x_adv = attack.generate(x.cpu().numpy())
-
-        assert x_adv.shape == x.shape
-        upper = (x + config.epsilon).clamp(0, 1).clone()
-        lower = (x - config.epsilon).clamp(0, 1).clone()
-        assert torch.all(x_adv <= upper + 1e-10)
-        assert torch.all(x_adv >= lower - 1e-10)
-        logits = self.model(x_adv).clone()
-        self.robust_acc = logits.argmax(dim=1) == y
+        x_adv = torch.from_numpy(x_adv).to(config.device)
+        return x_adv

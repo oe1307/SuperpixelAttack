@@ -16,26 +16,21 @@ logger = setup_logger(__name__)
 class ConfigParser:
     def __init__(self):
         self.config = AttrDict()
-        self.log_format = {
-            "indent": 1,
-            "width": 40,
-            "depth": None,
-            "compact": False,
-            "sort_dicts": False,
-        }
 
     def read(self, path=None, args=None):
+        reader = dict()
         if path is not None:
             logger.info(f"\n [ READ ] {path}")
-            self.config.update(yaml.safe_load(open(path, mode="r")))
+            reader.update(yaml.safe_load(open(path, mode="r")))
         if args is not None:
             args = vars(args)
             for k in args.keys():
-                if args[k] is None and k in self.config.keys():
-                    args[k] = self.config[k]
+                if args[k] is None and k in reader.keys():
+                    args[k] = reader[k]
             self.config.update(args)
-        msg = pprint.pformat(self.config, **self.log_format)
+        msg = pprint.pformat(reader, width=40)
         logger.info(f"{msg}\n")
+        self.config.update(reader)
         return self.config
 
     def __call__(self):

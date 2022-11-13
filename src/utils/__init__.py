@@ -1,7 +1,7 @@
-import _py310
-
+from . import _py310
+# from . import _ssl_certificate
 from .config_parser import config_parser
-from .confirmation import confirmation, ssl_certificate
+from .confirmation import confirmation
 from .counter import counter, timer
 from .logging import change_level, setup_logger
 from .processbar import pbar
@@ -14,9 +14,9 @@ COMMENT = False
 
 __all__ = [
     "_py310",
+    "_ssl_certificate",
     "config_parser",
     "confirmation",
-    "ssl_certificate",
     "counter",
     "timer",
     "change_level",

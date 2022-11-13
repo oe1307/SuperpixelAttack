@@ -12,7 +12,8 @@ config = config_parser()
 def load_imagenet(model_name: str, data_dir: str):
     """Load ImageNet data"""
     data_dir = os.path.join(data_dir, "imagenet/val")
-    assert os.path.exists(data_dir), "download imagenet dataset"
+    if not os.path.exists(data_dir):
+        raise FileNotFoundError("please download imagenet dataset")
     transform = get_preprocessing(
         BenchmarkDataset.imagenet, ThreatModel(config.norm), model_name, None
     )

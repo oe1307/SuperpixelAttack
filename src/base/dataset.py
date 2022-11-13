@@ -5,7 +5,7 @@ from torch import Tensor
 
 from utils import config_parser, setup_logger
 
-from ._load_dataset import load_imagenet
+from ._dataset import load_imagenet
 
 logger = setup_logger(__name__)
 config = config_parser()

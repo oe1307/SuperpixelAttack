@@ -13,10 +13,8 @@ def get_model(
     model_dir: str = "../storage/model",
 ) -> Module:
     """Get model from robustbench and set batch size."""
-    model = load_model(model_name, model_dir, config.dataset)
-
-    breakpoint()  # logit -> precision score
-
+    if model_container == "robustbench":
+        model = load_model(model_name, model_dir, config.dataset)
     model = model.to(config.device)
     model.eval()
     model.name = model_name
