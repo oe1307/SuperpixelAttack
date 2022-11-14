@@ -1,3 +1,5 @@
+import math
+
 import cv2
 import numpy as np
 import torch
@@ -17,61 +19,79 @@ class ProposedMethod(Attacker):
         self.criterion = get_criterion()
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
-        # TODO: batch処理
-        index = -1
         x_adv_all = []
         n_images = x_all.shape[0]
-        loss_storage = torch.zeros(n_images, config.forward)
-        best_loss_storage = torch.zeros(n_images, config.forward)
-        for x, y in zip(x_all, y_all):
-            index += 1
-            pbar(index + 1, n_images, "images")
+        n_batch = math.ceil(n_images / self.model.batch_size)
+        loss_storage = torch.zeros(n_images, config.forward + 1)
+        best_loss_storage = torch.zeros(n_images, config.forward + 1)
+        for i in range(n_batch):
+            pbar(i + 1, n_batch)
+            start = i * self.model.batch_size
+            end = min((i + 1) * self.model.batch_size, config.n_examples)
+            x = x_all[start:end].to(config.device)
+            y = y_all[start:end].to(config.device)
             upper = (x + config.epsilon).clamp(0, 1)
             lower = (x - config.epsilon).clamp(0, 1)
 
             # superpixel
-            _x = (x.clone().cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
-            converted = cv2.cvtColor(_x, cv2.COLOR_RGB2HSV_FULL)
-            slic = cv2.ximgproc.createSuperpixelSLIC(
-                converted, cv2.ximgproc.MSLIC, config.region_size, config.ruler
-            )
-            slic.iterate(config.num_iterations)
-            slic.enforceLabelConnectivity(config.min_element_size)
-            labels = slic.getLabels()
-            n_labels = slic.getNumberOfSuperpixels()
-            # self.visualize(_x, slic)  # 可視化
+            labels, n_labels = [], []
+            for _x, _y in zip(x, y):
+                _x = (_x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
+                converted = cv2.cvtColor(_x, cv2.COLOR_RGB2HSV_FULL)
+                slic = cv2.ximgproc.createSuperpixelSLIC(
+                    converted, cv2.ximgproc.MSLIC, config.region_size, config.ruler
+                )
+                slic.iterate(config.num_iterations)
+                slic.enforceLabelConnectivity(config.min_element_size)
+                label = slic.getLabels()
+                labels.append(label)
+                n_label = slic.getNumberOfSuperpixels()
+                n_labels.append(n_label)
+                # self.visualize(_x, slic)  # 可視化
 
             # initialize
-            is_upper = torch.zeros_like(x, dtype=torch.bool)
-            _is_upper = torch.randint(
-                0, 2, (n_labels, x.shape[0]), dtype=torch.bool, device=config.device
-            )
-            for label in range(n_labels):
-                # RGB
-                is_upper[0, labels == label] = _is_upper[label, 0]
-                is_upper[1, labels == label] = _is_upper[label, 1]
-                is_upper[2, labels == label] = _is_upper[label, 2]
+            is_upper = []
+            for idx in range(x.shape[0]):
+                _is_upper = torch.zeros_like(x[0], dtype=torch.bool)
+                for label in range(n_labels[idx]):
+                    # RGB
+                    _is_upper[0, labels == label] = torch.randint(
+                        2, (1,), dtype=torch.bool
+                    )
+                    _is_upper[1, labels == label] = torch.randint(
+                        2, (1,), dtype=torch.bool
+                    )
+                    _is_upper[2, labels == label] = torch.randint(
+                        2, (1,), dtype=torch.bool
+                    )
+                is_upper.append(_is_upper)
+            is_upper = torch.stack(is_upper)
             x_best = torch.where(is_upper, upper, lower)
-            pred = F.softmax(self.model(x_best.unsqueeze(0)), dim=1)
+            pred = F.softmax(self.model(x_best), dim=1)
             best_loss = self.criterion(pred, y)
+            loss_storage[start:end, 0] = best_loss
+            best_loss_storage[start:end, 0] = best_loss
 
             # loop: greedy
             for step in range(config.forward):
-                c, label = np.random.randint(x.shape[0]), np.random.randint(n_labels)
-                is_upper[c, labels == label] = ~is_upper[c, labels == label]
+                for idx in range(x.shape[0]):
+                    c, label = np.random.randint(x.shape[1]), np.random.randint(
+                        n_labels[idx]
+                    )
+                    is_upper[idx, c, labels == label] = ~is_upper[
+                        idx, c, labels == label
+                    ]
                 x_adv = torch.where(is_upper, upper, lower)
-                pred = F.softmax(self.model(x_adv.unsqueeze(0)), dim=1)
+                pred = F.softmax(self.model(x_adv), dim=1)
                 loss = self.criterion(pred, y)
-                loss_storage[index, step] = loss.clone()
-                if loss > best_loss:
-                    best_loss = loss.clone()
-                    x_best = x_adv.clone()
-                best_loss_storage[index, step] = best_loss.clone()
-
+                best_loss = torch.where(loss > best_loss, loss, best_loss)
+                loss_storage[start:end, step + 1] = loss
+                best_loss_storage[start:end, step + 1] = best_loss
+                x_best = torch.where(
+                    (loss > best_loss).view(-1, 1, 1, 1), x_adv, x_best
+                )
             x_adv_all.append(x_adv)
-        np.save(f"{config.savedir}/loss.npy", loss_storage.cpu().numpy())
-        np.save(f"{config.savedir}/best_loss.npy", best_loss_storage.cpu().numpy())
-        x_adv_all = torch.stack(x_adv_all)
+        x_adv_all = torch.cat(x_adv_all, dim=0)
         return x_adv_all
 
     def visualize(self, _x, slic):
