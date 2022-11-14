@@ -55,7 +55,7 @@ class ProposedMethod(Attacker):
             pred = F.softmax(self.model(x_best.unsqueeze(0)), dim=1)
             best_loss = self.criterion(pred, y)
 
-            # roop: greedy
+            # loop: greedy
             for step in range(config.forward):
                 c, label = np.random.randint(x.shape[0]), np.random.randint(n_labels)
                 is_upper[c, labels == label] = ~is_upper[c, labels == label]
