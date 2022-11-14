@@ -25,7 +25,6 @@ class ProposedMethod(Attacker):
         loss_storage = torch.zeros(n_images, config.forward + 1)
         best_loss_storage = torch.zeros(n_images, config.forward + 1)
         for i in range(n_batch):
-            pbar(i + 1, n_batch)
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, config.n_examples)
             x = x_all[start:end].to(config.device)
@@ -35,7 +34,8 @@ class ProposedMethod(Attacker):
 
             # superpixel
             labels, n_labels = [], []
-            for _x, _y in zip(x, y):
+            for n, _x in enumerate(x):
+                pbar(n + 1, x.shape[0], f"batch {i} superpixel")
                 _x = (_x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
                 converted = cv2.cvtColor(_x, cv2.COLOR_RGB2HSV_FULL)
                 slic = cv2.ximgproc.createSuperpixelSLIC(
@@ -74,6 +74,7 @@ class ProposedMethod(Attacker):
 
             # loop: greedy
             for step in range(config.forward):
+                pbar(step + 1, config.forward, f"batch {i} step")
                 for idx in range(x.shape[0]):
                     c, label = np.random.randint(x.shape[1]), np.random.randint(
                         n_labels[idx]
