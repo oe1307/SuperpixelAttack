@@ -5,7 +5,7 @@ from torch.nn import functional as F
 from torch import Tensor
 
 from base import Attacker, get_criterion
-from utils import config_parser, setup_logger
+from utils import config_parser, setup_logger, pbar
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -18,8 +18,14 @@ class ProposedMethod(Attacker):
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         # TODO: batch処理
+        index = -1
         x_adv_all = []
+        n_images = x_all.shape[0]
+        loss_storage = torch.zeros(n_images, config.forward)
+        best_loss_storage = torch.zeros(n_images, config.forward)
         for x, y in zip(x_all, y_all):
+            index += 1
+            pbar(index + 1, n_images, "images")
             upper = (x + config.epsilon).clamp(0, 1)
             lower = (x - config.epsilon).clamp(0, 1)
 
@@ -56,11 +62,15 @@ class ProposedMethod(Attacker):
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = F.softmax(self.model(x_adv.unsqueeze(0)), dim=1)
                 loss = self.criterion(pred, y)
+                loss_storage[index, step] = loss.clone()
                 if loss > best_loss:
                     best_loss = loss.clone()
                     x_best = x_adv.clone()
+                best_loss_storage[index, step] = best_loss.clone()
 
             x_adv_all.append(x_adv)
+        np.save(f"{config.savedir}/loss.npy", loss_storage.cpu().numpy())
+        np.save(f"{config.savedir}/best_loss.npy", best_loss_storage.cpu().numpy())
         x_adv_all = torch.stack(x_adv_all)
         return x_adv_all
 
