@@ -37,6 +37,10 @@ def argparser():
         "--export_level",
         default=10,
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+    )
     args = parser.parse_args()
     return args
 

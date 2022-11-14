@@ -20,12 +20,12 @@ class CWLoss(Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, logit: Tensor, y: Tensor) -> Tensor:
+    def forward(self, pred: Tensor, y: Tensor) -> Tensor:
         r"""
         .. math::
             loss = max_{c \neq y}{f_c(x)} - f_y(x)
         """
-        pred = F.softmax(logit, dim=1)
+        assert (0 <= pred).all() and (pred <= 1).all()
         pred_sorted, idx_sorted = pred.sort(dim=1, descending=True)
         class_pred = pred[torch.arange(pred.shape[0]), y]
         target_pred = torch.where(
