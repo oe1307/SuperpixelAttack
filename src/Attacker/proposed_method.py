@@ -91,7 +91,7 @@ class ProposedMethod(Attacker):
                 x_best = torch.where(
                     (loss > best_loss).view(-1, 1, 1, 1), x_adv, x_best
                 )
-            x_adv_all.append(x_adv)
+            x_adv_all.append(x_best)
         x_adv_all = torch.cat(x_adv_all, dim=0)
         return x_adv_all
 
