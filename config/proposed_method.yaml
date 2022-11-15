@@ -11,9 +11,10 @@ model:
 # hyperparameter
 forward: 100
 criterion: cw
-# ---superpixel---
-region_size: 20
+p_init: 0.8
+
+# superpixel hyperparameter
+region_size: 100
 ruler: 30.0
 min_element_size: 20
 num_iterations: 4
-# -----------------

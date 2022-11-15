@@ -5,11 +5,9 @@ if [ $1 = "setup" ]; then
     cd $(dirname $0)/storage/data
     if [ ! -e imagenet.tar.gz ]; then
         scp ds:/data0/issa/dataset/imagenet.tar.gz imagenet.tar.gz
-        # wget http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar
     fi
     if [ ! -e imagenet ]; then
         tar -xzf imagenet.tar.gz
-        # tar -xf ILSVRC2012_img_val.tar -C val
     else
         echo "-> imagenet already exists"
     fi

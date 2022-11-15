@@ -1,4 +1,5 @@
 def pbar(step: int, total: int, msg: str = "") -> None:
+    """print progress bar"""
     if step != total:
         print(
             f"\r{msg} ["
