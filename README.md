@@ -2,7 +2,7 @@
 
 ## requires
 
-    python 3.9
+    python 3.9，3.10
     cuda 11.6
 
 ## setup
