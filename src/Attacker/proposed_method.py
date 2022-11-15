@@ -1,3 +1,4 @@
+import bisect
 import itertools as it
 import math
 
@@ -109,16 +110,11 @@ class ProposedMethod(Attacker):
         return x_adv_all
 
     def flip_size_manager(self, step):
-        checkpoint = (
-            np.array([0.001, 0.005, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8])
-            * config.forward
-        )
-        p_rate = (
-            np.array([0.5**i for i in range(checkpoint.shape[0])]) * config.p_init
-        )
-        for p, c in zip(p_rate, checkpoint):
-            if step < c:
-                return p
+        i_p = step / config.forward
+        checkpoint = [0.001, 0.005, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8]
+        p_ratio = [0.5**i for i in range(len(checkpoint) + 1)]
+        i_ratio = bisect.bisect_left(checkpoint, i_p)
+        return config.p_init * p_ratio[i_ratio]
 
     def superpixel_visualize(self, x, slic):
         change_level("matplotlib", 40)
