@@ -22,8 +22,6 @@ class Attacker:
         """
         assert not model.training
         self.model = model
-        x = x.to(config.device)
-        y = y.to(config.device)
         self.timekeeper = time.time()
         self.robust_acc = torch.zeros(x.shape[0], dtype=torch.bool)
         config.savedir = rename_dir(f"../result/{config.dataset}/{config.attacker}")
@@ -36,6 +34,7 @@ class Attacker:
         upper = (x + config.epsilon).clamp(0, 1).clone()
         lower = (x - config.epsilon).clamp(0, 1).clone()
         assert (x_adv <= upper + 1e-10).all() and (x_adv >= lower - 1e-10).all()
+        x_adv = x_adv.clamp(lower, upper)
         np.save(f"{config.savedir}/x_adv.npy", x_adv.cpu().numpy())
         logit = self.model(x_adv).clone()
         self.robust_acc = logit.argmax(dim=1) == y

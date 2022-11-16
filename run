@@ -18,11 +18,11 @@ elif [ $1 = "install" ]; then
 
 elif [ $1 = "format" ]; then
     echo && echo "----black-----"
-    black $(dirname $0) -q
+    black $(dirname $0)/src -q
     echo && echo "----isort-----"
-    isort $(dirname $0) -s ./run
+    isort $(dirname $0)/src -s ./run
     echo && echo "----flake8----"
-    pflake8 $(dirname $0)
+    pflake8 $(dirname $0)/src
     echo
 
 else
