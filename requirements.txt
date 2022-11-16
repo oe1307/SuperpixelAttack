@@ -8,7 +8,7 @@ torchvision
 foolbox
 adversarial-robustness-toolbox
 git+https://github.com/BorealisAI/advertorch.git
-opencv-contrib-python
+scikit-image
 
 # utils
 yaspin
