@@ -1,15 +1,17 @@
 import os
+from typing import Union
 
 import torch
 from robustbench.data import CustomImageFolder, get_preprocessing
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
+from torch import Tensor
 
 from utils import config_parser, pbar
 
 config = config_parser()
 
 
-def load_imagenet(model_name: str, data_dir: str):
+def load_imagenet(model_name: str, data_dir: str) -> Union[Tensor, Tensor]:
     """Load ImageNet data"""
     data_dir = os.path.join(data_dir, "imagenet/val")
     if not os.path.exists(data_dir):
@@ -18,7 +20,6 @@ def load_imagenet(model_name: str, data_dir: str):
         BenchmarkDataset.imagenet, ThreatModel(config.norm), model_name, None
     )
     dataset = CustomImageFolder(data_dir, transform=transform)
-    config.n_examples = 10 if config.debug else 5000
     img = list()
     label = list()
     for index in range(config.n_examples):

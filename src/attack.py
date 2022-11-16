@@ -23,6 +23,11 @@ def argparser():
         required=True,
     )
     parser.add_argument(
+        "--n_examples",
+        type=int,
+        default=None,
+    )
+    parser.add_argument(
         "--thread",
         type=int,
         default=10,
@@ -32,14 +37,6 @@ def argparser():
         type=int,
         default=10,
         help="10:DEBUG,20:INFO,30:WARNING,40:ERROR,50:CRITICAL",
-    )
-    parser.add_argument(
-        "--export_level",
-        default=10,
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
     )
     args = parser.parse_args()
     return args

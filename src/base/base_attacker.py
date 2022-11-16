@@ -14,7 +14,7 @@ config = config_parser()
 
 class Attacker:
     @torch.no_grad()
-    def attack(self, model: Module, x: Tensor, y: Tensor):
+    def attack(self, model: Module, x: Tensor, y: Tensor) -> Tensor:
         """
         model (Module): classifier
         x (Tensor): clean image

@@ -3,10 +3,8 @@
 if [ $1 = "setup" ]; then
     mkdir -p $(dirname $0)/storage/data
     cd $(dirname $0)/storage/data
-    if [ ! -e imagenet.tar.gz ]; then
-        scp ds:/data0/issa/dataset/imagenet.tar.gz imagenet.tar.gz
-    fi
     if [ ! -e imagenet ]; then
+        scp ds:/data0/issa/dataset/imagenet.tar.gz imagenet.tar.gz
         tar -xzf imagenet.tar.gz
     else
         echo "-> imagenet already exists"
@@ -28,5 +26,5 @@ elif [ $1 = "format" ]; then
     echo
 
 else
-    echo "Usage: $0 [setup|install|format|test]"
+    echo "Usage: $0 [setup|install|format]"
 fi

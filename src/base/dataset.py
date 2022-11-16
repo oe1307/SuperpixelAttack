@@ -20,12 +20,12 @@ def load_dataset(
         config.n_classes = 10
         if config.epsilon != 8 / 255:
             logger.warning(f"dataset={config.dataset} epsilon={config.epsilon}")
-        img, label = load_cifar10(10000, data_dir)
+        img, label = load_cifar10(config.n_examples, data_dir)
     elif config.dataset == "cifar100":
         config.n_classes = 100
         if config.epsilon != 8 / 255:
             logger.warning(f"dataset={config.dataset} epsilon={config.epsilon}")
-        img, label = load_cifar100(10000, data_dir)
+        img, label = load_cifar100(config.n_examples, data_dir)
     elif config.dataset == "imagenet":
         config.n_classes = 1000
         if config.epsilon != 4 / 255:

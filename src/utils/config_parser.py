@@ -24,10 +24,10 @@ class ConfigParser:
             reader.update(yaml.safe_load(open(path, mode="r")))
         if args is not None:
             args = vars(args)
-            for k in args.keys():
-                if args[k] is None and k in reader.keys():
+            for k in args:
+                if args[k] is None and k in reader:
                     args[k] = reader[k]
-            self.config.update(args)
+            reader.update(args)
         msg = pprint.pformat(reader, width=40)
         logger.info(f"{msg}\n")
         self.config.update(reader)

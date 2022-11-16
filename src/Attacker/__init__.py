@@ -1,8 +1,8 @@
 from base import Attacker
 from utils import config_parser
 
-from .square_attack import SquareAttack
 from .proposed_method import ProposedMethod
+from .square_attack import SquareAttack
 
 config = config_parser()
 
