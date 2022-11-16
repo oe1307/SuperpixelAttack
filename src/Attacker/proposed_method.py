@@ -1,15 +1,14 @@
-import bisect
 import itertools as it
-import math
+import sys
 
-import cv2
 import numpy as np
 import torch
-from torch.nn import functional as F
+from skimage.segmentation import mark_boundaries, slic
 from torch import Tensor
+from torch.nn import functional as F
 
 from base import Attacker, get_criterion
-from utils import config_parser, setup_logger, pbar, change_level
+from utils import change_level, config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -17,112 +16,151 @@ config = config_parser()
 
 class ProposedMethod(Attacker):
     def __init__(self):
-        config.n_forward = config.forward
+        config.n_forward = config.step
         self.criterion = get_criterion()
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
-        n_images = x_all.shape[0]
         n_chanel = x_all.shape[1]
-        n_batch = math.ceil(n_images / self.model.batch_size)
-        loss_storage = torch.zeros(n_images, config.forward + 1)
-        best_loss_storage = torch.zeros(n_images, config.forward + 1)
-        for i in range(n_batch):
-            start = i * self.model.batch_size
-            end = min((i + 1) * self.model.batch_size, config.n_examples)
-            x = x_all[start:end].to(config.device)
-            y = y_all[start:end].to(config.device)
+        # TODO: batch処理
+        for x, y in zip(x_all, y_all):
+            x = x.to(config.device)
+            y = y.to(config.device)
             upper = (x + config.epsilon).clamp(0, 1)
             lower = (x - config.epsilon).clamp(0, 1)
+            pred = F.softmax(self.model(x.unsqueeze(0)), dim=1)
+            base_loss = self.criterion(pred, y).item()
+            forward = 1
 
-            # superpixel
-            labels, n_labels, slics = [], [], []
-            for n, _x in enumerate(x):
-                pbar(n + 1, x.shape[0], f"batch {i} superpixel")
-                _x = (_x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
-                converted = cv2.cvtColor(_x, cv2.COLOR_RGB2HSV_FULL)
-                slic = cv2.ximgproc.createSuperpixelSLIC(
-                    converted, cv2.ximgproc.MSLIC, config.region_size, config.ruler
-                )
-                slic.iterate(config.num_iterations)
-                slic.enforceLabelConnectivity(config.min_element_size)
-                slics.append(slic)
-                label = slic.getLabels()
-                labels.append(label)
-                n_label = slic.getNumberOfSuperpixels()
-                n_labels.append(n_label)
-            # self.superpixel_visualize(x[0], slics[0])  # 可視化
+            # 複数の荒さのsuperpixelをあらかじめ計算
+            superpixel_storage = []
+            for i, n_segments in enumerate(config.segments):
+                pbar(i + 1, len(config.segments), "superpixel")
+                img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
+                superpixel = slic(img, n_segments=n_segments)
+                superpixel_storage.append(superpixel)
 
             # initialize
-            is_upper_best = []
-            for idx in range(x.shape[0]):
-                is_upper = torch.zeros_like(x[0], dtype=torch.bool)
-                for label in range(n_labels[idx]):
-                    # RGB
-                    is_upper[0, labels[idx] == label] = torch.randint(
-                        2, (1,), dtype=torch.bool
-                    )
-                    is_upper[1, labels[idx] == label] = torch.randint(
-                        2, (1,), dtype=torch.bool
-                    )
-                    is_upper[2, labels[idx] == label] = torch.randint(
-                        2, (1,), dtype=torch.bool
-                    )
-                is_upper_best.append(is_upper)
-            is_upper_best = torch.stack(is_upper_best)
-            x_best = torch.where(is_upper_best, upper, lower)
-            pred = F.softmax(self.model(x_best), dim=1)
-            best_loss = self.criterion(pred, y)
-            loss_storage[start:end, 0] = best_loss
-            best_loss_storage[start:end, 0] = best_loss
-            # self.imshow(labels[0], x_best[0])  # 可視化
+            superpixel_level = 0
+            superpixel = superpixel_storage[superpixel_level]
+            n_superpixel = superpixel.max()
+            _y = y.repeat(n_chanel * n_superpixel).clone()
+            candidate = list(it.product(range(n_chanel), range(1, n_superpixel + 1)))
 
-            # loop: greedy
-            for step in range(config.forward):
-                pbar(step + 1, config.forward, f"batch {i} step")
-                is_upper = is_upper_best.clone()
-                for idx in range(x.shape[0]):
-                    candidate = np.array(
-                        list(it.product(range(n_chanel), range(n_labels[idx])))
-                    )
-                    n_flip = int(self.flip_size_manager(step) * len(candidate))
-                    flips = np.random.choice(len(candidate), n_flip, replace=False)
-                    flips = candidate[flips]
-                    for c, label in flips:
-                        is_upper[idx, c, labels[idx] == label] = ~is_upper[
-                            idx, c, labels[idx] == label
-                        ]
+            # search upper
+            x_adv = x.repeat(n_chanel * n_superpixel, 1, 1, 1)
+            for n, (c, label) in enumerate(candidate):
+                x_adv[n, c, superpixel == label] = upper[c, superpixel == label]
+            pred = F.softmax(self.model(x_adv), dim=1)
+            upper_loss = self.criterion(pred, _y)
+            forward += len(candidate)
+
+            # search lower
+            x_adv = x.repeat(n_chanel * n_superpixel, 1, 1, 1)
+            for n, (c, label) in enumerate(candidate):
+                x_adv[n, c, superpixel == label] = lower[c, superpixel == label]
+            pred = F.softmax(self.model(x_adv), dim=1)
+            lower_loss = self.criterion(pred, _y)
+            forward += len(candidate)
+
+            # make attention map
+            loss, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
+            loss = loss - base_loss
+            u_is_better = u_is_better.bool()
+            attention_map = [
+                (superpixel_level, c, label, u.item(), _loss.item())
+                for (c, label), u, _loss in zip(candidate, u_is_better, loss)
+            ]
+
+            # give init x_adv
+            is_upper_best = torch.zeros_like(x, dtype=torch.bool)
+            for (c, label), u in zip(candidate, u_is_better):
+                is_upper_best[c, superpixel == label] = u
+            x_best = torch.where(is_upper_best, upper, lower)
+            pred = F.softmax(self.model(x_best.unsqueeze(0)), dim=1)
+            best_loss = self.criterion(pred, y).item()
+            forward += 1
+            # self.visualize(superpixel, x_best)  # 可視化
+
+            while True:
+                if forward >= config.step:
+                    break
+                attention_map.sort(key=lambda k: k[4], reverse=True)
+
+                # divide most attention area
+                superpixel_level, c, label, u, _ = attention_map.pop(0)
+                attention = superpixel == label
+                next_level = min(superpixel_level + 1, len(config.segments) - 1)
+                next_superpixel = superpixel_storage[next_level]
+                n_superpixel = next_superpixel.max()
+                target = []
+                for target_label in range(1, n_superpixel + 1):
+                    target_pixel = next_superpixel == target_label
+                    intersection = np.logical_and(attention, target_pixel)
+                    if intersection.sum() >= target_pixel.sum() / 2:
+                        target.append(target_label)
+
+                # search target
+                is_upper = is_upper_best.repeat(len(target), 1, 1, 1)
+                for n, target_label in enumerate(target):
+                    is_upper[n, c, next_superpixel == target_label] = not u
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = F.softmax(self.model(x_adv), dim=1)
-                loss = self.criterion(pred, y)
-                is_upper_best = torch.where(
-                    (loss > best_loss).view(-1, 1, 1, 1), is_upper, is_upper_best
-                )
-                x_best = torch.where(
-                    (loss > best_loss).view(-1, 1, 1, 1), x_adv, x_best
-                )
-                best_loss = torch.where(loss > best_loss, loss, best_loss)
-                loss_storage[start:end, step + 1] = loss
-                best_loss_storage[start:end, step + 1] = best_loss
-                # self.imshow(labels[0], x_best[0])  # 可視化
+                _y = y.repeat(len(target)).clone()
+                loss = self.criterion(pred, _y)
+                forward += len(target)
+                _best_loss, _best_idx = loss.max(dim=0)
+                _loss = loss - best_loss
+
+                # update x_best
+                if _best_loss > best_loss:
+                    best_loss = _best_loss.item()
+                    is_upper_best = is_upper[_best_idx].clone()
+                    x_best = x_adv[_best_idx].clone()
+                if forward >= config.step:
+                    break
+
+                # 複数lossを更新しそうなものがあればまとめて更新
+                if (_loss > 0).sum().item() > 1:
+                    is_upper = is_upper_best.clone()
+                    for target_loss, target_label in zip(_loss, target):
+                        if target_loss > 0:
+                            is_upper_best[c, next_superpixel == target_label] = not u
+                    x_adv = torch.where(is_upper_best, upper, lower)
+                    pred = F.softmax(self.model(x_adv.unsqueeze(0)), dim=1)
+                    loss = self.criterion(pred, y).item()
+                    forward += 1
+                    if loss > best_loss:
+                        best_loss = loss
+                        is_upper_best = is_upper.clone()
+                        x_best = x_adv.clone()
+                        for label, target_loss in zip(target, _loss):
+                            attention_map.append(
+                                (next_level, c, label, not u, target_loss.item())
+                            )
+                    else:
+                        attention_map.append(
+                            (
+                                next_level,
+                                c,
+                                target[_best_idx],
+                                not u,
+                                _loss[_best_idx].item(),
+                            )
+                        )
+                if forward >= config.step:
+                    break
             x_adv_all.append(x_best)
-        x_adv_all = torch.cat(x_adv_all, dim=0)
+        x_adv_all = torch.stack(x_adv_all)
         return x_adv_all
 
-    def flip_size_manager(self, step):
-        i_p = step / config.forward
-        checkpoint = [0.001, 0.005, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8]
-        p_ratio = [0.5**i for i in range(len(checkpoint) + 1)]
-        i_ratio = bisect.bisect_left(checkpoint, i_p)
-        return config.p_init * p_ratio[i_ratio]
-
-    def superpixel_visualize(self, x, slic):
+    def visualize(self, superpixel: np.ndarray, x: Tensor):
         change_level("matplotlib", 40)
         from matplotlib import pyplot as plt
 
-        superpixel = x.cpu().numpy().transpose(1, 2, 0)
-        contour_mask = slic.getLabelContourMask(False)
-        superpixel[contour_mask == 255] = (0, 255, 255)
+        assert x.dim() == 3
+        x = x.cpu().numpy().transpose(1, 2, 0)
+
         plt.subplots(figsize=(6, 6))
         plt.tick_params(
             bottom=False,
@@ -130,19 +168,28 @@ class ProposedMethod(Attacker):
             labelbottom=False,
             labelleft=False,
         )
-        plt.imshow(superpixel)
+        plt.imshow(mark_boundaries(x, superpixel))
         plt.savefig(f"{config.savedir}/superpixel.png")
         plt.close()
-        quit()
 
-    def imshow(self, labels: np.ndarray, x: Tensor):
-        change_level("matplotlib", 40)
-        from matplotlib import pyplot as plt
+        plt.tick_params(
+            bottom=False,
+            left=False,
+            labelbottom=False,
+            labelleft=False,
+        )
+        plt.imshow(superpixel)
+        plt.colorbar()
+        plt.savefig(f"{config.savedir}/label.png")
+        plt.close()
 
-        plt.imshow(labels)
-        plt.savefig(f"{config.savedir}/labels.png")
-
-        assert x.dim() == 3
-        plt.imshow(x.cpu().numpy().transpose(1, 2, 0))
+        plt.tick_params(
+            bottom=False,
+            left=False,
+            labelbottom=False,
+            labelleft=False,
+        )
+        plt.imshow(x)
         plt.savefig(f"{config.savedir}/x_best.png")
-        quit()
+        plt.close()
+        sys.exit(0)
