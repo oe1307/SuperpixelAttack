@@ -7,7 +7,7 @@ from torch import Tensor
 from yaspin import yaspin
 
 from base import Attacker
-from utils import change_level, config_parser, setup_logger, pbar
+from utils import change_level, config_parser, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -21,7 +21,6 @@ class SquareAttack(Attacker):
         clean_acc = torch.zeros_like(y, dtype=torch.bool)
         n_batch = math.ceil(x.shape[0] / self.model.batch_size)
         for i in range(n_batch):
-            pbar(i + 1, n_batch)
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, config.n_examples)
             _x = x[start:end].to(config.device)
