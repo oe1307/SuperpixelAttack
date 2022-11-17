@@ -20,11 +20,11 @@ class SquareAttack(Attacker):
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         # remove misclassification images
         n_images = x_all.shape[0]
-        clean_acc = torch.zeros_like(y_all, dtype=torch.bool)
+        clean_acc = torch.zeros(n_images, dtype=torch.bool)
         n_batch = math.ceil(n_images / self.model.batch_size)
         for i in range(n_batch):
             start = i * self.model.batch_size
-            end = min((i + 1) * self.model.batch_size, config.n_examples)
+            end = min((i + 1) * self.model.batch_size, n_images)
             x = x_all[start:end]
             y = y_all[start:end]
             logits = self.model(x).clone()

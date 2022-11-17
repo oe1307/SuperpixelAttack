@@ -1,3 +1,4 @@
+import math
 import os
 import time
 
@@ -22,28 +23,38 @@ class Attacker:
         """
         assert not model.training
         self.model = model
+        n_images = x.shape[0]
         x = x.to(config.device)
         y = y.to(config.device)
         self.timekeeper = time.time()
-        self.robust_acc = torch.zeros(x.shape[0], dtype=torch.bool)
         config.savedir = rename_dir(f"../result/{config.dataset}/{config.attacker}")
         os.makedirs(config.savedir, exist_ok=True)
         config_parser.save(f"{config.savedir}/config.json")
 
-        x_adv = self._attack(x, y)
+        x_adv_all = self._attack(x, y)
 
-        assert x_adv.shape == x.shape
-        upper = (x + config.epsilon).clamp(0, 1).clone().to(config.device)
-        lower = (x - config.epsilon).clamp(0, 1).clone().to(config.device)
-        assert (x_adv <= upper + 1e-10).all() and (x_adv >= lower - 1e-10).all()
-        x_adv = x_adv.clamp(lower, upper)
-        np.save(f"{config.savedir}/x_adv.npy", x_adv.cpu().numpy())
-        logit = self.model(x_adv).clone()
-        self.robust_acc = logit.argmax(dim=1) == y
-        np.save(f"{config.savedir}/robust_acc.npy", self.robust_acc.cpu().numpy())
+        assert x_adv_all.shape == x.shape
+        np.save(f"{config.savedir}/x_adv.npy", x_adv_all.cpu().numpy())
+        robust_acc = torch.zeros(n_images, dtype=torch.bool)
+        n_batch = math.ceil(n_images / model.batch_size)
+        for i in range(n_batch):
+            start = i * model.batch_size
+            end = min((i + 1) * model.batch_size, n_images)
+            x_clean = x[start:end]
+            x_adv = x_adv_all[start:end]
+            label = y[start:end]
+            upper = (x_clean + config.epsilon).clamp(0, 1).clone().to(config.device)
+            lower = (x_clean - config.epsilon).clamp(0, 1).clone().to(config.device)
+
+            # for check
+            assert (x_adv <= upper + 1e-10).all() and (x_adv >= lower - 1e-10).all()
+            x_adv = x_adv.clamp(lower, upper)
+
+            logit = self.model(x_adv).clone()
+            robust_acc[start:end] = logit.argmax(dim=1) == label
+            np.save(f"{config.savedir}/robust_acc.npy", robust_acc.cpu().numpy())
         total_time = time.time() - self.timekeeper
-        robust_acc = self.robust_acc.sum() / x.shape[0] * 100
-        ASR = 100 - robust_acc
+        ASR = 100 - robust_acc.sum() / x.shape[0] * 100
 
         msg = (
             "\n"
