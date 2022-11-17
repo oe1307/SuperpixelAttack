@@ -1,4 +1,5 @@
 import itertools as it
+import math
 import sys
 
 import numpy as np
@@ -21,24 +22,32 @@ class ProposedMethod(Attacker):
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
+        n_images = x_all.shape[0]
         n_chanel = x_all.shape[1]
-        # TODO: batch処理
-        for idx, (x, y) in enumerate(zip(x_all, y_all)):
-            x = x.to(config.device)
-            y = y.to(config.device)
-            upper = (x + config.epsilon).clamp(0, 1)
-            lower = (x - config.epsilon).clamp(0, 1)
-            pred = F.softmax(self.model(x.unsqueeze(0)), dim=1)
-            base_loss = self.criterion(pred, y).item()
+        n_batch = math.ceil(n_images / self.model.batch_size)
+        for i in range(n_batch):
+            start = i * self.model.batch_size
+            end = min((i + 1) * self.model.batch_size, n_images)
+            x = x_all[start:end]
+            y = y_all[start:end]
+            upper = (x + config.epsilon).clamp(0, 1).clone()
+            lower = (x - config.epsilon).clamp(0, 1).clone()
+            pred = F.softmax(self.model(x), dim=1)
+            base_loss = self.criterion(pred, y)
             forward = 1
 
             # 複数の荒さのsuperpixelをあらかじめ計算
             superpixel_storage = []
-            for i, n_segments in enumerate(config.segments):
-                pbar(i + 1, len(config.segments), "superpixel")
-                img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
-                superpixel = slic(img, n_segments=n_segments)
-                superpixel_storage.append(superpixel)
+            for i, (_x, _y) in enumerate(zip(x, y)):
+                pbar(i + 1, x.shape[0], "superpixel")
+                _superpixel_storage = []
+                for i, n_segments in enumerate(config.segments):
+                    img = (_x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
+                    superpixel = slic(img, n_segments=n_segments)
+                    _superpixel_storage.append(superpixel)
+                superpixel_storage.append(_superpixel_storage)
+            superpixel_storage = np.array(superpixel_storage)
+            breakpoint()
 
             # initialize
             superpixel_level = 0
@@ -101,7 +110,7 @@ class ProposedMethod(Attacker):
 
                 # search target
                 if len(target) == 0:
-                    logger.warning(f"\ntarget is empty")
+                    logger.warning("\ntarget is empty")
                     continue
                 is_upper = is_upper_best.repeat(len(target), 1, 1, 1)
                 for n, target_label in enumerate(target):
