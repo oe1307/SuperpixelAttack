@@ -22,6 +22,8 @@ class Attacker:
         """
         assert not model.training
         self.model = model
+        x = x.to(config.device)
+        y = y.to(config.device)
         self.timekeeper = time.time()
         self.robust_acc = torch.zeros(x.shape[0], dtype=torch.bool)
         config.savedir = rename_dir(f"../result/{config.dataset}/{config.attacker}")
@@ -31,8 +33,8 @@ class Attacker:
         x_adv = self._attack(x, y)
 
         assert x_adv.shape == x.shape
-        upper = (x + config.epsilon).clamp(0, 1).clone()
-        lower = (x - config.epsilon).clamp(0, 1).clone()
+        upper = (x + config.epsilon).clamp(0, 1).clone().to(config.device)
+        lower = (x - config.epsilon).clamp(0, 1).clone().to(config.device)
         assert (x_adv <= upper + 1e-10).all() and (x_adv >= lower - 1e-10).all()
         x_adv = x_adv.clamp(lower, upper)
         np.save(f"{config.savedir}/x_adv.npy", x_adv.cpu().numpy())
@@ -46,6 +48,8 @@ class Attacker:
         msg = (
             "\n"
             + f"n_img = {x.shape[0]}\n"
+            + f"epsilon = {config.epsilon}\n"
+            + f"forward = {config.n_forward}\n"
             + f"total time (sec) = {total_time:.2f}s\n"
             + f"ASR (%) = {ASR:.2f}\n"
         )

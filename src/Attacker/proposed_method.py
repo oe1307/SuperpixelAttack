@@ -23,7 +23,7 @@ class ProposedMethod(Attacker):
         x_adv_all = []
         n_chanel = x_all.shape[1]
         # TODO: batch処理
-        for x, y in zip(x_all, y_all):
+        for idx, (x, y) in enumerate(zip(x_all, y_all)):
             x = x.to(config.device)
             y = y.to(config.device)
             upper = (x + config.epsilon).clamp(0, 1)
@@ -83,12 +83,11 @@ class ProposedMethod(Attacker):
             # self.visualize(superpixel, x_best)  # 可視化
 
             while True:
-                if forward >= config.step:
-                    break
                 attention_map.sort(key=lambda k: k[4], reverse=True)
 
                 # divide most attention area
                 superpixel_level, c, label, u, _ = attention_map.pop(0)
+                superpixel = superpixel_storage[superpixel_level]
                 attention = superpixel == label
                 next_level = min(superpixel_level + 1, len(config.segments) - 1)
                 next_superpixel = superpixel_storage[next_level]
@@ -101,6 +100,9 @@ class ProposedMethod(Attacker):
                         target.append(target_label)
 
                 # search target
+                if len(target) == 0:
+                    logger.warning(f"\ntarget is empty")
+                    continue
                 is_upper = is_upper_best.repeat(len(target), 1, 1, 1)
                 for n, target_label in enumerate(target):
                     is_upper[n, c, next_superpixel == target_label] = not u
@@ -112,42 +114,55 @@ class ProposedMethod(Attacker):
                 _best_loss, _best_idx = loss.max(dim=0)
                 _loss = loss - best_loss
 
-                # update x_best
+                # update one superpixel
+                update = 0
                 if _best_loss > best_loss:
+                    update = 1
                     best_loss = _best_loss.item()
                     is_upper_best = is_upper[_best_idx].clone()
                     x_best = x_adv[_best_idx].clone()
+                pbar(forward, config.step, "forward", f"{idx =}")
                 if forward >= config.step:
                     break
 
-                # 複数lossを更新しそうなものがあればまとめて更新
+                # updated multi superpixel
                 if (_loss > 0).sum().item() > 1:
                     is_upper = is_upper_best.clone()
                     for target_loss, target_label in zip(_loss, target):
-                        if target_loss > 0:
-                            is_upper_best[c, next_superpixel == target_label] = not u
-                    x_adv = torch.where(is_upper_best, upper, lower)
+                        if (target_loss > 0).item():
+                            is_upper[c, next_superpixel == target_label] = not u
+                    x_adv = torch.where(is_upper, upper, lower)
                     pred = F.softmax(self.model(x_adv.unsqueeze(0)), dim=1)
                     loss = self.criterion(pred, y).item()
                     forward += 1
                     if loss > best_loss:
+                        update = 2
                         best_loss = loss
                         is_upper_best = is_upper.clone()
                         x_best = x_adv.clone()
-                        for label, target_loss in zip(target, _loss):
+
+                if update == 0:  # not updated
+                    for loss, label in zip(_loss, target):
+                        attention_map.append((next_level, c, label, u, loss.item()))
+                elif update == 1:  # updated one superpixel
+                    for i, (loss, label) in enumerate(zip(_loss, target)):
+                        if i == _best_idx:
                             attention_map.append(
-                                (next_level, c, label, not u, target_loss.item())
+                                (next_level, c, label, not u, loss.item())
                             )
-                    else:
-                        attention_map.append(
-                            (
-                                next_level,
-                                c,
-                                target[_best_idx],
-                                not u,
-                                _loss[_best_idx].item(),
+                        else:
+                            attention_map.append((next_level, c, label, u, loss.item()))
+
+                elif update == 2:  # updated multi superpixel
+                    for loss, label in zip(_loss, target):
+                        if (loss > 0).item():
+                            attention_map.append(
+                                (next_level, c, label, not u, loss.item())
                             )
-                        )
+                        else:
+                            attention_map.append((next_level, c, label, u, loss.item()))
+
+                pbar(forward, config.step, "forward", f"{idx =}")
                 if forward >= config.step:
                     break
             x_adv_all.append(x_best)

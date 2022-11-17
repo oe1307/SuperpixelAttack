@@ -44,14 +44,13 @@ def confirmation(message="Are you sure you want to continue? [y/n]: "):
 
 def pbar(step: int, total: int, front_msg: str = "", back_msg: str = "") -> None:
     """print progress bar"""
-    if step != total:
+    if step < total:
         print(
             f"\r{front_msg} ["
             + "#" * int(step / total * 10)
             + " " * int((1 - step / total) * 10)
-            + f"] {step}/{total}"
-            + " " * 5
-            + back_msg,
+            + f"] {step}/{total} {back_msg}"
+            + " " * 5,
             end="",
         )
     else:
