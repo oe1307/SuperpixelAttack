@@ -43,8 +43,8 @@ class Attacker:
             x_clean = x[start:end]
             x_adv = x_adv_all[start:end]
             label = y[start:end]
-            upper = (x_clean + config.epsilon).clamp(0, 1).clone().to(config.device)
-            lower = (x_clean - config.epsilon).clamp(0, 1).clone().to(config.device)
+            upper = (x_clean + config.epsilon).clamp(0, 1).clone()
+            lower = (x_clean - config.epsilon).clamp(0, 1).clone()
 
             # for check
             assert (x_adv <= upper + 1e-10).all() and (x_adv >= lower - 1e-10).all()
