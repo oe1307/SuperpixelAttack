@@ -24,158 +24,192 @@ class ProposedMethod(Attacker):
         x_adv_all = []
         n_images = x_all.shape[0]
         n_chanel = x_all.shape[1]
+        chanel = np.arange(n_chanel)
         n_batch = math.ceil(n_images / self.model.batch_size)
-        for i in range(n_batch):
-            start = i * self.model.batch_size
-            end = min((i + 1) * self.model.batch_size, n_images)
+        for b in range(n_batch):
+            start = b * self.model.batch_size
+            end = min((b + 1) * self.model.batch_size, n_images)
             x = x_all[start:end]
             y = y_all[start:end]
+            batch = np.arange(x.shape[0])
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
             pred = F.softmax(self.model(x), dim=1)
             base_loss = self.criterion(pred, y)
-            forward = 1
+            forward = np.ones_like(y.cpu())
 
-            # 複数の荒さのsuperpixelをあらかじめ計算
+            # calculate various roughness superpixel
+            # TODO: cpuの並列処理
             superpixel_storage = []
-            for i, (_x, _y) in enumerate(zip(x, y)):
-                pbar(i + 1, x.shape[0], "superpixel")
+            for idx in batch:
+                pbar(idx + 1, batch.max() + 1, "superpixel", f"batch: {b}")
                 _superpixel_storage = []
-                for i, n_segments in enumerate(config.segments):
-                    img = (_x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
+                for idx, n_segments in enumerate(config.segments):
+                    img = (x[idx].cpu().numpy().transpose(1, 2, 0) * 255).astype(
+                        np.uint8
+                    )
                     superpixel = slic(img, n_segments=n_segments)
                     _superpixel_storage.append(superpixel)
                 superpixel_storage.append(_superpixel_storage)
             superpixel_storage = np.array(superpixel_storage)
-            breakpoint()
 
             # initialize
-            superpixel_level = 0
-            superpixel = superpixel_storage[superpixel_level]
-            n_superpixel = superpixel.max()
-            _y = y.repeat(n_chanel * n_superpixel).clone()
-            candidate = list(it.product(range(n_chanel), range(1, n_superpixel + 1)))
+            superpixel = superpixel_storage[:, 0]
+            n_superpixel = superpixel.max(axis=(1, 2))
+            candidate = list(it.product(chanel, range(1, n_superpixel.max() + 1)))
 
             # search upper
-            x_adv = x.repeat(n_chanel * n_superpixel, 1, 1, 1)
-            for n, (c, label) in enumerate(candidate):
-                x_adv[n, c, superpixel == label] = upper[c, superpixel == label]
-            pred = F.softmax(self.model(x_adv), dim=1)
-            upper_loss = self.criterion(pred, _y)
-            forward += len(candidate)
+            upper_loss = []
+            for c, label in candidate:
+                x_adv = x.permute(1, 0, 2, 3).clone()
+                _upper = upper.permute(1, 0, 2, 3).clone()
+                x_adv[c, superpixel == label] = _upper[c, superpixel == label]
+                pred = F.softmax(self.model(x_adv.permute(1, 0, 2, 3)), dim=1)
+                upper_loss.append(self.criterion(pred, y).clone())
+            upper_loss = torch.stack(upper_loss, dim=1)
+            forward += n_chanel * n_superpixel
 
             # search lower
-            x_adv = x.repeat(n_chanel * n_superpixel, 1, 1, 1)
-            for n, (c, label) in enumerate(candidate):
-                x_adv[n, c, superpixel == label] = lower[c, superpixel == label]
-            pred = F.softmax(self.model(x_adv), dim=1)
-            lower_loss = self.criterion(pred, _y)
-            forward += len(candidate)
+            lower_loss = []
+            for c, label in candidate:
+                x_adv = x.permute(1, 0, 2, 3).clone()
+                _lower = lower.permute(1, 0, 2, 3).clone()
+                x_adv[c, superpixel == label] = _lower[c, superpixel == label]
+                pred = F.softmax(self.model(x_adv.permute(1, 0, 2, 3)), dim=1)
+                lower_loss.append(self.criterion(pred, y).clone())
+            lower_loss = torch.stack(lower_loss, dim=1)
+            forward += n_chanel * n_superpixel
 
             # make attention map
             loss, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
-            loss = loss - base_loss
-            u_is_better = u_is_better.bool()
-            attention_map = [
-                (superpixel_level, c, label, u.item(), _loss.item())
-                for (c, label), u, _loss in zip(candidate, u_is_better, loss)
-            ]
+            rise = loss - base_loss.unsqueeze(1)
+            attention_map = []
+            for idx in batch:
+                _loss = rise[idx, : n_superpixel[idx] * n_chanel]
+                u = u_is_better[idx, : n_superpixel[idx] * n_chanel]
+                _candidate = it.product(chanel, range(1, n_superpixel[idx] + 1))
+                attention_map.append(
+                    [
+                        [0, c, label, u.item(), _loss.item()]
+                        for (c, label), u, _loss in zip(
+                            _candidate, u_is_better[idx], rise[idx]
+                        )
+                    ]
+                )
 
             # give init x_adv
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
-            for (c, label), u in zip(candidate, u_is_better):
-                is_upper_best[c, superpixel == label] = u
+            for idx, _attention_map in enumerate(attention_map):
+                for _, c, label, u, _ in _attention_map:
+                    is_upper_best[idx, c, superpixel[idx] == label] = u
             x_best = torch.where(is_upper_best, upper, lower)
-            pred = F.softmax(self.model(x_best.unsqueeze(0)), dim=1)
-            best_loss = self.criterion(pred, y).item()
+            pred = F.softmax(self.model(x_best), dim=1)
+            best_loss = self.criterion(pred, y).clone()
             forward += 1
-            # self.visualize(superpixel, x_best)  # 可視化
 
             while True:
-                attention_map.sort(key=lambda k: k[4], reverse=True)
+                # sort attention map
+                for _attention_map in attention_map:
+                    _attention_map.sort(key=lambda k: k[4], reverse=True)
 
                 # divide most attention area
-                superpixel_level, c, label, u, _ = attention_map.pop(0)
-                superpixel = superpixel_storage[superpixel_level]
-                attention = superpixel == label
-                next_level = min(superpixel_level + 1, len(config.segments) - 1)
-                next_superpixel = superpixel_storage[next_level]
-                n_superpixel = next_superpixel.max()
-                target = []
-                for target_label in range(1, n_superpixel + 1):
-                    target_pixel = next_superpixel == target_label
-                    intersection = np.logical_and(attention, target_pixel)
-                    if intersection.sum() >= target_pixel.sum() / 2:
-                        target.append(target_label)
+                target, attention = [], []
+                for idx, _attention_map in enumerate(attention_map):
+                    level, c, label, u, _ = attention_map[idx].pop(0)
+                    attention.append([level, c, u])
+                    superpixel = superpixel_storage[idx, level]
+                    next_level = min(level + 1, len(config.segments) - 1)
+                    next_superpixel = superpixel_storage[idx, next_level]
+                    n_superpixel = next_superpixel.max()
+                    _target = []
+                    for target_label in range(1, n_superpixel + 1):
+                        target_pixel = next_superpixel == target_label
+                        intersection = np.logical_and(superpixel == label, target_pixel)
+                        if intersection.sum() >= target_pixel.sum() / 2:
+                            _target.append(target_label)
+                    target.append(_target)
+                n_target = np.array([len(_target) for _target in target])
+                for idx, _target in enumerate(target):  # for batch processing
+                    target[idx] += [-1] * (n_target.max() - len(_target))
+                target, attention = np.array(target), np.array(attention)
 
                 # search target
-                if len(target) == 0:
-                    logger.warning("\ntarget is empty")
-                    continue
-                is_upper = is_upper_best.repeat(len(target), 1, 1, 1)
-                for n, target_label in enumerate(target):
-                    is_upper[n, c, next_superpixel == target_label] = not u
-                x_adv = torch.where(is_upper, upper, lower)
-                pred = F.softmax(self.model(x_adv), dim=1)
-                _y = y.repeat(len(target)).clone()
-                loss = self.criterion(pred, _y)
-                forward += len(target)
-                _best_loss, _best_idx = loss.max(dim=0)
-                _loss = loss - best_loss
+                next_level = (attention[:, 0] + 1).clip(0, len(config.segments) - 1)
+                next_superpixel = superpixel_storage[batch, next_level]
+                is_upper, loss = [], []
+                for t in range(n_target.max()):
+                    _is_upper = is_upper_best.clone()
+                    c = attention[:, 1]
+                    t_pixel = next_superpixel == target[:, t].reshape(-1, 1, 1)
+                    for idx in batch:
+                        _is_upper[idx, c[idx], t_pixel[idx]] = not attention[idx, 2]
+                    is_upper.append(_is_upper)
+                    x_adv = torch.where(_is_upper, upper, lower)
+                    pred = F.softmax(self.model(x_adv), dim=1)
+                    loss.append(self.criterion(pred, y))
+                is_upper, loss = torch.stack(is_upper, dim=0), torch.stack(loss, dim=1)
+                _best_loss, best_target = loss.max(dim=1)
+                forward += (target != -1).sum(axis=1)
 
                 # update one superpixel
-                update = 0
-                if _best_loss > best_loss:
-                    update = 1
-                    best_loss = _best_loss.item()
-                    is_upper_best = is_upper[_best_idx].clone()
-                    x_best = x_adv[_best_idx].clone()
-                pbar(forward, config.step, "forward", f"{idx =}")
-                if forward >= config.step:
+                update = _best_loss > best_loss
+                n_target = torch.from_numpy(n_target).to(config.device)
+                update = torch.logical_and(update, best_target < n_target)
+                best_loss = torch.where(update, _best_loss, best_loss)
+                _is_upper_best = is_upper[best_target, batch]
+                _update = update.view(-1, 1, 1, 1)
+                is_upper_best = torch.where(_update, _is_upper_best, is_upper_best)
+                x_best = torch.where(is_upper_best, upper, lower)
+                pbar(forward.min(), config.step, "forward", f"batch: {b}")
+                if forward.min() >= config.step:
                     break
 
                 # updated multi superpixel
-                if (_loss > 0).sum().item() > 1:
-                    is_upper = is_upper_best.clone()
-                    for target_loss, target_label in zip(_loss, target):
-                        if (target_loss > 0).item():
-                            is_upper[c, next_superpixel == target_label] = not u
-                    x_adv = torch.where(is_upper, upper, lower)
-                    pred = F.softmax(self.model(x_adv.unsqueeze(0)), dim=1)
-                    loss = self.criterion(pred, y).item()
-                    forward += 1
-                    if loss > best_loss:
-                        update = 2
-                        best_loss = loss
-                        is_upper_best = is_upper.clone()
-                        x_best = x_adv.clone()
+                rise = loss - base_loss.unsqueeze(1)
+                search_multi_superpixel = (rise > 0).sum(dim=1) > 1
+                is_upper = is_upper_best.clone()
+                for idx, (_target, _loss) in enumerate(zip(target, loss)):
+                    c = attention[idx, 1]
+                    for label, L in zip(_target, _loss):
+                        next_pixel = next_superpixel[idx]
+                        u = not attention[idx, 2] if L > 0 else attention[idx, 2]
+                        is_upper[idx, c, next_pixel == label] = u
+                x_adv = torch.where(is_upper, upper, lower)
+                pred = F.softmax(self.model(x_adv), dim=1)
+                loss = self.criterion(pred, y)
+                forward += search_multi_superpixel.cpu().numpy()
+                update = update.to(torch.uint8) + (loss > best_loss * 2)
+                best_loss = torch.where(update > 1, loss, best_loss)
+                is_upper_best = torch.where(
+                    (update > 1).view(-1, 1, 1, 1), is_upper, is_upper_best
+                )
+                x_best = torch.where(is_upper_best, upper, lower)
 
-                if update == 0:  # not updated
-                    for loss, label in zip(_loss, target):
-                        attention_map.append((next_level, c, label, u, loss.item()))
-                elif update == 1:  # updated one superpixel
-                    for i, (loss, label) in enumerate(zip(_loss, target)):
-                        if i == _best_idx:
-                            attention_map.append(
-                                (next_level, c, label, not u, loss.item())
-                            )
-                        else:
-                            attention_map.append((next_level, c, label, u, loss.item()))
+                # update attention map
+                for idx in batch:
+                    level = next_level[idx]
+                    c = attention[idx, 1]
+                    u = attention[idx, 2]
+                    _rise = rise[idx, : n_target[idx]].cpu().numpy()
+                    _target = target[: n_target[idx]]
+                    if update[idx] == 0:  # not updated
+                        for r, label in zip(_rise, _target):
+                            attention_map[idx].append((level, c, label, u, r))
+                    elif update[idx] == 1:  # updated one superpixel
+                        for target, (r, label) in enumerate(zip(_rise, _target)):
+                            is_best_target = target == best_target[idx].item()
+                            _u = not u if is_best_target else u
+                            attention_map[idx].append((level, c, label, _u, r))
+                    else:
+                        for r, label in zip(_rise, _target):
+                            attention_map[idx].append((level, c, label, not u, r))
 
-                elif update == 2:  # updated multi superpixel
-                    for loss, label in zip(_loss, target):
-                        if (loss > 0).item():
-                            attention_map.append(
-                                (next_level, c, label, not u, loss.item())
-                            )
-                        else:
-                            attention_map.append((next_level, c, label, u, loss.item()))
-
-                pbar(forward, config.step, "forward", f"{idx =}")
-                if forward >= config.step:
+                pbar(forward.min(), config.step, "forward", f"batch: {b}")
+                if forward.min() >= config.step:
                     break
+
             x_adv_all.append(x_best)
-        x_adv_all = torch.stack(x_adv_all)
+        x_adv_all = torch.concat(x_adv_all)
         return x_adv_all
 
     def visualize(self, superpixel: np.ndarray, x: Tensor):
