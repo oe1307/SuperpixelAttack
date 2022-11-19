@@ -1,5 +1,6 @@
 import math
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
@@ -37,17 +38,12 @@ class ProposedMethod(Attacker):
             forward = np.ones_like(batch)
 
             # calculate various roughness superpixel
-            # TODO: cpuの並列処理
-            superpixel_storage = []
-            for idx in batch:
-                pbar.debug(idx + 1, batch.max() + 1, "superpixel", f"batch: {b}")
-                _superpixel_storage = []
-                for n_segments in config.segments:
-                    img = x[idx].cpu().numpy()
-                    img = (img.transpose(1, 2, 0) * 255).astype(np.uint8)
-                    superpixel = slic(img, n_segments=n_segments)
-                    _superpixel_storage.append(superpixel)
-                superpixel_storage.append(_superpixel_storage)
+            futures, superpixel_storage = [], []
+            with ThreadPoolExecutor(config.thread) as executor:
+                for idx in batch:
+                    future = executor.submit(self.cal_superpixel, x[idx])
+                    futures.append(future)
+            superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
 
             # initialize
@@ -208,6 +204,14 @@ class ProposedMethod(Attacker):
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
         return x_adv_all
+
+    def cal_superpixel(self, x):
+        superpixel_storage = []
+        for n_segments in config.segments:
+            img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
+            superpixel = slic(img, n_segments=n_segments)
+            superpixel_storage.append(superpixel)
+        return superpixel_storage
 
     def visualize(self, superpixel: np.ndarray, x: Tensor):
         change_level("matplotlib", 40)
