@@ -42,21 +42,6 @@ def confirmation(message="Are you sure you want to continue? [y/n]: "):
             exit()
 
 
-def pbar(step: int, total: int, front_msg: str = "", back_msg: str = "") -> None:
-    """print progress bar"""
-    if step < total:
-        print(
-            f"\r{front_msg} ["
-            + "#" * int(step / total * 10)
-            + " " * int((1 - step / total) * 10)
-            + f"] {step}/{total} {back_msg}"
-            + " " * 5,
-            end="",
-        )
-    else:
-        print(f"\r{front_msg} [" + "#" * 10 + f"] {step}/{total} {back_msg}")
-
-
 def read_log(log_file):
     database = list()
     compiler = re.compile(

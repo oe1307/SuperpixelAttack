@@ -1,10 +1,10 @@
 from . import _py310, _ssl_certificate
 from .config_parser import config_parser
 from .logging import change_level, setup_logger
+from .progressbar import pbar
 from .utility import (
     confirmation,
     counter,
-    pbar,
     read_log,
     rename_dir,
     rename_file,
@@ -21,10 +21,10 @@ __all__ = [
     "config_parser",
     "change_level",
     "setup_logger",
+    "pbar",
     "confirmation",
     "counter",
     "timer",
-    "pbar",
     "read_log",
     "rename_dir",
     "rename_file",
