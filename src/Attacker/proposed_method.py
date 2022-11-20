@@ -112,8 +112,12 @@ class ProposedMethod(Attacker):
                     for target_label in range(1, n_superpixel + 1):
                         target_pixel = next_superpixel == target_label
                         intersection = np.logical_and(superpixel == label, target_pixel)
-                        if intersection.sum() >= target_pixel.sum() / 2:
+                        if (
+                            intersection.sum() >= target_pixel.sum() / 2
+                            and forward[idx] < config.n_forward
+                        ):
                             _target.append(target_label)
+                            forward[idx] += 1
                     target.append(_target)
                 n_target = np.array([len(_target) for _target in target])
                 for idx, _target in enumerate(target):  # for batch processing
@@ -136,7 +140,6 @@ class ProposedMethod(Attacker):
                     loss.append(self.criterion(pred, y))
                 is_upper, loss = torch.stack(is_upper, dim=0), torch.stack(loss, dim=1)
                 _best_loss, best_target = loss.max(dim=1)
-                forward += (target != -1).sum(axis=1)
 
                 # update one superpixel
                 update = _best_loss > best_loss
@@ -156,6 +159,8 @@ class ProposedMethod(Attacker):
                 search_multi_superpixel = (rise > 0).sum(dim=1) > 1
                 is_upper = is_upper_best.clone()
                 for idx, (_target, _loss) in enumerate(zip(target, loss)):
+                    if forward[idx] > config.n_forward:
+                        continue
                     c = attention[idx, 1]
                     for label, L in zip(_target, _loss):
                         next_pixel = next_superpixel[idx]
