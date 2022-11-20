@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from skimage.segmentation import mark_boundaries, slic
 from torch import Tensor
-from torch.nn import functional as F
 
 from base import Attacker, get_criterion
 from utils import change_level, config_parser, pbar, setup_logger
@@ -33,7 +32,7 @@ class ProposedMethod(Attacker):
             batch = np.arange(x.shape[0])
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
-            pred = F.softmax(self.model(x), dim=1)
+            pred = self.model(x).softmax(dim=1)
             base_loss = self.criterion(pred, y)
             forward = np.ones_like(batch)
 
@@ -58,7 +57,7 @@ class ProposedMethod(Attacker):
                 x_adv = x.permute(1, 0, 2, 3).clone()
                 _upper = upper.permute(1, 0, 2, 3).clone()
                 x_adv[c, superpixel == label] = _upper[c, superpixel == label]
-                pred = F.softmax(self.model(x_adv.permute(1, 0, 2, 3)), dim=1)
+                pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
                 upper_loss.append(self.criterion(pred, y).clone())
             upper_loss = torch.stack(upper_loss, dim=1)
             forward += n_chanel * n_superpixel
@@ -69,7 +68,7 @@ class ProposedMethod(Attacker):
                 x_adv = x.permute(1, 0, 2, 3).clone()
                 _lower = lower.permute(1, 0, 2, 3).clone()
                 x_adv[c, superpixel == label] = _lower[c, superpixel == label]
-                pred = F.softmax(self.model(x_adv.permute(1, 0, 2, 3)), dim=1)
+                pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
                 lower_loss.append(self.criterion(pred, y).clone())
             lower_loss = torch.stack(lower_loss, dim=1)
             forward += n_chanel * n_superpixel
@@ -92,7 +91,7 @@ class ProposedMethod(Attacker):
                 for c, label, u in _attention_map[:, 1:4].astype(int):
                     is_upper_best[idx, c, superpixel[idx] == label] = u
             x_best = torch.where(is_upper_best, upper, lower)
-            pred = F.softmax(self.model(x_best), dim=1)
+            pred = self.model(x_best).softmax(dim=1)
             best_loss = self.criterion(pred, y).clone()
             forward += 1
 
@@ -136,7 +135,7 @@ class ProposedMethod(Attacker):
                         _is_upper[idx, c[idx], t_pixel[idx]] = not attention[idx, 2]
                     is_upper.append(_is_upper)
                     x_adv = torch.where(_is_upper, upper, lower)
-                    pred = F.softmax(self.model(x_adv), dim=1)
+                    pred = self.model(x_adv).softmax(dim=1)
                     loss.append(self.criterion(pred, y))
                 is_upper, loss = torch.stack(is_upper, dim=0), torch.stack(loss, dim=1)
                 _best_loss, best_target = loss.max(dim=1)
@@ -167,7 +166,7 @@ class ProposedMethod(Attacker):
                         u = not attention[idx, 2] if L > 0 else attention[idx, 2]
                         is_upper[idx, c, next_pixel == label] = u
                 x_adv = torch.where(is_upper, upper, lower)
-                pred = F.softmax(self.model(x_adv), dim=1)
+                pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
                 forward += search_multi_superpixel.cpu().numpy()
                 update = update.to(torch.uint8) + (loss > best_loss) * 2
