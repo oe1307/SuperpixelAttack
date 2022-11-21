@@ -104,7 +104,11 @@ class ProposedMethod(Attacker):
                 with ThreadPoolExecutor(config.thread) as executor:
                     futures = [
                         executor.submit(
-                            self.search_target, attention_map, superpixel_storage, idx
+                            self.search_target,
+                            attention_map,
+                            superpixel_storage,
+                            forward[idx].item(),
+                            idx,
                         )
                         for idx in batch
                     ]
@@ -114,6 +118,7 @@ class ProposedMethod(Attacker):
                 for idx, _target in enumerate(target):  # for batch processing
                     target[idx] += [-1] * (n_target.max() - len(_target))
                 target, attention = np.array(target), np.array(attention)
+                forward += (target != -1).sum(axis=1)
 
                 # search target
                 next_level = (attention[:, 0] + 1).clip(0, len(config.segments) - 1)
@@ -147,7 +152,10 @@ class ProposedMethod(Attacker):
 
                 # updated multi superpixel
                 rise = loss - base_loss.unsqueeze(1)
-                search_multi_superpixel = (rise > 0).sum(dim=1) > 1
+                search_multi_superpixel = ((rise > 0).sum(dim=1) > 1).cpu().numpy()
+                search_multi_superpixel = np.logical_and(
+                    search_multi_superpixel, forward < config.step
+                )
                 is_upper = is_upper_best.clone()
                 for idx, (_target, _loss) in enumerate(zip(target, loss)):
                     if forward[idx] > config.n_forward:
@@ -160,7 +168,7 @@ class ProposedMethod(Attacker):
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
-                forward += search_multi_superpixel.cpu().numpy()
+                forward += search_multi_superpixel
                 update = update.to(torch.uint8) + (loss > best_loss) * 2
                 best_loss = torch.where(update > 1, loss, best_loss)
                 is_upper_best = torch.where(
@@ -172,7 +180,7 @@ class ProposedMethod(Attacker):
                 with ThreadPoolExecutor(config.thread) as executor:
                     futures = [
                         executor.submit(
-                            self.make_attention_map,
+                            self.update_attention_map,
                             next_level[idx],
                             n_target[idx],
                             attention[idx],
@@ -209,7 +217,7 @@ class ProposedMethod(Attacker):
         level = np.zeros_like(labels)
         return np.stack([level, chanel, labels, u, _rise]).T
 
-    def search_target(self, attention_map, superpixel_storage, idx):
+    def search_target(self, attention_map, superpixel_storage, forward, idx):
         _attention_map = attention_map[idx]
         attention_idx = _attention_map.argmax(axis=0)[4]
         level, c, label, u = _attention_map[attention_idx, :4].astype(int)
@@ -222,8 +230,9 @@ class ProposedMethod(Attacker):
         for target_label in range(1, n_superpixel + 1):
             target_pixel = next_superpixel == target_label
             intersection = np.logical_and(superpixel == label, target_pixel)
-            if intersection.sum() >= target_pixel.sum() / 2:
+            if intersection.sum() >= target_pixel.sum() / 2 and forward < config.step:
                 target.append(target_label)
+                forward += 1
         return target, [level, c, u]
 
     def update_attention_map(
