@@ -21,7 +21,18 @@ install modules
 
 ## attacker
 
+#### HALS
+
+    Parsimonious Black-Box Adversarial Attacks via Efficient Combinatorial Optimization
+
+#### GenAttack (advertorch)
+
+    GenAttack: practical black-box attacks with gradient-free optimization
+
 #### SquareAttack (Art)
 
     Square Attack: A Query-Efficient Black-Box Adversarial Attack via Random Search
 
+#### SaliencyAttack
+
+    Saliency Attack: Towards Imperceptible Black-box Adversarial Attack
