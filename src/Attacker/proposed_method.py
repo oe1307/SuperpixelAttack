@@ -47,8 +47,8 @@ class ProposedMethod(Attacker):
             # initialize
             superpixel = superpixel_storage[:, 0]
             n_superpixel = superpixel.max(axis=(1, 2))
-            chanel = np.repeat(np.arange(n_chanel), n_superpixel.max())
-            labels = np.tile(range(1, n_superpixel.max() + 1), n_chanel)
+            chanel = np.tile(np.arange(n_chanel), n_superpixel.max())
+            labels = np.repeat(range(1, n_superpixel.max() + 1), n_chanel)
 
             # search upper
             upper_loss = []
@@ -136,11 +136,12 @@ class ProposedMethod(Attacker):
                     loss.append(self.criterion(pred, y))
                 is_upper, loss = torch.stack(is_upper, dim=0), torch.stack(loss, dim=1)
                 _best_loss, best_target = loss.max(dim=1)
+                rise = loss - best_loss.unsqueeze(1)
 
                 # update one superpixel
                 update = _best_loss > best_loss
                 _n_target = torch.from_numpy(n_target).to(config.device)
-                update = torch.logical_and(update, best_target < _n_target - 1)
+                update = torch.logical_and(update, best_target < _n_target)
                 best_loss = torch.where(update, _best_loss, best_loss)
                 _is_upper_best = is_upper[best_target, batch]
                 _update = update.view(-1, 1, 1, 1)
@@ -151,14 +152,11 @@ class ProposedMethod(Attacker):
                     break
 
                 # updated multi superpixel
-                rise = loss - best_loss.unsqueeze(1)
-                search_multi_superpixel = ((rise > 0).sum(dim=1) > 1).cpu().numpy()
-                search_multi_superpixel = np.logical_and(
-                    search_multi_superpixel, forward < config.step
-                )
+                search_multi = ((rise > 0).sum(dim=1) > 1).cpu().numpy()
+                search_multi = np.logical_and(search_multi, forward < config.step)
                 is_upper = is_upper_best.clone()
                 for idx, (_target, _loss) in enumerate(zip(target, loss)):
-                    if forward[idx] > config.n_forward:
+                    if forward[idx] >= config.n_forward or not search_multi[idx]:
                         continue
                     c = attention[idx, 1]
                     for label, L in zip(_target, _loss):
@@ -168,7 +166,7 @@ class ProposedMethod(Attacker):
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
-                forward += search_multi_superpixel
+                forward += search_multi
                 update = update.to(torch.uint8) + (loss > best_loss) * 2
                 best_loss = torch.where(update > 1, loss, best_loss)
                 is_upper_best = torch.where(
@@ -212,8 +210,8 @@ class ProposedMethod(Attacker):
     def make_attention_map(self, rise, n_superpixel, n_chanel, u_is_better, idx):
         _rise = rise[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
         u = u_is_better[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
-        chanel = np.repeat(np.arange(n_chanel), n_superpixel[idx])
-        labels = np.tile(range(1, n_superpixel[idx] + 1), n_chanel)
+        chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
+        labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
         level = np.zeros_like(labels)
         return np.stack([level, chanel, labels, u, _rise]).T
 
