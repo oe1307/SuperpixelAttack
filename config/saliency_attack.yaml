@@ -1,0 +1,16 @@
+attacker: SaliencyAttack
+
+norm: Linf
+epsilon: 0.01568627450980392
+dataset: imagenet
+n_examples: 5000
+
+model:
+    robustbench:
+        Salman2020Do_R18: 1000
+
+# hyperparameter
+steps: 100
+criterion: cw
+initial_split: 32
+
