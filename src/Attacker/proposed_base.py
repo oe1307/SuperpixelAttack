@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class ProposedMethod(Attacker):
+class BaseProposedMethod(Attacker):
     def __init__(self):
         config.n_forward = config.step
         self.criterion = get_criterion()

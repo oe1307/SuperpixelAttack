@@ -1,4 +1,4 @@
-attacker: ProposedMethod
+attacker: BaseProposedMethod
 
 norm: Linf
 epsilon: 0.01568627450980392
