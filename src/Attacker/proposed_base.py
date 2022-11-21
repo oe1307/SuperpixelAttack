@@ -219,7 +219,8 @@ class BaseProposedMethod(Attacker):
         _attention_map = attention_map[idx]
         attention_idx = _attention_map.argmax(axis=0)[4]
         level, c, label, u = _attention_map[attention_idx, :4].astype(int)
-        attention_map[idx] = np.delete(attention_map[idx], attention_idx, 0)
+        if attention_map[idx].shape[0] > 1:
+            attention_map[idx] = np.delete(attention_map[idx], attention_idx, 0)
         superpixel = superpixel_storage[idx, level]
         next_level = min(level + 1, len(config.segments) - 1)
         next_superpixel = superpixel_storage[idx, next_level]
