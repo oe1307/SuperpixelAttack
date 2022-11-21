@@ -46,7 +46,7 @@ class ColorProposedMethod(Attacker):
 
             # initialize
             superpixel = superpixel_storage[:, 0]
-            n_superpixel = superpixel.max(axis=(1, 2))
+            n_superpixel = superpixel.max(axis=(2, 3))
             chanel = np.tile(np.arange(n_chanel), n_superpixel.max())
             labels = np.repeat(range(1, n_superpixel.max() + 1), n_chanel)
 
@@ -55,22 +55,24 @@ class ColorProposedMethod(Attacker):
             for c, label in zip(chanel, labels):
                 x_adv = x.permute(1, 0, 2, 3).clone()
                 _upper = upper.permute(1, 0, 2, 3).clone()
-                x_adv[c, superpixel == label] = _upper[c, superpixel == label]
+                _superpixel = superpixel[batch, c]
+                x_adv[c, _superpixel == label] = _upper[c, _superpixel == label]
                 pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
                 upper_loss.append(self.criterion(pred, y).clone())
             upper_loss = torch.stack(upper_loss, dim=1)
-            forward += n_chanel * n_superpixel
+            forward += n_superpixel.sum(axis=1)
 
             # search lower
             lower_loss = []
             for c, label in zip(chanel, labels):
                 x_adv = x.permute(1, 0, 2, 3).clone()
                 _lower = lower.permute(1, 0, 2, 3).clone()
-                x_adv[c, superpixel == label] = _lower[c, superpixel == label]
+                _superpixel = superpixel[batch, c]
+                x_adv[c, _superpixel == label] = _lower[c, _superpixel == label]
                 pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
                 lower_loss.append(self.criterion(pred, y).clone())
             lower_loss = torch.stack(lower_loss, dim=1)
-            forward += n_chanel * n_superpixel
+            forward += n_superpixel.sum(axis=1)
 
             # make attention map
             loss, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
@@ -93,7 +95,7 @@ class ColorProposedMethod(Attacker):
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
             for idx, _attention_map in enumerate(attention_map):
                 for c, label, u in _attention_map[:, 1:4].astype(int):
-                    is_upper_best[idx, c, superpixel[idx] == label] = u
+                    is_upper_best[idx, c, superpixel[idx, c] == label] = u
             x_best = torch.where(is_upper_best, upper, lower)
             pred = self.model(x_best).softmax(dim=1)
             best_loss = self.criterion(pred, y).clone()
@@ -122,7 +124,8 @@ class ColorProposedMethod(Attacker):
 
                 # search target
                 next_level = (attention[:, 0] + 1).clip(0, len(config.segments) - 1)
-                next_superpixel = superpixel_storage[batch, next_level]
+                target_chanel = attention[:, 1]
+                next_superpixel = superpixel_storage[batch, next_level, target_chanel]
                 is_upper, loss = [], []
                 for label in target.T:
                     _is_upper = is_upper_best.clone()
@@ -201,28 +204,44 @@ class ColorProposedMethod(Attacker):
 
     def cal_superpixel(self, x):
         superpixel_storage = []
+        img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
         for n_segments in config.segments:
-            img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
-            superpixel = slic(img, n_segments=n_segments)
-            superpixel_storage.append(superpixel)
+            _superpixel_storage = []
+            red_img = img.copy()
+            red_img[:, :, 1], red_img[:, :, 2] = 0, 0
+            superpixel = slic(red_img, n_segments=n_segments)
+            _superpixel_storage.append(superpixel)
+            green_img = img.copy()
+            green_img[:, :, 0], green_img[:, :, 2] = 0, 0
+            superpixel = slic(green_img, n_segments=n_segments)
+            _superpixel_storage.append(superpixel)
+            blue_img = img.copy()
+            blue_img[:, :, 0], blue_img[:, :, 1] = 0, 0
+            superpixel = slic(blue_img, n_segments=n_segments)
+            _superpixel_storage.append(superpixel)
+            superpixel_storage.append(_superpixel_storage)
         return superpixel_storage
 
     def make_attention_map(self, rise, n_superpixel, n_chanel, u_is_better, idx):
-        _rise = rise[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
-        u = u_is_better[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
-        chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-        labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-        level = np.zeros_like(labels)
-        return np.stack([level, chanel, labels, u, _rise]).T
+        chanel = np.tile(np.arange(n_chanel), n_superpixel.max())
+        labels = np.repeat(range(1, n_superpixel.max() + 1), n_chanel)
+        _rise = rise[idx].cpu().numpy()
+        u = u_is_better[idx].cpu().numpy()
+        attention_map = []
+        for c, l, r, _u in zip(chanel, labels, _rise, u):
+            if l <= n_superpixel[idx, c]:
+                attention_map.append([0, c, l, _u, r])
+        attention_map = np.array(attention_map)
+        return attention_map
 
     def search_target(self, attention_map, superpixel_storage, forward, idx):
         _attention_map = attention_map[idx]
         attention_idx = _attention_map.argmax(axis=0)[4]
         level, c, label, u = _attention_map[attention_idx, :4].astype(int)
         attention_map[idx] = np.delete(attention_map[idx], attention_idx, 0)
-        superpixel = superpixel_storage[idx, level]
+        superpixel = superpixel_storage[idx, level, c]
         next_level = min(level + 1, len(config.segments) - 1)
-        next_superpixel = superpixel_storage[idx, next_level]
+        next_superpixel = superpixel_storage[idx, next_level, c]
         n_superpixel = next_superpixel.max()
         target = []
         for target_label in range(1, n_superpixel + 1):

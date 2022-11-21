@@ -51,8 +51,10 @@ class SquareAttack(Attacker):
             p_init=config.p_init,
             nb_restarts=config.restart,
         )
-        with yaspin(text="Attacking...", color="cyan"):
-            x_adv = attack.generate(x_all[clean_acc].cpu().numpy())
+        spinner = yaspin(text="Attacking...", color="cyan")
+        spinner.start()
+        x_adv = attack.generate(x_all[clean_acc].cpu().numpy())
+        spinner.stop()
         x_adv_all = x_all.clone()
         x_adv_all[clean_acc] = torch.from_numpy(x_adv).to(config.device)
         return x_adv_all

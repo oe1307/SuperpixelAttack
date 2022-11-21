@@ -1,4 +1,4 @@
-attacker: BaseProposedMethod
+attacker: ColorProposedMethod
 
 norm: Linf
 epsilon: 0.01568627450980392
@@ -7,7 +7,7 @@ n_examples: 5000
 
 model:
     robustbench:
-        Salman2020Do_R18: 1000
+        Salman2020Do_R18: 5000
 
 # hyperparameter
 step: 100

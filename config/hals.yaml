@@ -1,4 +1,4 @@
-attacker: BaseProposedMethod
+attacker: HALS
 
 norm: Linf
 epsilon: 0.01568627450980392
@@ -10,7 +10,7 @@ model:
         Salman2020Do_R18: 1000
 
 # hyperparameter
-step: 100
-criterion: cw
-p_init: 0.8
-segments: [4, 16, 64, 256, 512]
+steps: 100
+criterion: ce
+initial_split: 32
+insert_deletion: 1
