@@ -151,7 +151,7 @@ class ProposedMethod(Attacker):
                     break
 
                 # updated multi superpixel
-                rise = loss - base_loss.unsqueeze(1)
+                rise = loss - best_loss.unsqueeze(1)
                 search_multi_superpixel = ((rise > 0).sum(dim=1) > 1).cpu().numpy()
                 search_multi_superpixel = np.logical_and(
                     search_multi_superpixel, forward < config.step
