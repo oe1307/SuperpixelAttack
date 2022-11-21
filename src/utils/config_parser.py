@@ -40,7 +40,9 @@ class ConfigParser:
         change_level("git", 30)
         self.config.datetime = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
         self.config.hostname = socket.gethostname()
-        self.config.git_hash = git.cmd.Git("./").rev_parse("HEAD")[:7]
+        git_repo = git.Repo(search_parent_directories=True)
+        self.config.branch = git_repo.active_branch.name
+        self.config.git_hash = git_repo.head.object.hexsha[:7]
         os.makedirs(os.path.dirname(path), exist_ok=True)
         json.dump(self.config, open(path, mode="w"), indent=4)
 
