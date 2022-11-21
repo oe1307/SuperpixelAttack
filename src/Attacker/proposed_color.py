@@ -228,9 +228,9 @@ class ColorProposedMethod(Attacker):
         _rise = rise[idx].cpu().numpy()
         u = u_is_better[idx].cpu().numpy()
         attention_map = []
-        for c, l, r, _u in zip(chanel, labels, _rise, u):
-            if l <= n_superpixel[idx, c]:
-                attention_map.append([0, c, l, _u, r])
+        for c, L, r, _u in zip(chanel, labels, _rise, u):
+            if L <= n_superpixel[idx, c]:
+                attention_map.append([0, c, L, _u, r])
         attention_map = np.array(attention_map)
         return attention_map
 

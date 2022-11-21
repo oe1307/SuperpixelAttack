@@ -10,6 +10,7 @@ model:
         Salman2020Do_R18: 1000
 
 # hyperparameter
+saliency_weight: ../storage/model/saliency/saliency_weight.pth
 steps: 100
 criterion: cw
 initial_split: 32

@@ -4,7 +4,7 @@ import math
 import torch
 from torch import Tensor
 
-from base import Attacker, get_criterion
+from base import Attacker, SODModel, get_criterion
 from utils import config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)
@@ -16,6 +16,11 @@ class SaliencyAttack(Attacker):
         super().__init__()
         if config.dataset != "imagenet":
             raise ValueError("Saliency Attack is only for ImageNet")
+        self.saliency_model = SODModel()
+        chkpt = torch.load(config.saliency_weight, map_location=config.device)
+        self.saliency_model.load_state_dict(chkpt["model"])
+        self.saliency_model.to(config.device)
+        self.saliency_model.eval()
         self.criterion = get_criterion()
         config.n_forward = config.steps
 
