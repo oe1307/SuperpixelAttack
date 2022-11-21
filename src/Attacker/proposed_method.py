@@ -38,11 +38,10 @@ class ProposedMethod(Attacker):
             forward = np.ones_like(batch)
 
             # calculate various roughness superpixel
-            futures, superpixel_storage = [], []
             with ThreadPoolExecutor(config.thread) as executor:
-                for idx in batch:
-                    future = executor.submit(self.cal_superpixel, x[idx])
-                    futures.append(future)
+                futures = [
+                    executor.submit(self.cal_superpixel, x[idx]) for idx in batch
+                ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
 
@@ -77,14 +76,19 @@ class ProposedMethod(Attacker):
             # make attention map
             loss, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
             rise = loss - base_loss.unsqueeze(1)
-            attention_map = []
-            for idx in batch:
-                _rise = rise[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
-                u = u_is_better[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
-                chanel = np.repeat(np.arange(n_chanel), n_superpixel[idx])
-                labels = np.tile(range(1, n_superpixel[idx] + 1), n_chanel)
-                level = np.zeros_like(labels)
-                attention_map.append(np.stack([level, chanel, labels, u, _rise]).T)
+            with ThreadPoolExecutor(config.thread) as executor:
+                futures = [
+                    executor.submit(
+                        self.make_attention_map,
+                        rise,
+                        n_superpixel,
+                        n_chanel,
+                        u_is_better,
+                        idx,
+                    )
+                    for idx in batch
+                ]
+            attention_map = [future.result() for future in futures]
 
             # give init x_adv
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
@@ -98,23 +102,15 @@ class ProposedMethod(Attacker):
 
             while True:
                 # divide most attention area
-                target, attention = [], []
-                for idx, _attention_map in enumerate(attention_map):
-                    attention_idx = _attention_map.argmax(axis=0)[4]
-                    level, c, label, u = _attention_map[attention_idx, :4].astype(int)
-                    attention_map[idx] = np.delete(attention_map[idx], attention_idx, 0)
-                    attention.append([level, c, u])
-                    superpixel = superpixel_storage[idx, level]
-                    next_level = min(level + 1, len(config.segments) - 1)
-                    next_superpixel = superpixel_storage[idx, next_level]
-                    n_superpixel = next_superpixel.max()
-                    _target = []
-                    for target_label in range(1, n_superpixel + 1):
-                        target_pixel = next_superpixel == target_label
-                        intersection = np.logical_and(superpixel == label, target_pixel)
-                        if intersection.sum() >= target_pixel.sum() / 2:
-                            _target.append(target_label)
-                    target.append(_target)
+                with ThreadPoolExecutor(config.thread) as executor:
+                    futures = [
+                        executor.submit(
+                            self.search_target, attention_map, superpixel_storage, idx
+                        )
+                        for idx in batch
+                    ]
+                target = [future.result()[0] for future in futures]
+                attention = [future.result()[1] for future in futures]
                 n_target = np.array([len(_target) for _target in target])
                 for idx, _target in enumerate(target):  # for batch processing
                     target[idx] += [-1] * (n_target.max() - len(_target))
@@ -173,30 +169,22 @@ class ProposedMethod(Attacker):
                 x_best = torch.where(is_upper_best, upper, lower)
 
                 # update attention map
-                for idx in batch:
-                    level = next_level[idx].repeat(n_target[idx])
-                    c = attention[idx, 1].repeat(n_target[idx])
-                    u = attention[idx, 2].repeat(n_target[idx])
-                    _rise = rise[idx, : n_target[idx]].cpu().numpy()
-                    _target = target[idx, : n_target[idx]]
-                    if update[idx] == 0:  # not updated
-                        new_attention = np.stack([level, c, _target, u, _rise]).T
-                        attention_map[idx] = np.append(
-                            attention_map[idx], new_attention, axis=0
+                with ThreadPoolExecutor(config.thread) as executor:
+                    futures = [
+                        executor.submit(
+                            self.make_attention_map,
+                            next_level[idx],
+                            n_target[idx],
+                            attention[idx],
+                            rise[idx],
+                            target[idx],
+                            update[idx],
+                            attention_map[idx],
+                            best_target[idx],
                         )
-                    elif update[idx] == 1:  # updated one superpixel
-                        u[best_target[idx]] = not u[best_target[idx]]
-                        new_attention = np.stack([level, c, _target, u, _rise]).T
-                        attention_map[idx] = np.append(
-                            attention_map[idx], new_attention, axis=0
-                        )
-                    else:  # updated multi superpixel
-                        u = np.where(_rise > 0, 1 - u, u)
-                        new_attention = np.stack([level, c, _target, u, _rise]).T
-                        attention_map[idx] = np.append(
-                            attention_map[idx], new_attention, axis=0
-                        )
-
+                        for idx in batch
+                    ]
+                attention_map = [future.result() for future in futures]
                 pbar.debug(forward.min(), config.step, "forward", f"batch: {b}")
                 if forward.min() >= config.step:
                     break
@@ -212,6 +200,59 @@ class ProposedMethod(Attacker):
             superpixel = slic(img, n_segments=n_segments)
             superpixel_storage.append(superpixel)
         return superpixel_storage
+
+    def make_attention_map(self, rise, n_superpixel, n_chanel, u_is_better, idx):
+        _rise = rise[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
+        u = u_is_better[idx, : n_superpixel[idx] * n_chanel].cpu().numpy()
+        chanel = np.repeat(np.arange(n_chanel), n_superpixel[idx])
+        labels = np.tile(range(1, n_superpixel[idx] + 1), n_chanel)
+        level = np.zeros_like(labels)
+        return np.stack([level, chanel, labels, u, _rise]).T
+
+    def search_target(self, attention_map, superpixel_storage, idx):
+        _attention_map = attention_map[idx]
+        attention_idx = _attention_map.argmax(axis=0)[4]
+        level, c, label, u = _attention_map[attention_idx, :4].astype(int)
+        attention_map[idx] = np.delete(attention_map[idx], attention_idx, 0)
+        superpixel = superpixel_storage[idx, level]
+        next_level = min(level + 1, len(config.segments) - 1)
+        next_superpixel = superpixel_storage[idx, next_level]
+        n_superpixel = next_superpixel.max()
+        target = []
+        for target_label in range(1, n_superpixel + 1):
+            target_pixel = next_superpixel == target_label
+            intersection = np.logical_and(superpixel == label, target_pixel)
+            if intersection.sum() >= target_pixel.sum() / 2:
+                target.append(target_label)
+        return target, [level, c, u]
+
+    def update_attention_map(
+        self,
+        next_level,
+        n_target,
+        attention,
+        rise,
+        target,
+        update,
+        attention_map,
+        best_target,
+    ):
+        level = next_level.repeat(n_target)
+        c, u = attention[1].repeat(n_target), attention[2].repeat(n_target)
+        _rise = rise[:n_target].cpu().numpy()
+        _target = target[:n_target]
+        if update == 0:  # not updated
+            new_attention = np.stack([level, c, _target, u, _rise]).T
+            attention_map = np.append(attention_map, new_attention, axis=0)
+        elif update == 1:  # updated one superpixel
+            u[best_target] = not u[best_target]
+            new_attention = np.stack([level, c, _target, u, _rise]).T
+            attention_map = np.append(attention_map, new_attention, axis=0)
+        else:  # updated multi superpixel
+            u = np.where(_rise > 0, 1 - u, u)
+            new_attention = np.stack([level, c, _target, u, _rise]).T
+            attention_map = np.append(attention_map, new_attention, axis=0)
+        return attention_map
 
     def visualize(self, superpixel: np.ndarray, x: Tensor):
         change_level("matplotlib", 40)
