@@ -5,6 +5,7 @@ from .gen_attack import GenAttack
 from .hals import HALS
 from .proposed_base import BaseProposedMethod
 from .proposed_color import ColorProposedMethod
+from .proposed_tabu import TabuProposedMethod
 from .square_attack import SquareAttack
 
 config = config_parser()
@@ -21,5 +22,7 @@ def get_attacker() -> Attacker:
         return BaseProposedMethod()
     elif config.attacker == "ColorProposedMethod":
         return ColorProposedMethod()
+    elif config.attacker == "TabuProposedMethod":
+        return TabuProposedMethod()
     else:
         raise NotImplementedError(config.attacker)

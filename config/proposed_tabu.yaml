@@ -12,5 +12,5 @@ model:
 # hyperparameter
 step: 100
 criterion: cw
-p_init: 0.8
-segments: [4, 16, 64, 256, 512]
+segments: [4, 16]
+checkpoints: [30, 70]
