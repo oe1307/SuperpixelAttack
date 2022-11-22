@@ -1,5 +1,6 @@
 import math
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
@@ -36,7 +37,11 @@ class BaseProposedMethod(Attacker):
             forward = np.ones_like(batch)
 
             # calculate various roughness superpixel
-            superpixel_storage = [self.cal_superpixel(x[idx]) for idx in batch]
+            with ThreadPoolExecutor(config.thread) as executor:
+                futures = [
+                    executor.submit(self.cal_superpixel, x[idx]) for idx in batch
+                ]
+            superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
 
             # initialize
