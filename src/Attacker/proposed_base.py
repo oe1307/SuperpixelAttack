@@ -1,6 +1,5 @@
 import math
 import sys
-from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
@@ -37,11 +36,7 @@ class BaseProposedMethod(Attacker):
             forward = np.ones_like(batch)
 
             # calculate various roughness superpixel
-            with ThreadPoolExecutor(config.thread) as executor:
-                futures = [
-                    executor.submit(self.cal_superpixel, x[idx]) for idx in batch
-                ]
-            superpixel_storage = [future.result() for future in futures]
+            superpixel_storage = [self.cal_superpixel(x[idx]) for idx in batch]
             superpixel_storage = np.array(superpixel_storage)
 
             # initialize
@@ -75,19 +70,10 @@ class BaseProposedMethod(Attacker):
             # make attention map
             loss, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
             rise = loss - base_loss.unsqueeze(1)
-            with ThreadPoolExecutor(config.thread) as executor:
-                futures = [
-                    executor.submit(
-                        self.make_attention_map,
-                        rise,
-                        n_superpixel,
-                        n_chanel,
-                        u_is_better,
-                        idx,
-                    )
-                    for idx in batch
-                ]
-            attention_map = [future.result() for future in futures]
+            attention_map = [
+                self.make_attention_map(rise, n_superpixel, n_chanel, u_is_better, idx)
+                for idx in batch
+            ]
 
             # give init x_adv
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
@@ -101,19 +87,14 @@ class BaseProposedMethod(Attacker):
 
             while True:
                 # divide most attention area
-                with ThreadPoolExecutor(config.thread) as executor:
-                    futures = [
-                        executor.submit(
-                            self.search_target,
-                            attention_map,
-                            superpixel_storage,
-                            forward[idx].item(),
-                            idx,
-                        )
-                        for idx in batch
-                    ]
-                target = [future.result()[0] for future in futures]
-                attention = [future.result()[1] for future in futures]
+                result = [
+                    self.search_target(
+                        attention_map, superpixel_storage, forward[idx].item(), idx
+                    )
+                    for idx in batch
+                ]
+                target = [r[0] for r in result]
+                attention = [r[1] for r in result]
                 n_target = np.array([len(_target) for _target in target])
                 for idx, _target in enumerate(target):  # for batch processing
                     target[idx] += [-1] * (n_target.max() - len(_target))
@@ -175,22 +156,19 @@ class BaseProposedMethod(Attacker):
                 x_best = torch.where(is_upper_best, upper, lower)
 
                 # update attention map
-                with ThreadPoolExecutor(config.thread) as executor:
-                    futures = [
-                        executor.submit(
-                            self.update_attention_map,
-                            next_level[idx],
-                            n_target[idx],
-                            attention[idx],
-                            rise[idx],
-                            target[idx],
-                            update[idx],
-                            attention_map[idx],
-                            best_target[idx],
-                        )
-                        for idx in batch
-                    ]
-                attention_map = [future.result() for future in futures]
+                attention_map = [
+                    self.update_attention_map(
+                        next_level[idx],
+                        n_target[idx],
+                        attention[idx],
+                        rise[idx],
+                        target[idx],
+                        update[idx],
+                        attention_map[idx],
+                        best_target[idx],
+                    )
+                    for idx in batch
+                ]
                 pbar.debug(forward.min(), config.step, "forward", f"batch: {b}")
                 if forward.min() >= config.step:
                     break
