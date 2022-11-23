@@ -5,6 +5,7 @@ from .gen_attack import GenAttack
 from .hals import HALS
 from .proposed_base import BaseProposedMethod
 from .proposed_color import ColorProposedMethod
+from .proposed_only_boundary import BoundaryProposedMethod
 from .proposed_tabu import TabuProposedMethod
 from .square_attack import SquareAttack
 
@@ -22,6 +23,8 @@ def get_attacker() -> Attacker:
         return BaseProposedMethod()
     elif config.attacker == "ColorProposedMethod":
         return ColorProposedMethod()
+    elif config.attacker == "BoundaryProposedMethod":
+        return BoundaryProposedMethod()
     elif config.attacker == "TabuProposedMethod":
         return TabuProposedMethod()
     else:

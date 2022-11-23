@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuProposedMethod(Attacker):
+class TabuInitializedProposedMethod(Attacker):
     def __init__(self):
         config.n_forward = config.step
         self.criterion = get_criterion()
@@ -43,11 +43,47 @@ class TabuProposedMethod(Attacker):
             superpixel_storage = np.array(superpixel_storage)
 
             # initialize
-            superpixel_level = 0
+            superpixel_level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, superpixel_level]
             n_superpixel = superpixel.max(axis=(1, 2))
             chanel = np.tile(np.arange(n_chanel), n_superpixel.max())
             labels = np.repeat(range(1, n_superpixel.max() + 1), n_chanel)
+
+            # search upper
+            upper_loss = []
+            for c, label in zip(chanel, labels):
+                x_adv = x.permute(1, 0, 2, 3).clone()
+                _upper = upper.permute(1, 0, 2, 3).clone()
+                x_adv[c, superpixel == label] = _upper[c, superpixel == label]
+                pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
+                upper_loss.append(self.criterion(pred, y).clone())
+            upper_loss = torch.stack(upper_loss, dim=1)
+            forward += n_chanel * n_superpixel
+
+            # search lower
+            lower_loss = []
+            for c, label in zip(chanel, labels):
+                x_adv = x.permute(1, 0, 2, 3).clone()
+                _lower = lower.permute(1, 0, 2, 3).clone()
+                x_adv[c, superpixel == label] = _lower[c, superpixel == label]
+                pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
+                lower_loss.append(self.criterion(pred, y).clone())
+            lower_loss = torch.stack(lower_loss, dim=1)
+            forward += n_chanel * n_superpixel
+
+            # give init x_adv
+            loss, u_is_better = torch.stack([lower_loss, upper_loss]).argmax(dim=0)
+            u_is_better = u_is_better.to(torch.bool)
+            is_upper_best = torch.zeros_like(x, dtype=torch.bool)
+            for idx in batch:
+                for c, label, u in zip(chanel, labels, u_is_better[idx]):
+                    is_upper_best[idx, c, superpixel[idx] == label] = u
+            x_best = torch.where(is_upper_best, upper, lower)
+            pred = self.model(x_best).softmax(dim=1)
+            best_loss = self.criterion(pred, y).clone()
+            forward += 1
+            tabu_list = np.zeros((batch.shape[0], n_chanel, labels.shape[0]))
+            assert forward.max() < config.checkpoints[0]
 
             while True:
                 if sum([(forward == c).sum() for c in config.checkpoints]) > 0:
@@ -56,6 +92,7 @@ class TabuProposedMethod(Attacker):
                     superpixel = superpixel_storage[batch, superpixel_level]
                     n_superpixel = superpixel.max(axis=(1, 2))
 
+                # fast fit
                 is_upper = []
                 for idx in batch:
                     _is_upper = is_upper_best[idx].clone()
@@ -64,7 +101,6 @@ class TabuProposedMethod(Attacker):
                         if tabu_list[idx, c, label - 1] > 0:
                             tabu_list[idx, c, label - 1] -= 1
                             continue
-                    
 
                 pbar.debug(forward.min(), config.step, "forward", f"batch: {b}")
                 if forward.min() >= config.step:
@@ -81,43 +117,3 @@ class TabuProposedMethod(Attacker):
             superpixel = slic(img, n_segments=n_segments)
             superpixel_storage.append(superpixel)
         return superpixel_storage
-
-    def visualize(self, superpixel: np.ndarray, x: Tensor):
-        change_level("matplotlib", 40)
-        from matplotlib import pyplot as plt
-
-        assert x.dim() == 3
-        x = x.cpu().numpy().transpose(1, 2, 0)
-
-        plt.subplots(figsize=(6, 6))
-        plt.tick_params(
-            bottom=False,
-            left=False,
-            labelbottom=False,
-            labelleft=False,
-        )
-        plt.imshow(mark_boundaries(x, superpixel))
-        plt.savefig(f"{config.savedir}/superpixel.png")
-        plt.close()
-
-        plt.tick_params(
-            bottom=False,
-            left=False,
-            labelbottom=False,
-            labelleft=False,
-        )
-        plt.imshow(superpixel)
-        plt.colorbar()
-        plt.savefig(f"{config.savedir}/label.png")
-        plt.close()
-
-        plt.tick_params(
-            bottom=False,
-            left=False,
-            labelbottom=False,
-            labelleft=False,
-        )
-        plt.imshow(x)
-        plt.savefig(f"{config.savedir}/x_best.png")
-        plt.close()
-        sys.exit(0)
