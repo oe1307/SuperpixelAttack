@@ -1,4 +1,4 @@
-attacker: TabuProposedMethod
+attacker: LocalSearchProposedMethod
 
 norm: Linf
 epsilon: 0.01568627450980392
@@ -12,5 +12,4 @@ model:
 # hyperparameter
 step: 100
 criterion: cw
-segments: [4, 16]
-checkpoints: [30, 70]
+segments: [4, 16, 64]

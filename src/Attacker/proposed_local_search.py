@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuProposedMethod(Attacker):
+class LocalSearchProposedMethod(Attacker):
     def __init__(self):
         config.n_forward = config.step
         self.criterion = get_criterion()
@@ -32,7 +32,13 @@ class TabuProposedMethod(Attacker):
             batch = np.arange(x.shape[0])
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
-            forward = np.zeros_like(batch)
+
+            # initialize
+            is_upper_best = torch.zeros_like(x, dtype=torch.bool)
+            x_best = lower.clone()
+            pred = self.model(x_best).softmax(1)
+            best_loss = self.criterion(pred, y)
+            forward = np.ones_like(batch)
 
             # calculate various roughness superpixel
             with ThreadPoolExecutor(config.thread) as executor:
@@ -41,30 +47,26 @@ class TabuProposedMethod(Attacker):
                 ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
-
-            # initialize
-            superpixel_level = 0
+            superpixel_level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, superpixel_level]
             n_superpixel = superpixel.max(axis=(1, 2))
-            chanel = np.tile(np.arange(n_chanel), n_superpixel.max())
-            labels = np.repeat(range(1, n_superpixel.max() + 1), n_chanel)
 
+            # local search
             while True:
-                if sum([(forward == c).sum() for c in config.checkpoints]) > 0:
-                    for c in config.checkpoints:
-                        superpixel_level += forward == c
-                    superpixel = superpixel_storage[batch, superpixel_level]
-                    n_superpixel = superpixel.max(axis=(1, 2))
+                # update superpixel
+                superpixel_level += forward == 3 * n_superpixel
+                superpixel = superpixel_storage[batch, superpixel_level]
+                n_superpixel = superpixel.max(axis=(1, 2))
 
                 is_upper = []
                 for idx in batch:
+
                     _is_upper = is_upper_best[idx].clone()
                     _best_loss = -10
                     for c, label in zip(chanel, labels):
                         if tabu_list[idx, c, label - 1] > 0:
                             tabu_list[idx, c, label - 1] -= 1
                             continue
-                    
 
                 pbar.debug(forward.min(), config.step, "forward", f"batch: {b}")
                 if forward.min() >= config.step:

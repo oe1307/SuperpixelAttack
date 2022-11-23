@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
-from skimage.segmentation import find_boundaries, slic, mark_boundaries
+from skimage.segmentation import find_boundaries, mark_boundaries, slic
 from torch import Tensor
 
 from base import Attacker, get_criterion

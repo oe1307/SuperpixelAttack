@@ -65,7 +65,9 @@ def run_inference(args):
     transform = get_preprocessing(
         BenchmarkDataset.imagenet, ThreatModel("Linf"), "Salman2020Do_R18", None
     )
-    dataset = CustomImageFolder("/work/issa/AdEx_BlackBox/storage/data/imagenet/val", transform=transform)
+    dataset = CustomImageFolder(
+        "/work/issa/AdEx_BlackBox/storage/data/imagenet/val", transform=transform
+    )
 
     print("Press 'q' to quit.")
     with torch.no_grad():

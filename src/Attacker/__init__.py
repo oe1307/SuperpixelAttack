@@ -4,9 +4,7 @@ from utils import config_parser
 from .gen_attack import GenAttack
 from .hals import HALS
 from .proposed_base import BaseProposedMethod
-from .proposed_color import ColorProposedMethod
-from .proposed_only_boundary import BoundaryProposedMethod
-from .proposed_tabu import TabuProposedMethod
+from .proposed_local_search import LocalSearchProposedMethod
 from .square_attack import SquareAttack
 
 config = config_parser()
@@ -21,11 +19,7 @@ def get_attacker() -> Attacker:
         return SquareAttack()
     elif config.attacker == "BaseProposedMethod":
         return BaseProposedMethod()
-    elif config.attacker == "ColorProposedMethod":
-        return ColorProposedMethod()
-    elif config.attacker == "BoundaryProposedMethod":
-        return BoundaryProposedMethod()
-    elif config.attacker == "TabuProposedMethod":
-        return TabuProposedMethod()
+    elif config.attacker == "LocalSearchProposedMethod":
+        return LocalSearchProposedMethod()
     else:
         raise NotImplementedError(config.attacker)
