@@ -33,13 +33,6 @@ class LocalSearchProposedMethod(Attacker):
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
 
-            # initialize
-            is_upper_best = torch.zeros_like(x, dtype=torch.bool)
-            x_best = lower.clone()
-            pred = self.model(x_best).softmax(1)
-            best_loss = self.criterion(pred, y)
-            forward = np.ones_like(batch)
-
             # calculate various roughness superpixel
             with ThreadPoolExecutor(config.thread) as executor:
                 futures = [
@@ -47,29 +40,58 @@ class LocalSearchProposedMethod(Attacker):
                 ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
+
+            # initialize
             superpixel_level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, superpixel_level]
             n_superpixel = superpixel.max(axis=(1, 2))
 
+            is_upper_best = torch.zeros_like(x, dtype=torch.bool)
+            x_best = lower.clone()
+            pred = self.model(x_best).softmax(1)
+            best_loss = self.criterion(pred, y)
+            forward = 1
+
+            targets = []
+            for idx in batch:
+                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
+                labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
+                target = np.stack([chanel, labels], axis=1)
+                np.random.shuffle(target)
+                targets.append(target)
+            del target, chanel, labels
+            checkpoint = 3 * n_superpixel
+
             # local search
             while True:
-                # update superpixel
-                superpixel_level += forward == 3 * n_superpixel
-                superpixel = superpixel_storage[batch, superpixel_level]
-                n_superpixel = superpixel.max(axis=(1, 2))
-
-                is_upper = []
+                is_upper = is_upper_best.clone()
                 for idx in batch:
+                    if forward == checkpoint[idx]:
+                        superpixel_level[idx] += 1
+                        superpixel[idx] = superpixel_storage[idx, superpixel_level[idx]]
+                        n_superpixel[idx] = superpixel[idx].max()
+                        chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
+                        labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
+                        targets[idx] = np.stack([chanel, labels], axis=1)
+                        np.random.shuffle(targets[idx])
+                        checkpoint[idx] += 3 * n_superpixel[idx]
+                    c, label = targets[idx][0]
+                    targets[idx] = np.delete(targets[idx], 0, axis=0)
+                    is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
+                        idx, c, superpixel[idx] == label
+                    ]
+                x_adv = torch.where(is_upper, upper, lower)
+                pred = self.model(x_adv).softmax(dim=1)
+                loss = self.criterion(pred, y)
+                update = loss >= best_loss
+                x_best[update] = x_adv[update]
+                best_loss[update] = loss[update]
+                is_upper_best[update] = is_upper[update]
+                forward += 1
+                # breakpoint()
 
-                    _is_upper = is_upper_best[idx].clone()
-                    _best_loss = -10
-                    for c, label in zip(chanel, labels):
-                        if tabu_list[idx, c, label - 1] > 0:
-                            tabu_list[idx, c, label - 1] -= 1
-                            continue
-
-                pbar.debug(forward.min(), config.step, "forward", f"batch: {b}")
-                if forward.min() >= config.step:
+                pbar.debug(forward, config.step, "forward", f"batch: {b}")
+                if forward == config.step:
                     break
 
             x_adv_all.append(x_best)
