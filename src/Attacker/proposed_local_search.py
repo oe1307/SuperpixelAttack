@@ -64,7 +64,6 @@ class LocalSearchProposedMethod(Attacker):
             # local search
             while True:
                 is_upper = is_upper_best.clone()
-                search = []
                 for idx in batch:
                     if forward == checkpoint[idx]:
                         superpixel_level[idx] += 1
@@ -80,7 +79,6 @@ class LocalSearchProposedMethod(Attacker):
                     is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
                         idx, c, superpixel[idx] == label
                     ]
-                    search.append((c, label))
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
@@ -89,14 +87,6 @@ class LocalSearchProposedMethod(Attacker):
                 best_loss[update] = loss[update]
                 is_upper_best[update] = is_upper[update]
                 forward += 1
-                for idx in batch:  # TODO: search should be
-                    if update[idx]:
-                        chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                        labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-                        targets[idx] = np.stack([chanel, labels], axis=1)
-                        np.random.shuffle(targets[idx])
-                        searched = np.where((targets[idx] == (1, 1)).all(axis=1))[0]
-                        targets[idx] = np.delete(targets[idx], searched, axis=0)
 
                 pbar.debug(forward, config.step, "forward", f"batch: {b}")
                 if forward == config.step:
