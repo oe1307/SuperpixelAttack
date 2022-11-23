@@ -1,14 +1,13 @@
 import math
-import sys
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
-from skimage.segmentation import mark_boundaries, slic
+from skimage.segmentation import slic
 from torch import Tensor
 
 from base import Attacker, get_criterion
-from utils import change_level, config_parser, pbar, setup_logger
+from utils import config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()
