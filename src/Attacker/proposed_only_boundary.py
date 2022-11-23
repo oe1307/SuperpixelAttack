@@ -138,7 +138,7 @@ class BoundaryProposedMethod(Attacker):
                         np.random.shuffle(target)
                         targets[idx] = target
                         checkpoint[idx] += 3 * n_boundary[idx]
-                    if targets[idx][0] == []:
+                    if targets[idx] == []:
                         continue
                     c, box_id = targets[idx][0]
                     targets[idx] = np.delete(targets[idx], 0, axis=0)
