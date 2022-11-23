@@ -15,13 +15,15 @@ class SaliencyAttack(Attacker):
         super().__init__()
         if config.dataset != "imagenet":
             raise ValueError("Saliency Attack is only for ImageNet")
+        self.criterion = get_criterion()
+        config.n_forward = config.steps
+
+        # saliency model
         self.saliency_model = SODModel()
         chkpt = torch.load(config.saliency_weight, map_location=config.device)
         self.saliency_model.load_state_dict(chkpt["model"])
         self.saliency_model.to(config.device)
         self.saliency_model.eval()
-        self.criterion = get_criterion()
-        config.n_forward = config.steps
 
     def _attack(self, x_all: Tensor, y_all: Tensor):
         x_adv_all = []
@@ -34,4 +36,5 @@ class SaliencyAttack(Attacker):
             y = y_all[start:end]
             upper = (x + config.epsilon).clamp(0, 1)
             lower = (x - config.epsilon).clamp(0, 1)
+        del y, upper, lower, x_adv_all
         raise NotImplementedError
