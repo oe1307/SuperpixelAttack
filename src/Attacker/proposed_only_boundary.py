@@ -46,40 +46,40 @@ class BoundaryProposedMethod(Attacker):
             superpixel_level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, superpixel_level]
             n_superpixel = superpixel.max(axis=(1, 2))
-            chanel = np.tile(np.arange(n_chanel), n_superpixel.max())
-            labels = np.repeat(range(1, n_superpixel.max() + 1), n_chanel)
 
-            # search upper
-            upper_loss = []
-            for c, label in zip(chanel, labels):
-                x_adv = x.permute(1, 0, 2, 3).clone()
-                _upper = upper.permute(1, 0, 2, 3).clone()
-                x_adv[c, superpixel == label] = _upper[c, superpixel == label]
-                pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
-                upper_loss.append(self.criterion(pred, y).clone())
-            upper_loss = torch.stack(upper_loss, dim=1)
-            forward = n_chanel * n_superpixel
-
-            # search lower
-            lower_loss = []
-            for c, label in zip(chanel, labels):
-                x_adv = x.permute(1, 0, 2, 3).clone()
-                _lower = lower.permute(1, 0, 2, 3).clone()
-                x_adv[c, superpixel == label] = _lower[c, superpixel == label]
-                pred = self.model(x_adv.permute(1, 0, 2, 3)).softmax(dim=1)
-                lower_loss.append(self.criterion(pred, y).clone())
-            lower_loss = torch.stack(lower_loss, dim=1)
-            forward += n_chanel * n_superpixel
-
-            u_is_better = torch.stack([lower_loss, upper_loss]).argmax(dim=0).to(bool)
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
+            x_best = lower.clone()
+            pred = self.model(x_best).softmax(1)
+            best_loss = self.criterion(pred, y)
+            forward = np.ones_like(batch)
+
+            targets = []
             for idx in batch:
-                for c, label, u in zip(chanel, labels, u_is_better[idx]):
-                    is_upper_best[idx, c, superpixel[idx] == label] = u
-            x_best = torch.where(is_upper_best, upper, lower)
-            pred = self.model(x_best).softmax(dim=1)
-            best_loss = self.criterion(pred, y).clone()
-            forward += 1
+                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
+                labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
+                target = np.stack([chanel, labels], axis=1)
+                np.random.shuffle(target)
+                targets.append(target)
+            checkpoint = 3 * n_superpixel
+
+            for _ in range(checkpoint.max()):
+                is_upper = is_upper_best.clone()
+                for idx in batch:
+                    if forward[idx] >= checkpoint[idx]:
+                        continue
+                    c, label = targets[idx][0]
+                    targets[idx] = np.delete(targets[idx], 0, axis=0)
+                    is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
+                        idx, c, superpixel[idx] == label
+                    ]
+                    forward[idx] += 1
+                x_adv = torch.where(is_upper, upper, lower)
+                pred = self.model(x_adv).softmax(dim=1)
+                loss = self.criterion(pred, y)
+                update = loss >= best_loss
+                x_best[update] = x_adv[update]
+                best_loss[update] = loss[update]
+                is_upper_best[update] = is_upper[update]
 
             boundary_boxes = [[] for _ in batch]
             for idx in batch:
