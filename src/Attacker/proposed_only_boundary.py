@@ -23,6 +23,7 @@ class BoundaryProposedMethod(Attacker):
         x_adv_all = []
         n_images = x_all.shape[0]
         n_chanel = x_all.shape[1]
+        h, w = x_all.shape[2:]
         n_batch = math.ceil(n_images / self.model.batch_size)
         for b in range(n_batch):
             start = b * self.model.batch_size
@@ -80,19 +81,30 @@ class BoundaryProposedMethod(Attacker):
             best_loss = self.criterion(pred, y).clone()
             forward += 1
 
-            boundary_boxes = []
+            boundary_boxes = [[] for _ in batch]
             for idx in batch:
                 candidate = it.combinations(range(1, n_superpixel[idx] + 1), 2)
-                boundary_boxes.append(
-                    [
-                        np.logical_and(
-                            find_boundaries(superpixel[idx] == label1),
-                            find_boundaries(superpixel[idx] == label2),
-                        )
-                        for label1, label2 in candidate
-                    ]
-                )
+                for label1, label2 in candidate:
+                    boundary = np.logical_and(
+                        find_boundaries(superpixel[idx] == label1),
+                        find_boundaries(superpixel[idx] == label2),
+                    )
+                    rows = np.repeat(np.any(boundary, axis=1), w)
+                    rows = rows.reshape(x.shape[2:])
+                    cols = np.tile(np.any(boundary, axis=0), h)
+                    cols = cols.reshape(x.shape[2:])
+                    boundary_box = np.logical_and(rows, cols)
+                    if boundary_box.sum() > 0:
+                        boundary_boxes[idx].append(boundary_box)
             n_boundary = np.array([len(boundary) for boundary in boundary_boxes])
+
+            targets = []
+            for idx in batch:
+                chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
+                ids = np.repeat(range(n_boundary[idx]), n_chanel)
+                target = np.stack([chanel, ids], axis=1)
+                np.random.shuffle(target)
+                targets.append(target)
             checkpoint = forward + 3 * n_boundary
 
             # local search
@@ -106,19 +118,31 @@ class BoundaryProposedMethod(Attacker):
                         superpixel[idx] = superpixel_storage[idx, superpixel_level[idx]]
                         n_superpixel[idx] = superpixel[idx].max()
                         candidate = it.combinations(range(1, n_superpixel[idx] + 1), 2)
-                        boundary_boxes[idx] = [
-                            np.logical_and(
+                        boundary_boxes[idx] = []
+                        for label1, label2 in candidate:
+                            boundary = np.logical_and(
                                 find_boundaries(superpixel[idx] == label1),
                                 find_boundaries(superpixel[idx] == label2),
                             )
-                            for label1, label2 in candidate
-                        ]
+                            rows = np.repeat(np.any(boundary, axis=1), w)
+                            rows = rows.reshape(x.shape[2:])
+                            cols = np.tile(np.any(boundary, axis=0), h)
+                            cols = cols.reshape(x.shape[2:])
+                            boundary_box = np.logical_and(rows, cols)
+                            if boundary_box.sum() > 0:
+                                boundary_boxes[idx].append(boundary_box)
                         n_boundary[idx] = len(boundary_boxes[idx])
+                        chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
+                        ids = np.repeat(range(n_boundary[idx]), n_chanel)
+                        target = np.stack([chanel, ids], axis=1)
+                        np.random.shuffle(target)
+                        targets[idx] = target
                         checkpoint[idx] += 3 * n_boundary[idx]
-                    box_id = np.random.randint(n_boundary[idx])
-                    boundary_box = boundary_boxes[idx].pop(box_id)
-                    n_boundary[idx] -= 1
-                    is_upper[idx, c, boundary_box] = ~is_upper[idx, c, boundary_box]
+                    c, box_id = targets[idx][0]
+                    targets[idx] = np.delete(targets[idx], 0, axis=0)
+                    is_upper[idx, c, boundary_boxes[idx][box_id]] = ~is_upper[
+                        idx, c, boundary_boxes[idx][box_id]
+                    ]
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
