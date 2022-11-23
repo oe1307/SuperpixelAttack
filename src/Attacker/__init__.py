@@ -3,7 +3,7 @@ from utils import config_parser
 
 from .gen_attack import GenAttack
 from .hals import HALS
-from .proposed_base import BaseProposedMethod
+from .proposed_attention import AttentionProposedMethod
 from .proposed_local_search import LocalSearchProposedMethod
 from .square_attack import SquareAttack
 
@@ -17,8 +17,8 @@ def get_attacker() -> Attacker:
         return HALS()
     elif config.attacker == "SquareAttack":
         return SquareAttack()
-    elif config.attacker == "BaseProposedMethod":
-        return BaseProposedMethod()
+    elif config.attacker == "AttentionProposedMethod":
+        return AttentionProposedMethod()
     elif config.attacker == "LocalSearchProposedMethod":
         return LocalSearchProposedMethod()
     else:
