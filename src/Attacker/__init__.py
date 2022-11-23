@@ -6,6 +6,7 @@ from .hals import HALS
 from .proposed_attention import AttentionProposedMethod
 from .proposed_local_search import LocalSearchProposedMethod
 from .proposed_only_boundary import BoundaryProposedMethod
+from .proposed_plus_boundary import BoundaryPlusProposedMethod
 from .square_attack import SquareAttack
 
 config = config_parser()
@@ -24,5 +25,7 @@ def get_attacker() -> Attacker:
         return LocalSearchProposedMethod()
     elif config.attacker == "BoundaryProposedMethod":
         return BoundaryProposedMethod()
+    elif config.attacker == "BoundaryPlusProposedMethod":
+        return BoundaryPlusProposedMethod()
     else:
         raise NotImplementedError(config.attacker)

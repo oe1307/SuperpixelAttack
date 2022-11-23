@@ -58,7 +58,6 @@ class LocalSearchProposedMethod(Attacker):
                 target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(target)
                 targets.append(target)
-            del target, chanel, labels
             checkpoint = 3 * n_superpixel
 
             # local search
