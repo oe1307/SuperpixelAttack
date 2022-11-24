@@ -107,6 +107,9 @@ class BoundaryProposedMethod(Attacker):
                         continue
                     if forward[idx] == checkpoint[idx] or targets[idx].shape[0] == 0:
                         superpixel_level[idx] += 1
+                        if superpixel_level[idx] >= len(config.segments):
+                            logger.warning("Reach maximum superpixel level")
+                            superpixel_level[idx] = len(config.segments) - 1
                         boundary_box[idx] = boundary_box_storage[idx][superpixel_level[idx]]
                         n_boundary[idx] = boundary_box[idx].shape[0]
                         chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
