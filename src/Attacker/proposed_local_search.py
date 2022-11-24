@@ -66,6 +66,9 @@ class LocalSearchProposedMethod(Attacker):
                 for idx in batch:
                     if forward == checkpoint[idx]:
                         superpixel_level[idx] += 1
+                        if superpixel_level[idx] == len(config.segments):
+                            logger.warning("reach max superpixel")
+                            superpixel_level[idx] = -1
                         superpixel[idx] = superpixel_storage[idx, superpixel_level[idx]]
                         n_superpixel[idx] = superpixel[idx].max()
                         chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
