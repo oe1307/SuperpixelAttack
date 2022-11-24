@@ -48,7 +48,12 @@ class BoundaryProposedMethod(Attacker):
             # calculate boundary box
             with ThreadPoolExecutor(config.thread) as executor:
                 futures = [
-                    executor.submit(self.cal_boundary_box, superpixel_storage[idx])
+                    executor.submit(
+                        self.cal_boundary_box,
+                        superpixel_storage[idx],
+                        idx,
+                        batch.max() + 1,
+                    )
                     for idx in batch
                 ]
             boundary_box_storage = [future.result() for future in futures]
@@ -110,7 +115,9 @@ class BoundaryProposedMethod(Attacker):
                         if superpixel_level[idx] >= len(config.segments):
                             logger.warning("Reach maximum superpixel level")
                             superpixel_level[idx] = len(config.segments) - 1
-                        boundary_box[idx] = boundary_box_storage[idx][superpixel_level[idx]]
+                        boundary_box[idx] = boundary_box_storage[idx][
+                            superpixel_level[idx]
+                        ]
                         n_boundary[idx] = boundary_box[idx].shape[0]
                         chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
                         ids = np.repeat(range(n_boundary[idx]), n_chanel)
@@ -150,7 +157,8 @@ class BoundaryProposedMethod(Attacker):
             superpixel_storage.append(superpixel)
         return superpixel_storage
 
-    def cal_boundary_box(self, superpixel_storage):
+    def cal_boundary_box(self, superpixel_storage, idx, total):
+        pbar.debug(idx + 1, total, "cal_boundary_box")
         w, h = superpixel_storage.shape[1:]
         boundary_box_storage = []
         for level in range(len(config.segments)):
