@@ -28,6 +28,10 @@ def argparser():
         default=None,
     )
     parser.add_argument(
+        "--save_adv_img",
+        action="store_true",
+    )
+    parser.add_argument(
         "--thread",
         type=int,
         default=10,

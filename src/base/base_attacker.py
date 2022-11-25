@@ -34,7 +34,8 @@ class Attacker:
         x_adv_all = self._attack(x, y)
 
         assert x_adv_all.shape == x.shape
-        np.save(f"{config.savedir}/x_adv.npy", x_adv_all.cpu().numpy())
+        if config.save_adv_img:
+            np.save(f"{config.savedir}/x_adv.npy", x_adv_all.cpu().numpy())
         robust_acc = torch.zeros(n_images, dtype=torch.bool)
         n_batch = math.ceil(n_images / model.batch_size)
         for i in range(n_batch):
