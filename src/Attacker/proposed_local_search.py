@@ -57,7 +57,7 @@ class LocalSearchProposedMethod(Attacker):
                 target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(target)
                 targets.append(target)
-            checkpoint = 3 * n_superpixel
+            checkpoint = config.checkpoint * n_superpixel
 
             # local search
             while True:
@@ -65,6 +65,8 @@ class LocalSearchProposedMethod(Attacker):
                 for idx in batch:
                     if forward == checkpoint[idx]:
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
+                        targets[idx] = np.empty(0)
+                    if targets[idx].shape[0] == 0:
                         superpixel[idx] = superpixel_storage[idx, level[idx]]
                         n_superpixel[idx] = superpixel[idx].max()
                         chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])

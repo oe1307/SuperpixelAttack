@@ -13,3 +13,4 @@ model:
 steps: 100
 criterion: cw
 segments: [4, 16, 64]
+checkpoint: 3
