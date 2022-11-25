@@ -35,7 +35,8 @@ class LocalSearchProposedMethod(Attacker):
             # calculate various roughness superpixel
             with ThreadPoolExecutor(config.thread) as executor:
                 futures = [
-                    executor.submit(self.cal_superpixel, x[idx]) for idx in batch
+                    executor.submit(self.cal_superpixel, x[idx], idx, batch.max() + 1)
+                    for idx in batch
                 ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
@@ -96,7 +97,8 @@ class LocalSearchProposedMethod(Attacker):
         x_adv_all = torch.concat(x_adv_all)
         return x_adv_all
 
-    def cal_superpixel(self, x):
+    def cal_superpixel(self, x, idx, total):
+        pbar.debug(idx + 1, total, "cal_superpixel")
         superpixel_storage = []
         for n_segments in config.segments:
             img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
