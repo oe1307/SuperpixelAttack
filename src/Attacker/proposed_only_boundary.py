@@ -1,4 +1,3 @@
-import itertools as it
 import math
 from concurrent.futures import ThreadPoolExecutor
 
@@ -41,8 +40,8 @@ class BoundaryProposedMethod(Attacker):
                 ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
-            superpixel_level = np.zeros_like(batch)
-            superpixel = superpixel_storage[batch, superpixel_level]
+            level = np.zeros_like(batch)
+            superpixel = superpixel_storage[batch, level]
             n_superpixel = superpixel.max(axis=(1, 2))
 
             # calculate boundary box
@@ -111,13 +110,10 @@ class BoundaryProposedMethod(Attacker):
                     if forward[idx] >= config.n_forward:
                         continue
                     if forward[idx] == checkpoint[idx] or targets[idx].shape[0] == 0:
-                        superpixel_level[idx] += 1
-                        if superpixel_level[idx] >= len(config.segments):
-                            logger.warning("Reach maximum superpixel level")
-                            superpixel_level[idx] = len(config.segments) - 1
-                        boundary_box[idx] = boundary_box_storage[idx][
-                            superpixel_level[idx]
-                        ]
+                        level[idx] += 1
+                        if level[idx] >= len(config.segments):
+                            level[idx] = len(config.segments) - 1
+                        boundary_box[idx] = boundary_box_storage[idx][level[idx]]
                         n_boundary[idx] = boundary_box[idx].shape[0]
                         chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
                         ids = np.repeat(range(n_boundary[idx]), n_chanel)

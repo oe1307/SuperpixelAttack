@@ -1,4 +1,3 @@
-import itertools as it
 import math
 from concurrent.futures import ThreadPoolExecutor
 
@@ -37,16 +36,31 @@ class BoundaryPlusProposedMethod(Attacker):
             # calculate various roughness superpixel
             with ThreadPoolExecutor(config.thread) as executor:
                 futures = [
-                    executor.submit(self.cal_superpixel, x[idx]) for idx in batch
+                    executor.submit(self.cal_superpixel, x[idx], idx, batch.max() + 1)
+                    for idx in batch
                 ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
-
-            # initialize
-            superpixel_level = np.zeros_like(batch)
-            superpixel = superpixel_storage[batch, superpixel_level]
+            level = np.zeros_like(batch)
+            superpixel = superpixel_storage[batch, level]
             n_superpixel = superpixel.max(axis=(1, 2))
 
+            # calculate boundary box
+            with ThreadPoolExecutor(config.thread) as executor:
+                futures = [
+                    executor.submit(
+                        self.cal_boundary_box,
+                        superpixel_storage[idx],
+                        idx,
+                        batch.max() + 1,
+                    )
+                    for idx in batch
+                ]
+            boundary_box_storage = [future.result() for future in futures]
+            boundary_box = [box[0] for box in boundary_box_storage]
+            n_boundary = np.array([boundary_box[idx].shape[0] for idx in batch])
+
+            # initialize
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
             x_best = lower.clone()
             pred = self.model(x_best).softmax(1)
@@ -61,26 +75,22 @@ class BoundaryPlusProposedMethod(Attacker):
                 np.random.shuffle(target)
                 targets.append(target)
             checkpoint = 3 * n_superpixel
-            boundary_boxes = [[] for _ in batch]
-            n_boundary = np.zeros_like(batch)
-            search_boundary = np.zeros_like(batch, dtype=np.bool)
 
             # local search
+            search_boundary = np.zeros_like(batch, dtype=np.bool)
             while True:
                 is_upper = is_upper_best.clone()
                 for idx in batch:
                     if search_boundary[idx]:
                         c, box_id = targets[idx][0]
                         targets[idx] = np.delete(targets[idx], 0, axis=0)
-                        is_upper[idx, c, boundary_boxes[idx][box_id]] = ~is_upper[
-                            idx, c, boundary_boxes[idx][box_id]
+                        is_upper[idx, c, boundary_box[idx][box_id]] = ~is_upper[
+                            idx, c, boundary_box[idx][box_id]
                         ]
                         if forward == checkpoint[idx]:
                             search_boundary[idx] = False
-                            superpixel_level[idx] += 1
-                            superpixel[idx] = superpixel_storage[
-                                idx, superpixel_level[idx]
-                            ]
+                            level[idx] = min(level[idx] + 1, len(config.segments) - 1)
+                            superpixel[idx] = superpixel_storage[idx, level[idx]]
                             n_superpixel[idx] = superpixel[idx].max()
                             chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                             labels = np.repeat(
@@ -96,28 +106,11 @@ class BoundaryPlusProposedMethod(Attacker):
                             idx, c, superpixel[idx] == label
                         ]
                         if forward == checkpoint[idx]:
-                            search_boundary[idx] = True
-                            candidate = it.combinations(range(1, n_superpixel[idx] + 1), 2)
-                            boundary_boxes[idx] = []
-                            for label1, label2 in candidate:
-                                boundary = np.logical_and(
-                                    find_boundaries(superpixel[idx] == label1),
-                                    find_boundaries(superpixel[idx] == label2),
+                            if boundary_box_storage[idx][level[idx]].shape[0] == 0:
+                                level[idx] = min(
+                                    level[idx] + 1, len(config.segments) - 1
                                 )
-                                rows = np.repeat(np.any(boundary, axis=1), w)
-                                rows = rows.reshape(x.shape[2:])
-                                cols = np.tile(np.any(boundary, axis=0), h)
-                                cols = cols.reshape(x.shape[2:])
-                                boundary_box = np.logical_and(rows, cols)
-                                if boundary_box.sum() > 0:
-                                    boundary_boxes[idx].append(boundary_box)
-                            n_boundary[idx] = len(boundary_boxes[idx])
-                            if n_boundary[idx] == 0:
-                                search_boundary[idx] = False
-                                superpixel_level[idx] += 1
-                                superpixel[idx] = superpixel_storage[
-                                    idx, superpixel_level[idx]
-                                ]
+                                superpixel[idx] = superpixel_storage[idx, level[idx]]
                                 n_superpixel[idx] = superpixel[idx].max()
                                 chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                                 labels = np.repeat(
@@ -127,6 +120,11 @@ class BoundaryPlusProposedMethod(Attacker):
                                 np.random.shuffle(targets[idx])
                                 checkpoint[idx] += 3 * n_superpixel[idx]
                             else:
+                                search_boundary[idx] = True
+                                boundary_box[idx] = boundary_box_storage[idx][
+                                    level[idx]
+                                ]
+                                n_boundary[idx] = boundary_box[idx].shape[0]
                                 chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
                                 ids = np.repeat(range(n_boundary[idx]), n_chanel)
                                 target = np.stack([chanel, ids], axis=1)
@@ -150,10 +148,34 @@ class BoundaryPlusProposedMethod(Attacker):
         x_adv_all = torch.concat(x_adv_all)
         return x_adv_all
 
-    def cal_superpixel(self, x):
+    def cal_superpixel(self, x, idx, total):
+        pbar.debug(idx + 1, total, "cal_superpixel")
         superpixel_storage = []
         for n_segments in config.segments:
             img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
             superpixel = slic(img, n_segments=n_segments)
             superpixel_storage.append(superpixel)
         return superpixel_storage
+
+    def cal_boundary_box(self, superpixel_storage, idx, total):
+        pbar.debug(idx + 1, total, "cal_boundary_box")
+        w, h = superpixel_storage.shape[1:]
+        boundary_box_storage = []
+        for level in range(len(config.segments)):
+            box = []
+            superpixel = superpixel_storage[level]
+            tmp = np.stack([superpixel[1:, 1:], superpixel[:-1, :-1]]).reshape(2, -1)
+            tmp = np.unique(np.sort(tmp, axis=0).reshape(2, -1), axis=1)
+            tmp = tmp[np.tile((tmp[0] != tmp[1]), 2).reshape(2, -1)]
+            candidate = tmp.reshape(2, -1).T
+            for label1, label2 in candidate:
+                boundary = np.logical_and(
+                    find_boundaries(superpixel == label1),
+                    find_boundaries(superpixel == label2),
+                )
+                rows = np.repeat(np.any(boundary, axis=1), w).reshape((h, w))
+                cols = np.tile(np.any(boundary, axis=0), h).reshape((h, w))
+                boundary_box = np.logical_and(rows, cols)
+                box.append(boundary_box)
+            boundary_box_storage.append(np.array(box))
+        return boundary_box_storage

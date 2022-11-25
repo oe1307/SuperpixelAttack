@@ -39,12 +39,11 @@ class LocalSearchProposedMethod(Attacker):
                 ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
-
-            # initialize
-            superpixel_level = np.zeros_like(batch)
-            superpixel = superpixel_storage[batch, superpixel_level]
+            level = np.zeros_like(batch)
+            superpixel = superpixel_storage[batch, level]
             n_superpixel = superpixel.max(axis=(1, 2))
 
+            # initialize
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
             x_best = lower.clone()
             pred = self.model(x_best).softmax(1)
@@ -65,11 +64,8 @@ class LocalSearchProposedMethod(Attacker):
                 is_upper = is_upper_best.clone()
                 for idx in batch:
                     if forward == checkpoint[idx]:
-                        superpixel_level[idx] += 1
-                        if superpixel_level[idx] == len(config.segments):
-                            logger.warning("reach max superpixel")
-                            superpixel_level[idx] = -1
-                        superpixel[idx] = superpixel_storage[idx, superpixel_level[idx]]
+                        level[idx] = min(level[idx] + 1, len(config.segments) - 1)
+                        superpixel[idx] = superpixel_storage[idx, level[idx]]
                         n_superpixel[idx] = superpixel[idx].max()
                         chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                         labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
