@@ -10,6 +10,6 @@ model:
         Salman2020Do_R18: 1000
 
 # hyperparameter
-step: 100
+steps: 100
 criterion: cw
 segments: [4, 16, 64, 256, 512]

@@ -16,7 +16,7 @@ config = config_parser()
 
 class BoundaryPlusProposedMethod(Attacker):
     def __init__(self):
-        config.n_forward = config.step
+        config.n_forward = config.steps
         self.criterion = get_criterion()
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
@@ -142,8 +142,8 @@ class BoundaryPlusProposedMethod(Attacker):
                 is_upper_best[update] = is_upper[update]
                 forward += 1
 
-                pbar.debug(forward, config.step, "forward", f"batch: {b}")
-                if forward == config.step:
+                pbar.debug(forward, config.steps, "forward", f"batch: {b}")
+                if forward == config.steps:
                     break
 
             x_adv_all.append(x_best)

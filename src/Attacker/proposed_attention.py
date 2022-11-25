@@ -16,7 +16,7 @@ config = config_parser()
 
 class AttentionProposedMethod(Attacker):
     def __init__(self):
-        config.n_forward = config.step
+        config.n_forward = config.steps
         self.criterion = get_criterion()
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
@@ -133,13 +133,13 @@ class AttentionProposedMethod(Attacker):
                 _update = update.view(-1, 1, 1, 1)
                 is_upper_best = torch.where(_update, _is_upper_best, is_upper_best)
                 x_best = torch.where(is_upper_best, upper, lower)
-                pbar.debug(forward.min(), config.step, "forward", f"batch: {b}")
-                if forward.min() >= config.step:
+                pbar.debug(forward.min(), config.steps, "forward", f"batch: {b}")
+                if forward.min() >= config.steps:
                     break
 
                 # updated multi superpixel
                 search_multi = ((rise > 0).sum(dim=1) > 1).cpu().numpy()
-                search_multi = np.logical_and(search_multi, forward < config.step)
+                search_multi = np.logical_and(search_multi, forward < config.steps)
                 is_upper = is_upper_best.clone()
                 for idx, (_target, _loss) in enumerate(zip(target, loss)):
                     if forward[idx] >= config.n_forward or not search_multi[idx]:
@@ -174,8 +174,8 @@ class AttentionProposedMethod(Attacker):
                     )
                     for idx in batch
                 ]
-                pbar.debug(forward.min(), config.step, "forward", f"batch: {b}")
-                if forward.min() >= config.step:
+                pbar.debug(forward.min(), config.steps, "forward", f"batch: {b}")
+                if forward.min() >= config.steps:
                     break
 
             x_adv_all.append(x_best)
@@ -212,7 +212,7 @@ class AttentionProposedMethod(Attacker):
         for target_label in range(1, n_superpixel + 1):
             target_pixel = next_superpixel == target_label
             intersection = np.logical_and(superpixel == label, target_pixel)
-            if intersection.sum() >= target_pixel.sum() / 2 and forward < config.step:
+            if intersection.sum() >= target_pixel.sum() / 2 and forward < config.steps:
                 target.append(target_label)
                 forward += 1
         return target, [level, c, u]

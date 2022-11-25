@@ -28,6 +28,16 @@ def argparser():
         default=None,
     )
     parser.add_argument(
+        "--steps",
+        type=int,
+        default=None,
+    )
+    parser.add_argument(
+        "--epsilon",
+        type=float,
+        default=None,
+    )
+    parser.add_argument(
         "--save_adv_img",
         action="store_true",
     )
