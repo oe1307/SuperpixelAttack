@@ -1,6 +1,7 @@
 import heapq
 import math
 
+import numpy as np
 import torch
 from torch import Tensor
 
@@ -15,89 +16,75 @@ class HALS(Attacker):
     def __init__(self):
         super().__init__()
         self.criterion = get_criterion()
-        if (config.dataset == "cifar10" and config.initial_split != 4) or (
-            config.dataset == "imagenet" and config.initial_split != 32
-        ):
-            logger.critical(f"{config.dataset}: split = {config.initial_split}")
         config.n_forward = config.steps
 
-    def _attack(self, x_all: Tensor, y_all: Tensor):
-        x_adv_all = []
-        n_images = x_all.shape[0]
-        n_batch = math.ceil(n_images / self.model.batch_size)
-        for i in range(n_batch):
-            start = i * self.model.batch_size
-            end = min((i + 1) * self.model.batch_size, n_images)
-            x = x_all[start:end]
-            self.y = y_all[start:end]
-            self.upper = (x + config.epsilon).clamp(0, 1)
-            self.lower = (x - config.epsilon).clamp(0, 1)
-            self.split = config.initial_split
-            self.batch, c, h, w = x.shape
-            is_upper = torch.zeros(
-                (self.batch, c, h // self.split, w // self.split),
-                dtype=bool,
-                device=config.device,
+    def _attack(self, x: Tensor, y: Tensor):
+        self.y = y
+        self.upper = (x + config.epsilon).clamp(0, 1)
+        self.lower = (x - config.epsilon).clamp(0, 1)
+        self.split = config.initial_split
+        n_images, c, h, w = x.shape
+
+        # initialize
+        is_upper = torch.zeros(
+            (n_images, c, h // self.split, w // self.split), dtype=bool
+        ).to(config.device)
+        is_upper_best = is_upper.clone()
+        loss = self.cal_loss(is_upper)
+        best_loss = loss.clone()
+        self.forward = np.ones(n_images)
+
+        # main loop
+        while True:
+            is_upper, loss, is_upper_best, best_loss = self.local_search(
+                is_upper, loss, is_upper_best, best_loss
             )
-            is_upper_best = is_upper.clone()
-            x_adv = self.lower.clone()
-            pred = self.model(x_adv).softmax(dim=1)
-            loss = self.criterion(pred, self.y)
-            best_loss = loss.clone()
-            self.forward = torch.ones(self.batch, device=config.device)
+            if self.forward.min() >= config.steps:
+                break
+            elif self.split > 1:
+                is_upper = is_upper.repeat([1, 1, 2, 2])
+                is_upper_best = is_upper_best.repeat([1, 1, 2, 2])
+                if self.split % 2 == 1:
+                    logger.critical(f"self.split is not even: {self.split}")
+                self.split //= 2
 
-            while True:
-                is_upper, loss, is_upper_best, best_loss = self.local_search(
-                    is_upper, loss, is_upper_best, best_loss
-                )
-                if self.forward.min().item() >= config.steps:
-                    break
-                if self.split > 1:
-                    is_upper = is_upper.repeat([1, 1, 2, 2])
-                    is_upper_best = is_upper_best.repeat([1, 1, 2, 2])
-                    if self.split % 2 == 1:
-                        logger.critical(f"self.split is not even: {self.split}")
-                    self.split //= 2
-
-            is_upper = is_upper.repeat([1, 1, self.split, self.split])
-            x_adv = torch.where(is_upper, self.upper, self.lower)
-            x_adv_all.append(x_adv)
-        x_adv_all = torch.cat(x_adv_all)
-        return x_adv_all
+        is_upper_best = is_upper_best.repeat([1, 1, self.split, self.split])
+        x_best = torch.where(is_upper_best, self.upper, self.lower)
+        return x_best
 
     def local_search(self, is_upper, loss, is_upper_best, best_loss):
         for _ in range(config.insert_deletion):
             is_upper, loss = self.insert(is_upper, loss)
-            is_upper_best = torch.where(
-                (loss > best_loss).view(-1, 1, 1, 1), is_upper, is_upper_best
-            )
-            best_loss = torch.max(loss, best_loss)
-            if self.forward.min().item() >= config.steps:
+            update = loss > best_loss
+            is_upper_best[update] = is_upper[update]
+            best_loss[update] = loss[update]
+            if self.forward.min() >= config.steps:
                 break
-            is_upper, loss = self.deletion(is_upper, loss)
-            is_upper_best = torch.where(
-                (loss > best_loss).view(-1, 1, 1, 1), is_upper, is_upper_best
-            )
-            best_loss = torch.max(loss, best_loss)
-            if self.forward.min().item() >= config.steps:
-                break
-        _is_upper = is_upper.repeat([1, 1, self.split, self.split])
-        x_adv_inverse = torch.where(~_is_upper, self.upper, self.lower)
-        pred = self.model(x_adv_inverse).softmax(dim=1)
-        loss_inverse = self.criterion(pred, self.y)
 
-        update = torch.logical_and(loss_inverse > loss, self.forward < config.steps)
-        is_upper = torch.where(update.view(-1, 1, 1, 1), ~is_upper, is_upper)
-        loss = torch.max(loss_inverse, loss)
-        update = torch.logical_and(
-            loss_inverse > best_loss, self.forward < config.steps
-        )
-        is_upper_best = torch.where(update.view(-1, 1, 1, 1), ~is_upper, is_upper_best)
-        best_loss = torch.max(loss_inverse, best_loss)
+            is_upper, loss = self.deletion(is_upper, loss)
+            update = loss > best_loss
+            is_upper_best[update] = is_upper[update]
+            best_loss[update] = loss[update]
+            if self.forward.min() >= config.steps:
+                break
+
+        loss_inverse = self.cal_loss(~is_upper)
+        self.forward += 1
+
+        update = (loss_inverse > loss).cpu().numpy()
+        update = np.logical_and(update, self.forward < config.steps)
+        is_upper[update] = ~is_upper[update]
+        loss[update] = loss_inverse[update]
+
+        update = (loss > best_loss).cpu().numpy()
+        update = np.logical_and(update, self.forward < config.steps)
+        is_upper_best[update] = is_upper[update]
+        best_loss[update] = loss[update]
         return is_upper, loss, is_upper_best, best_loss
 
     def insert(self, is_upper, base_loss):
-        max_heap = [[] for _ in range(self.batch)]
+        n_images = is_upper.shape[0]
+        max_heap = [[] for _ in range(n_images)]
         all_elements = (~is_upper).nonzero()
 
         # search in elementary
@@ -142,14 +129,13 @@ class HALS(Attacker):
                     heapq.heappush(_max_heap, (delta_hat, element_hat))
             _is_upper.append(idx_is_upper)
         is_upper = torch.stack(_is_upper)
-        _is_upper = is_upper.repeat([1, 1, self.split, self.split])
-        x_adv = torch.where(_is_upper, self.upper, self.lower).clone()
-        pred = self.model(x_adv).softmax(dim=1)
-        loss = self.criterion(pred, self.y)
+        loss = self.cal_loss(is_upper)
+        self.forward += 1
         return is_upper, loss
 
     def deletion(self, is_upper, base_loss):
-        max_heap = [[] for _ in range(self.batch)]
+        n_images = is_upper.shape[0]
+        max_heap = [[] for _ in range(n_images)]
         all_elements = is_upper.nonzero()
 
         # search in elementary
@@ -194,8 +180,22 @@ class HALS(Attacker):
                     heapq.heappush(_max_heap, (delta_hat, element_hat))
             _is_upper.append(idx_is_upper)
         is_upper = torch.stack(_is_upper)
-        _is_upper = is_upper.repeat([1, 1, self.split, self.split])
-        x_adv = torch.where(_is_upper, self.upper, self.lower).clone()
-        pred = self.model(x_adv).softmax(dim=1)
-        loss = self.criterion(pred, self.y)
+        loss = self.cal_loss(is_upper)
+        self.forward += 1
         return is_upper, loss
+
+    def cal_loss(self, is_upper_all: Tensor) -> Tensor:
+        n_images = is_upper_all.shape[0]
+        loss = torch.zeros(n_images, device=config.device)
+        num_batch = math.ceil(n_images / self.model.batch_size)
+        for i in range(num_batch):
+            start = i * self.model.batch_size
+            end = min((i + 1) * self.model.batch_size, n_images)
+            upper = self.upper[start:end]
+            lower = self.lower[start:end]
+            is_upper = is_upper_all[start:end].repeat([1, 1, self.split, self.split])
+            x_adv = torch.where(is_upper, upper, lower)
+            y = self.y[start:end]
+            pred = self.model(x_adv).softmax(dim=1)
+            loss[start:end] = self.criterion(pred, y)
+        return loss

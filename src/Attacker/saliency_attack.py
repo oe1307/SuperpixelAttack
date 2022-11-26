@@ -1,10 +1,11 @@
 import math
 
+import numpy as np
 import torch
 from torch import Tensor
 
 from base import Attacker, SODModel, get_criterion
-from utils import config_parser, setup_logger
+from utils import config_parser, setup_logger, change_level
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -20,8 +21,8 @@ class SaliencyAttack(Attacker):
 
         # saliency model
         self.saliency_model = SODModel()
-        chkpt = torch.load(config.saliency_weight, map_location=config.device)
-        self.saliency_model.load_state_dict(chkpt["model"])
+        weights = torch.load(config.saliency_weight)
+        self.saliency_model.load_state_dict(weights["model"])
         self.saliency_model.to(config.device)
         self.saliency_model.eval()
 
@@ -36,5 +37,38 @@ class SaliencyAttack(Attacker):
             y = y_all[start:end]
             upper = (x + config.epsilon).clamp(0, 1)
             lower = (x - config.epsilon).clamp(0, 1)
+            batch, c, h, w = x.shape
+            self.split = config.initial_split
+            saliency_map = self.saliency_model(x)[0].round()
+            is_upper = torch.zeros(
+                (batch, c, h // self.split, w // self.split),
+                dtype=bool,
+                device=config.device,
+            )
+            self.forward = torch.zeros(self.batch, device=config.device)
+
+            while True:
+                self.refine()
+                if self.split > 1:
+                    is_upper = is_upper.repeat([1, 1, 2, 2])
+                    if self.split % 2 == 1:
+                        logger.critical(f"self.split is not even: {self.split}")
+                    self.split //= 2
+
         del y, upper, lower, x_adv_all
         raise NotImplementedError
+
+    def visualize(self, saliency_map: Tensor):
+        change_level("matplotlib", 40)
+        from matplotlib import pyplot as plt
+
+        plt.subplots(figsize=(6, 6))
+        plt.tick_params(
+            bottom=False,
+            left=False,
+            labelbottom=False,
+            labelleft=False,
+        )
+        plt.imshow(saliency_map[0, 0].cpu().numpy(), cmap="gray")
+        plt.savefig("saliency_map.png")
+        quit()

@@ -1,4 +1,4 @@
-attacker: SaliencyAttack
+attacker: TabuSearchProposedMethod
 
 norm: Linf
 epsilon: 0.01568627450980392
@@ -7,11 +7,11 @@ n_examples: 5000
 
 model:
     robustbench:
-        Salman2020Do_R18: 1000
+        Salman2020Do_R18: 2500
 
 # hyperparameter
-saliency_weight: ../storage/model/saliency/saliency_weight.pth
 steps: 100
 criterion: cw
-initial_split: 16
-
+segments: [4, 16, 64, 256]
+checkpoint: 3
+tabu_size: 20
