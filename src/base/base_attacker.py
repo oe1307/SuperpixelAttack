@@ -1,5 +1,6 @@
 import math
 import os
+import shutil
 import time
 
 import numpy as np
@@ -67,3 +68,5 @@ class Attacker:
         )
         print(msg, file=open(f"{config.savedir}/summary.txt", "w"))
         logger.info(msg)
+
+        shutil.copytree("../src", f"{config.savedir}/backup")

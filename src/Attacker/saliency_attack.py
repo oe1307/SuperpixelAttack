@@ -27,16 +27,17 @@ class SaliencyAttack(Attacker):
     def _attack(self, x_all: Tensor, y_all: Tensor):
 
         # make saliency map
-        saliency_map = []
-        n_images, c, h, w = x_all.shape
+        saliency_map_all = []
+        n_images, n_chanel, h, w = x_all.shape
         n_batch = math.ceil(n_images / config.saliency_batch_size)
         for i in range(n_batch):
             pbar.debug(i + 1, n_batch, "saliency map")
             start = i * config.saliency_batch_size
             end = min((i + 1) * config.saliency_batch_size, n_images)
             x = x_all[start:end]
-            saliency_map.append(self.saliency_model(x)[0].round()[:, 0])
-        saliency_map = torch.cat(saliency_map, dim=0)
+            saliency_map = self.saliency_model(x)[0].round()
+            saliency_map_all.append(saliency_map)
+        saliency_map_all = torch.concat(saliency_map_all)
 
         x_adv_all = []
         n_batch = math.ceil(n_images / self.model.batch_size)
@@ -48,13 +49,40 @@ class SaliencyAttack(Attacker):
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
             split = config.initial_split
+            saliency_map = saliency_map_all[start:end].to(torch.bool)
+            pred = self.model(x).softmax(dim=1)
+            loss = self.criterion(pred, y)
+            forward = np.ones(x.shape[0])
 
             # initialize
-            init_block = (n_images, c, h // split, w // split)
+            init_block = (n_images, n_chanel, h // split, w // split)
             is_upper = torch.zeros(init_block, dtype=torch.bool, device=config.device)
-            h = np.repeat(np.arange(init_block[2]), init_block[3])
-            w = np.tile(np.arange(init_block[3]), init_block[2])
-            targets = np.stack([h, w], axis=1)
+            _h = np.repeat(np.arange(init_block[2]), init_block[3])
+            _w = np.tile(np.arange(init_block[3]), init_block[2])
+            targets = np.stack([_h, _w], axis=1)
+            c = np.tile(np.arange(n_chanel), targets.shape[0])
+            targets = np.repeat(targets, n_chanel, axis=0)
+            targets = np.stack([c, targets[:, 0], targets[:, 1]], axis=1)
+            for t in targets:
+                _is_upper = is_upper.clone()
+                assert (~(_is_upper[:, :, t[0], t[1]])).all()
+                _is_upper[:, :, t[0], t[1]] = True
+                x_adv = torch.where(_is_upper.repeat(1, 1, split, split), upper, lower)
+                x_adv = torch.where(saliency_map, x_adv, x)
+                pred = self.model(x_adv).softmax(dim=1)
+                _loss = self.criterion(pred, y)
+                update = _loss > loss
+                is_upper[update] = _is_upper[update]
+                loss[update] = _loss[update]
+            from matplotlib import pyplot as plt
+
+            plt.imshow(
+                is_upper[0].cpu().numpy().transpose(1, 2, 0).astype(np.uint8) * 255
+            )
+            plt.savefig("test.png")
+            plt.imshow(x_adv[0].cpu().numpy().transpose(1, 2, 0))
+            plt.savefig("test2.png")
+
             breakpoint()
 
         self.forward = np.ones(n_images)
@@ -70,19 +98,3 @@ class SaliencyAttack(Attacker):
                 if self.split % 2 == 1:
                     logger.critical(f"self.split is not even: {self.split}")
                 self.split //= 2
-
-    def cal_loss(self, is_upper_all: Tensor) -> Tensor:
-        n_images = is_upper_all.shape[0]
-        loss = torch.zeros(n_images, device=config.device)
-        num_batch = math.ceil(n_images / self.model.batch_size)
-        for i in range(num_batch):
-            start = i * self.model.batch_size
-            end = min((i + 1) * self.model.batch_size, n_images)
-            upper = self.upper[start:end]
-            lower = self.lower[start:end]
-            is_upper = is_upper_all[start:end].repeat([1, 1, self.split, self.split])
-            x_adv = torch.where(is_upper, upper, lower)
-            y = self.y[start:end]
-            pred = self.model(x_adv).softmax(dim=1)
-            loss[start:end] = self.criterion(pred, y)
-        return loss
