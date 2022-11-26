@@ -28,7 +28,7 @@ class SaliencyAttack(Attacker):
 
         # make saliency map
         saliency_map_all = []
-        n_images, n_chanel, h, w = x_all.shape
+        n_images, n_chanel, height, width = x_all.shape
         n_batch = math.ceil(n_images / config.saliency_batch_size)
         for i in range(n_batch):
             pbar.debug(i + 1, n_batch, "saliency map")
@@ -55,7 +55,7 @@ class SaliencyAttack(Attacker):
             forward = np.ones(x.shape[0])
 
             # initialize
-            init_block = (n_images, n_chanel, h // split, w // split)
+            init_block = (n_images, n_chanel, height // split, width // split)
             is_upper = torch.zeros(init_block, dtype=torch.bool, device=config.device)
             _h = np.repeat(np.arange(init_block[2]), init_block[3])
             _w = np.tile(np.arange(init_block[3]), init_block[2])
@@ -63,11 +63,13 @@ class SaliencyAttack(Attacker):
             c = np.tile(np.arange(n_chanel), targets.shape[0])
             targets = np.repeat(targets, n_chanel, axis=0)
             targets = np.stack([c, targets[:, 0], targets[:, 1]], axis=1)
-            for t in targets:
+            for c, h, w in targets:
                 _is_upper = is_upper.clone()
-                assert (~(_is_upper[:, :, t[0], t[1]])).all()
-                _is_upper[:, :, t[0], t[1]] = True
-                x_adv = torch.where(_is_upper.repeat(1, 1, split, split), upper, lower)
+                assert (~(_is_upper[:, c, h, w])).all().item()
+                _is_upper[:, c, h, w] = True
+                _is_upper = _is_upper.repeat_interleave(split, dim=2)
+                _is_upper = _is_upper.repeat_interleave(split, dim=3)
+                x_adv = torch.where(_is_upper, upper, lower)
                 x_adv = torch.where(saliency_map, x_adv, x)
                 pred = self.model(x_adv).softmax(dim=1)
                 _loss = self.criterion(pred, y)
@@ -76,9 +78,8 @@ class SaliencyAttack(Attacker):
                 loss[update] = _loss[update]
             from matplotlib import pyplot as plt
 
-            plt.imshow(
-                is_upper[0].cpu().numpy().transpose(1, 2, 0).astype(np.uint8) * 255
-            )
+            plt.imshow(saliency_map[0, 0].cpu().numpy().astype(np.uint8))
+            plt.show()
             plt.savefig("test.png")
             plt.imshow(x_adv[0].cpu().numpy().transpose(1, 2, 0))
             plt.savefig("test2.png")

@@ -23,10 +23,10 @@ class HALS(Attacker):
         self.upper = (x + config.epsilon).clamp(0, 1)
         self.lower = (x - config.epsilon).clamp(0, 1)
         self.split = config.initial_split
-        n_images, c, h, w = x.shape
+        n_images, n_chanel, height, width = x.shape
 
         # initialize
-        init_block = (n_images, c, h // self.split, w // self.split)
+        init_block = (n_images, n_chanel, height // self.split, width // self.split)
         is_upper = torch.zeros(init_block, dtype=torch.bool, device=config.device)
         is_upper_best = is_upper.clone()
         loss = self.cal_loss(is_upper)
@@ -41,13 +41,16 @@ class HALS(Attacker):
             if self.forward.min() >= config.steps:
                 break
             elif self.split > 1:
-                is_upper = is_upper.repeat([1, 1, 2, 2])
-                is_upper_best = is_upper_best.repeat([1, 1, 2, 2])
+                is_upper = torch.repeat_interleave(is_upper, 2, dim=2)
+                is_upper = torch.repeat_interleave(is_upper, 2, dim=3)
+                is_upper_best = torch.repeat_interleave(is_upper_best, 2, dim=2)
+                is_upper_best = torch.repeat_interleave(is_upper_best, 2, dim=3)
                 if self.split % 2 == 1:
                     logger.critical(f"self.split is not even: {self.split}")
                 self.split //= 2
 
-        is_upper_best = is_upper_best.repeat([1, 1, self.split, self.split])
+        is_upper_best = torch.repeat_interleave(is_upper_best, self.split, dim=2)
+        is_upper_best = torch.repeat_interleave(is_upper_best, self.split, dim=3)
         x_best = torch.where(is_upper_best, self.upper, self.lower)
         return x_best
 
@@ -102,7 +105,8 @@ class HALS(Attacker):
                 _is_upper[i, c, h, w] = True
                 self.forward[idx] += 1
                 searched.append((i, idx, c, h, w))
-            _is_upper = _is_upper.repeat([1, 1, self.split, self.split])
+            _is_upper = torch.repeat_interleave(_is_upper, self.split, dim=2)
+            _is_upper = torch.repeat_interleave(_is_upper, self.split, dim=3)
             upper = self.upper[elements[:, 0]]
             lower = self.lower[elements[:, 0]]
             x_adv = torch.where(_is_upper, upper, lower)
@@ -153,7 +157,8 @@ class HALS(Attacker):
                 _is_upper[i, c, h, w] = False
                 self.forward[idx] += 1
                 searched.append((i, idx, c, h, w))
-            _is_upper = _is_upper.repeat([1, 1, self.split, self.split])
+            _is_upper = torch.repeat_interleave(_is_upper, self.split, dim=2)
+            _is_upper = torch.repeat_interleave(_is_upper, self.split, dim=3)
             upper = self.upper[elements[:, 0]]
             lower = self.lower[elements[:, 0]]
             x_adv = torch.where(_is_upper, upper, lower)
@@ -192,7 +197,9 @@ class HALS(Attacker):
             end = min((i + 1) * self.model.batch_size, n_images)
             upper = self.upper[start:end]
             lower = self.lower[start:end]
-            is_upper = is_upper_all[start:end].repeat([1, 1, self.split, self.split])
+            is_upper = is_upper_all[start:end]
+            is_upper = torch.repeat_interleave(is_upper, self.split, dim=2)
+            is_upper = torch.repeat_interleave(is_upper, self.split, dim=3)
             x_adv = torch.where(is_upper, upper, lower)
             y = self.y[start:end]
             pred = self.model(x_adv).softmax(dim=1)
