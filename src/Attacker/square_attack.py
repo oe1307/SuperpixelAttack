@@ -46,7 +46,6 @@ class SquareAttack(Attacker):
             eps=config.epsilon,
             batch_size=self.model.batch_size,
             verbose=False,
-            # ---hyperparameter---
             max_iter=config.steps,
             p_init=config.p_init,
             nb_restarts=config.restart,

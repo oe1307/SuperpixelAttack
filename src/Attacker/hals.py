@@ -26,9 +26,8 @@ class HALS(Attacker):
         n_images, c, h, w = x.shape
 
         # initialize
-        is_upper = torch.zeros(
-            (n_images, c, h // self.split, w // self.split), dtype=bool
-        ).to(config.device)
+        init_block = (n_images, c, h // self.split, w // self.split)
+        is_upper = torch.zeros(init_block, dtype=torch.bool, device=config.device)
         is_upper_best = is_upper.clone()
         loss = self.cal_loss(is_upper)
         best_loss = loss.clone()

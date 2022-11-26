@@ -20,9 +20,7 @@ class BoundaryProposedMethod(Attacker):
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
-        n_images = x_all.shape[0]
-        n_chanel = x_all.shape[1]
-        h, w = x_all.shape[2:]
+        n_images, n_chanel = x_all.shape[:2]
         n_batch = math.ceil(n_images / self.model.batch_size)
         for b in range(n_batch):
             start = b * self.model.batch_size
