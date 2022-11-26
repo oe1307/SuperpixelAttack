@@ -26,5 +26,7 @@ def load_imagenet(
     dataloader = DataLoader(
         dataset, config.n_examples, shuffle=False, num_workers=config.thread
     )
+    logger.debug("Loading ImageNet data...")
     img, label = next(iter(dataloader))[:2]
+    logger.debug("Loaded ImageNet data...")
     return img, label
