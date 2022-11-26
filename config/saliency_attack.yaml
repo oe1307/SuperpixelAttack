@@ -11,7 +11,7 @@ model:
 
 # hyperparameter
 saliency_weight: ../storage/model/saliency/saliency_weight.pth
-saliency_batch_size: 1000
+saliency_batch_size: 10
 steps: 100
 criterion: cw
 initial_split: 16

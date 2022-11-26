@@ -4,7 +4,7 @@ from datetime import datetime
 import torch
 
 from Attacker import get_attacker
-from base import get_model, load_dataset
+from base import get_model, load_imagenet
 from utils import config_parser, reproducibility, setup_logger
 
 
@@ -63,7 +63,7 @@ def main():
             print(f"{model_name}")
             reproducibility()
             config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-            data, label = load_dataset(model_name)
+            data, label = load_imagenet(model_name)
             model = get_model(model_container, model_name, batch_size)
             attacker = get_attacker()
             attacker.attack(model, data, label)
