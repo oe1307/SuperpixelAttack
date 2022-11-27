@@ -43,6 +43,11 @@ def argparser():
         default=5,
     )
     parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+    )
+    parser.add_argument(
         "--log_level",
         type=int,
         default=10,
@@ -57,7 +62,7 @@ def main():
     for model_container, models in config.model.items():
         for model_name, batch_size in models.items():
             print(f"{model_name}")
-            reproducibility()
+            reproducibility(config.seed)
             config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
             data, label = load_imagenet(model_name)
             model = get_model(model_container, model_name, batch_size)
