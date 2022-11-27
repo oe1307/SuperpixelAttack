@@ -72,7 +72,7 @@ class LocalSearchProposedMethod(Attacker):
                         labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
                         targets[idx] = np.stack([chanel, labels], axis=1)
                         np.random.shuffle(targets[idx])
-                        checkpoint[idx] += 3 * n_superpixel[idx]
+                        checkpoint[idx] += config.checkpoint * n_superpixel[idx]
                     if targets[idx].shape[0] == 0:
                         chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                         labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
