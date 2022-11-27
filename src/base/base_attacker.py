@@ -31,6 +31,7 @@ class Attacker:
         config.savedir = rename_dir(f"../result/{config.dataset}/{config.attacker}")
         os.makedirs(config.savedir, exist_ok=True)
         config_parser.save(f"{config.savedir}/config.json")
+        shutil.copytree("../src", f"{config.savedir}/backup")
 
         x_adv_all = self._attack(x, y)
 
@@ -66,5 +67,3 @@ class Attacker:
         )
         print(msg, file=open(f"{config.savedir}/summary.txt", "w"))
         logger.info(msg)
-
-        shutil.copytree("../src", f"{config.savedir}/backup")
