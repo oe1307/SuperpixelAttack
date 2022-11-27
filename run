@@ -9,6 +9,13 @@ if [ $1 = "setup" ]; then
     else
         echo "-> imagenet already exists"
     fi
+    mkdir -p ../model/saliency
+    cd ../model/saliency
+    if [ ! -e saliency_weight.pth ]; then
+        scp ds:/data0/issa/other/saliency_weight.pth saliency_weight.pth
+    else
+        echo "-> saliency already exists"
+    fi
 
 elif [ $1 = "install" ]; then
     cd $(dirname $0)
