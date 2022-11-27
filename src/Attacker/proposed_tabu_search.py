@@ -15,6 +15,7 @@ config = config_parser()
 
 class TabuSearchProposedMethod(Attacker):
     def __init__(self):
+        assert type(config.steps) == int
         config.n_forward = config.steps
         self.criterion = get_criterion()
 
