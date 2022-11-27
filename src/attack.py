@@ -40,7 +40,7 @@ def argparser():
     parser.add_argument(
         "--thread",
         type=int,
-        default=10,
+        default=5,
     )
     parser.add_argument(
         "--log_level",
