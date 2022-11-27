@@ -3,6 +3,7 @@ from utils import config_parser
 
 from .gen_attack import GenAttack
 from .hals import HALS
+from .local_search_improved import ImprovedLocalSearchProposedMethod
 from .proposed_local_search import LocalSearchProposedMethod
 from .proposed_only_boundary import BoundaryProposedMethod
 from .proposed_plus_boundary import BoundaryPlusProposedMethod
@@ -18,6 +19,8 @@ def get_attacker() -> Attacker:
         return GenAttack()
     elif config.attacker == "HALS":
         return HALS()
+    elif config.attacker == "ImprovedLocalSearchMethod":
+        return ImprovedLocalSearchProposedMethod()
     elif config.attacker == "LocalSearchProposedMethod":
         return LocalSearchProposedMethod()
     elif config.attacker == "BoundaryProposedMethod":
