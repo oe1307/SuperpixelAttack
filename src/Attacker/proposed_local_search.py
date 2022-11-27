@@ -66,8 +66,6 @@ class LocalSearchProposedMethod(Attacker):
                 for idx in batch:
                     if forward == checkpoint[idx]:
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
-                        targets[idx] = np.empty(0)
-                    if targets[idx].shape[0] == 0:
                         superpixel[idx] = superpixel_storage[idx, level[idx]]
                         n_superpixel[idx] = superpixel[idx].max()
                         chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
@@ -75,6 +73,11 @@ class LocalSearchProposedMethod(Attacker):
                         targets[idx] = np.stack([chanel, labels], axis=1)
                         np.random.shuffle(targets[idx])
                         checkpoint[idx] += 3 * n_superpixel[idx]
+                    if targets[idx].shape[0] == 0:
+                        chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
+                        labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
+                        targets[idx] = np.stack([chanel, labels], axis=1)
+                        np.random.shuffle(targets[idx])
                     c, label = targets[idx][0]
                     targets[idx] = np.delete(targets[idx], 0, axis=0)
                     is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
