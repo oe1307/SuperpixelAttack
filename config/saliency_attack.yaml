@@ -7,11 +7,11 @@ n_examples: 5000
 
 model:
     robustbench:
-        Wong2020Fast: 1000
-        Engstrom2019Robustness: 1000
-        Salman2020Do_R18: 1000
-        Salman2020Do_R50: 1000
-        Salman2020Do_50_2: 1000
+        Wong2020Fast: 100
+        Engstrom2019Robustness: 100
+        Salman2020Do_R18: 100
+        Salman2020Do_R50: 100
+        Salman2020Do_50_2: 100
 
 # hyperparameter
 saliency_weight: ../storage/model/saliency/saliency_weight.pth

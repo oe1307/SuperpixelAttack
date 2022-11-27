@@ -70,7 +70,8 @@ class SaliencyAttack(Attacker):
                 np.random.shuffle(blocks)
 
             upper_loss, lower_loss = [], []
-            for block in split_blocks:
+            for i, block in enumerate(split_blocks):
+                pbar.debug(i + 1, split_blocks.shape[0], f"{split_level = }")
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
                     if self.forward[idx] < config.steps:
@@ -89,7 +90,8 @@ class SaliencyAttack(Attacker):
         else:
             split_blocks = self.split(search_block, k)
             upper_loss, lower_loss = [], []
-            for block in split_blocks:
+            for i, block in enumerate(split_blocks):
+                pbar.debug(i + 1, split_blocks.shape[0], f"{split_level = }")
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
                     if self.forward[idx] < config.steps:
