@@ -25,77 +25,96 @@ class SaliencyAttack(Attacker):
         self.saliency_model.eval()
 
     def _attack(self, x_all: Tensor, y_all: Tensor):
-
-        # make saliency map
-        saliency_map_all = []
-        n_images, n_chanel, height, width = x_all.shape
-        n_batch = math.ceil(n_images / config.saliency_batch_size)
-        for i in range(n_batch):
-            pbar.debug(i + 1, n_batch, "saliency map")
-            start = i * config.saliency_batch_size
-            end = min((i + 1) * config.saliency_batch_size, n_images)
-            x = x_all[start:end]
-            saliency_map = self.saliency_model(x)[0].round()
-            saliency_map_all.append(saliency_map)
-        saliency_map_all = torch.concat(saliency_map_all)
-
         x_adv_all = []
+        n_images, n_chanel, height, width = x_all.shape
         n_batch = math.ceil(n_images / self.model.batch_size)
         for i in range(n_batch):
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, n_images)
-            x = x_all[start:end]
-            y = y_all[start:end]
-            upper = (x + config.epsilon).clamp(0, 1).clone()
-            lower = (x - config.epsilon).clamp(0, 1).clone()
-            split = config.initial_split
-            saliency_map = saliency_map_all[start:end].to(torch.bool)
-            pred = self.model(x).softmax(dim=1)
-            loss = self.criterion(pred, y)
-            forward = np.ones(x.shape[0])
+            self.x_adv = x_all[start:end].clone()
+            self.y = y_all[start:end]
+            self.upper = (self.x_adv + config.epsilon).clamp(0, 1).clone()
+            self.lower = (self.x_adv - config.epsilon).clamp(0, 1).clone()
+            self.saliency_map = self.saliency_model(self.x_adv)[0].round()
+            self.saliency_map = self.saliency_map.bool()
 
-            # initialize
-            init_block = (n_images, n_chanel, height // split, width // split)
-            is_upper = torch.zeros(init_block, dtype=torch.bool, device=config.device)
-            _h = np.repeat(np.arange(init_block[2]), init_block[3])
-            _w = np.tile(np.arange(init_block[3]), init_block[2])
-            targets = np.stack([_h, _w], axis=1)
-            c = np.tile(np.arange(n_chanel), targets.shape[0])
-            targets = np.repeat(targets, n_chanel, axis=0)
-            targets = np.stack([c, targets[:, 0], targets[:, 1]], axis=1)
-            for c, h, w in targets:
-                _is_upper = is_upper.clone()
-                assert (~(_is_upper[:, c, h, w])).all().item()
-                _is_upper[:, c, h, w] = True
-                _is_upper = _is_upper.repeat_interleave(split, dim=2)
-                _is_upper = _is_upper.repeat_interleave(split, dim=3)
-                x_adv = torch.where(_is_upper, upper, lower)
-                x_adv = torch.where(saliency_map, x_adv, x)
+            k_init = config.k_init
+            split_level = 1
+            block = np.array([(c, 0, height, 0, width) for c in range(n_chanel)])
+            self.forward = np.zeros(self.x_adv.shape[0])
+
+            # main loop
+            while True:
+                self.refine(block, k_init, split_level)
+                if self.forward >= config.steps:
+                    break
+                elif k_init > 1:
+                    assert k_init % 2 == 0
+                    k_init //= 2
+            x_adv_all.append(self.x_adv)
+        x_adv_all = torch.concat(x_adv_all)
+        return x_adv_all
+
+    def refine(self, search_block, k, split_level):
+        forward = self.forward.copy()
+        if split_level == 1:
+
+            split_blocks = []
+            for block in search_block:
+                split_blocks.append(self.split(block, k))
+            split_blocks = np.concatenate(split_blocks)
+            np.random.shuffle(split_blocks)
+
+            upper_loss, lower_loss = [], []
+            for block in split_blocks:
+                _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
+                _block[:, block[0], block[1] : block[2], block[3] : block[4]] = True
+                _block = _block & self.saliency_map
+                x_adv = torch.where(_block, self.upper, self.x_adv)
+                pred = self.model(x_adv).softmax(dim=0)
+                upper_loss.append(self.criterion(pred, self.y))
+                forward += (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
+                x_adv = torch.where(_block, self.lower, self.x_adv)
+                pred = self.model(x_adv).softmax(dim=0)
+                lower_loss.append(self.criterion(pred, self.y))
+                forward += (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
+                if forward.min() >= config.steps:
+                    break
+            upper_loss, lower_loss = torch.stack(upper_loss), torch.stack(lower_loss)
+            loss, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
+            indices = loss.argsort(dim=0, descending=True)
+            for index in indices:
+                breakpoint()
+        else:
+            split_blocks = self.split(search_block, k)
+            for block in split_blocks:
+                _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
+                _block[:, block[0], block[1] : block[2], block[3] : block[4]] = True
+                _block = _block & self.saliency_map
+                x_adv = torch.where(_block, self.upper, self.x_adv)
                 pred = self.model(x_adv).softmax(dim=1)
-                _loss = self.criterion(pred, y)
-                update = _loss > loss
-                is_upper[update] = _is_upper[update]
-                loss[update] = _loss[update]
-            from matplotlib import pyplot as plt
+                upper_loss.append(self.criterion(pred, self.y))
+                forward += (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
+                x_adv = torch.where(_block, self.lower, self.x_adv)
+                pred = self.model(x_adv).softmax(dim=1)
+                lower_loss.append(self.criterion(pred, self.y))
+                forward += (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
+                if forward.min() >= config.steps:
+                    break
+            upper_loss, lower_loss = torch.stack(upper_loss), torch.stack(lower_loss)
+            loss, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
+            indices = loss.argsort(descending=True)
 
-            plt.imshow(saliency_map[0, 0].cpu().numpy().astype(np.uint8))
-            plt.show()
-            plt.savefig("test.png")
-            plt.imshow(x_adv[0].cpu().numpy().transpose(1, 2, 0))
-            plt.savefig("test2.png")
 
-            breakpoint()
-
-        self.forward = np.ones(n_images)
-
-        while True:
-            is_upper, loss, is_upper_best, best_loss = self.refine(
-                is_upper, loss, is_upper_best, best_loss
-            )
-            if self.forward.min() >= config.steps:
-                break
-            elif self.split > 1:
-                is_upper = is_upper.repeat([1, 1, 2, 2])
-                if self.split % 2 == 1:
-                    logger.critical(f"self.split is not even: {self.split}")
-                self.split //= 2
+    def split(self, block: np.ndarray, k):
+        n_blocks = ((block[2] - block[1]) // k, (block[4] - block[3]) // k)
+        x1 = np.linspace(block[1], block[2] - k, n_blocks[0], dtype=int)
+        x2 = np.linspace(block[1] + k, block[2], n_blocks[0], dtype=int)
+        x = np.stack([np.repeat(x1, n_blocks[1]), np.repeat(x2, n_blocks[1])]).T
+        y1 = np.linspace(block[3], block[4] - k, n_blocks[1], dtype=int)
+        y2 = np.linspace(block[3] + k, block[4], n_blocks[1], dtype=int)
+        y = np.stack([np.tile(y1, n_blocks[0]), np.tile(y2, n_blocks[0])]).T
+        c = np.repeat(block[0], n_blocks[0] * n_blocks[1])
+        split_block = np.stack([c, x[:, 0], x[:, 1], y[:, 0], y[:, 1]], axis=1)
+        np.random.shuffle(split_block)
+        return split_block

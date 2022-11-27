@@ -28,5 +28,5 @@ def load_imagenet(
     )
     logger.debug("Loading ImageNet data...")
     img, label = next(iter(dataloader))[:2]
-    logger.debug("Loaded ImageNet data...")
+    logger.debug("Loaded ImageNet data")
     return img, label
