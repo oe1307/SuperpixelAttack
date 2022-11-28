@@ -36,8 +36,15 @@ class SaliencyAttack(Attacker):
             batch = self.x_adv.shape[0]
             self.upper = (self.x_adv + config.epsilon).clamp(0, 1).clone()
             self.lower = (self.x_adv - config.epsilon).clamp(0, 1).clone()
-            self.saliency_map = self.saliency_model(self.x_adv)[0].round()
-            self.saliency_map = self.saliency_map.bool()
+            self.saliency_map = []
+            n_saliency_batch = math.ceil(batch / config.saliency_batch)
+            for j in range(n_saliency_batch):
+                pbar.debug(j + 1, n_saliency_batch, "saliency map")
+                start = j * config.saliency_batch
+                end = min((j + 1) * config.saliency_batch, batch)
+                x = self.x_adv[start:end]
+                self.saliency_map.append(self.saliency_model(x)[0].round())
+            self.saliency_map = torch.cat(self.saliency_map, dim=0).to(torch.bool)
             self.best_loss = -100 * torch.ones(batch, device=config.device)
             self.forward = np.zeros(batch, dtype=np.int64)
 
