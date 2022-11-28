@@ -45,6 +45,8 @@ class SaliencyAttack(Attacker):
                 x = self.x_adv[start:end]
                 self.saliency_map.append(self.saliency_model(x)[0].round())
             self.saliency_map = torch.cat(self.saliency_map, dim=0).to(torch.bool)
+            not_detected = self.saliency_map.sum(dim=(1, 2, 3)) == 0
+            self.saliency_map[not_detected] = True
             self.best_loss = -100 * torch.ones(batch, device=config.device)
             self.forward = np.zeros(batch, dtype=np.int64)
 
@@ -71,15 +73,18 @@ class SaliencyAttack(Attacker):
             split_blocks = []
             for c in range(n_chanel):
                 search_block[:, 0] = c
-                block = [self.split(b, k) for b in search_block]
-                split_blocks.append(np.stack(block, axis=1))
+                split_blocks.append(self.split(search_block, k))
             split_blocks = np.concatenate(split_blocks)
             for blocks in split_blocks.transpose(1, 0, 2):
                 np.random.shuffle(blocks)
 
             upper_loss, lower_loss = [], []
             for i, block in enumerate(split_blocks):
-                pbar.debug(i + 1, split_blocks.shape[0], f"{split_level = }")
+                pbar.debug(
+                    i + 1,
+                    split_blocks.shape[0],
+                    f"{split_level = } forward = {self.forward.min()}",
+                )
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
                     if self.forward[idx] < config.steps:
@@ -101,7 +106,11 @@ class SaliencyAttack(Attacker):
             split_blocks = self.split(search_block, k)
             upper_loss, lower_loss = [], []
             for i, block in enumerate(split_blocks):
-                pbar.debug(i + 1, split_blocks.shape[0], f"{split_level = }")
+                pbar.debug(
+                    i + 1,
+                    split_blocks.shape[0],
+                    f"{split_level = } forward = {self.forward.min()}",
+                )
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
                     if self.forward[idx] < config.steps:
@@ -119,7 +128,6 @@ class SaliencyAttack(Attacker):
                 if self.forward.min() >= config.steps:
                     break
 
-        logger.debug(f"forward = {self.forward.min()}")
         upper_loss, lower_loss = torch.stack(upper_loss), torch.stack(lower_loss)
         loss_storage, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
         indices = loss_storage.argsort(dim=0, descending=True)
@@ -149,14 +157,18 @@ class SaliencyAttack(Attacker):
                 self.refine(block, k, split_level + 1)
 
     def split(self, block: np.ndarray, k: int) -> np.ndarray:
-        n_blocks = ((block[2] - block[1]) // k, (block[4] - block[3]) // k)
-        x1 = np.linspace(block[1], block[2] - k, n_blocks[0], dtype=int)
-        x2 = np.linspace(block[1] + k, block[2], n_blocks[0], dtype=int)
-        x = np.stack([np.repeat(x1, n_blocks[1]), np.repeat(x2, n_blocks[1])]).T
-        y1 = np.linspace(block[3], block[4] - k, n_blocks[1], dtype=int)
-        y2 = np.linspace(block[3] + k, block[4], n_blocks[1], dtype=int)
-        y = np.stack([np.tile(y1, n_blocks[0]), np.tile(y2, n_blocks[0])]).T
-        c = np.repeat(block[0], n_blocks[0] * n_blocks[1])
-        split_block = np.stack([c, x[:, 0], x[:, 1], y[:, 0], y[:, 1]], axis=1)
-        np.random.shuffle(split_block)
+        split_block = []
+        for _block in block:
+            n_blocks = ((_block[2] - _block[1]) // k, (_block[4] - _block[3]) // k)
+            x1 = np.linspace(_block[1], _block[2] - k, n_blocks[0], dtype=int)
+            x2 = np.linspace(_block[1] + k, _block[2], n_blocks[0], dtype=int)
+            x = np.stack([np.repeat(x1, n_blocks[1]), np.repeat(x2, n_blocks[1])]).T
+            y1 = np.linspace(_block[3], _block[4] - k, n_blocks[1], dtype=int)
+            y2 = np.linspace(_block[3] + k, _block[4], n_blocks[1], dtype=int)
+            y = np.stack([np.tile(y1, n_blocks[0]), np.tile(y2, n_blocks[0])]).T
+            c = np.repeat(_block[0], n_blocks[0] * n_blocks[1])
+            _split_block = np.stack([c, x[:, 0], x[:, 1], y[:, 0], y[:, 1]], axis=1)
+            np.random.shuffle(_split_block)
+            split_block.append(_split_block)
+        split_block = np.stack(split_block, axis=1)
         return split_block
