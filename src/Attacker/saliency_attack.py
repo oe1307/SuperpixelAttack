@@ -83,7 +83,8 @@ class SaliencyAttack(Attacker):
                 pbar.debug(
                     i + 1,
                     split_blocks.shape[0],
-                    f"{split_level = } forward = {self.forward.min()}",
+                    f"{split_level = }",
+                    f"forward = {self.forward.min()}",
                 )
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
@@ -109,7 +110,8 @@ class SaliencyAttack(Attacker):
                 pbar.debug(
                     i + 1,
                     split_blocks.shape[0],
-                    f"{split_level = } forward = {self.forward.min()}",
+                    f"{split_level = }",
+                    f"forward = {self.forward.min()}",
                 )
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
