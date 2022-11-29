@@ -43,10 +43,8 @@ class SaliencyAttack(Attacker):
                 start = j * config.saliency_batch
                 end = min((j + 1) * config.saliency_batch, batch)
                 x = self.x_adv[start:end]
-                self.saliency_map.append(self.saliency_model(x)[0].round())
+                self.saliency_map.append(self.saliency_model(x)[0] >= config.threshold)
             self.saliency_map = torch.cat(self.saliency_map, dim=0).to(torch.bool)
-            not_detected = self.saliency_map.sum(dim=(1, 2, 3)) == 0
-            self.saliency_map[not_detected] = True
             self.best_loss = -100 * torch.ones(batch, device=config.device)
             self.forward = np.zeros(batch, dtype=np.int64)
 
@@ -78,59 +76,70 @@ class SaliencyAttack(Attacker):
             for blocks in split_blocks.transpose(1, 0, 2):
                 np.random.shuffle(blocks)
 
-            upper_loss, lower_loss = [], []
+            upper_loss = -100 * torch.ones(
+                (split_blocks.shape[0], batch), device=config.device
+            )
+            lower_loss = -100 * torch.ones(
+                (split_blocks.shape[0], batch), device=config.device
+            )
             for i, block in enumerate(split_blocks):
+                _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
+                for idx, b in enumerate(block):
+                    _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
+                _block = _block & self.saliency_map
+                condition1 = self.forward < config.steps
+                condition2 = (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
+                condition = condition1 & condition2
+                x_adv = torch.where(_block, self.upper, self.x_adv)
+                pred = self.model(x_adv[condition]).softmax(dim=1)
+                upper_loss[i, condition] = self.criterion(pred, self.y[condition])
+                self.forward += condition
+                x_adv = torch.where(_block, self.lower, self.x_adv)
+                pred = self.model(x_adv[condition]).softmax(dim=1)
+                lower_loss[i, condition] = self.criterion(pred, self.y[condition])
+                self.forward += condition
                 pbar.debug(
                     i + 1,
                     split_blocks.shape[0],
                     f"{split_level = }",
                     f"forward = {self.forward.min()}",
                 )
-                _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
-                for idx, b in enumerate(block):
-                    if self.forward[idx] < config.steps:
-                        _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
-                if _block.sum() == 0:
-                    continue
-                _block = _block & self.saliency_map
-                x_adv = torch.where(_block, self.upper, self.x_adv)
-                pred = self.model(x_adv).softmax(dim=1)
-                upper_loss.append(self.criterion(pred, self.y))
-                self.forward += (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
-                x_adv = torch.where(_block, self.lower, self.x_adv)
-                pred = self.model(x_adv).softmax(dim=1)
-                lower_loss.append(self.criterion(pred, self.y))
-                self.forward += (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
                 if self.forward.min() >= config.steps:
+                    logger.debug("")
                     break
         else:
             split_blocks = self.split(search_block, k)
-            upper_loss, lower_loss = [], []
+            upper_loss = -100 * torch.ones(
+                (split_blocks.shape[0], batch), device=config.device
+            )
+            lower_loss = -100 * torch.ones(
+                (split_blocks.shape[0], batch), device=config.device
+            )
             for i, block in enumerate(split_blocks):
+                _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
+                for idx, b in enumerate(block):
+                    _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
+                _block = _block & self.saliency_map
+                condition1 = self.forward < config.steps
+                condition2 = (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
+                condition = condition1 & condition2
+                x_adv = torch.where(_block, self.upper, self.x_adv)
+                pred = self.model(x_adv[condition]).softmax(dim=1)
+                upper_loss[i, condition] = self.criterion(pred, self.y[condition])
+                x_adv = torch.where(_block, self.lower, self.x_adv)
+                pred = self.model(x_adv[condition]).softmax(dim=1)
+                lower_loss[i, condition] = self.criterion(pred, self.y[condition])
+                self.forward += condition
                 pbar.debug(
                     i + 1,
                     split_blocks.shape[0],
                     f"{split_level = }",
                     f"forward = {self.forward.min()}",
                 )
-                _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
-                for idx, b in enumerate(block):
-                    if self.forward[idx] < config.steps:
-                        _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
-                if _block.sum() == 0:
-                    continue
-                _block = _block & self.saliency_map
-                x_adv = torch.where(_block, self.upper, self.x_adv)
-                pred = self.model(x_adv).softmax(dim=1)
-                upper_loss.append(self.criterion(pred, self.y))
-                x_adv = torch.where(_block, self.lower, self.x_adv)
-                pred = self.model(x_adv).softmax(dim=1)
-                lower_loss.append(self.criterion(pred, self.y))
-                self.forward += (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
                 if self.forward.min() >= config.steps:
+                    logger.debug("")
                     break
 
-        upper_loss, lower_loss = torch.stack(upper_loss), torch.stack(lower_loss)
         loss_storage, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
         indices = loss_storage.argsort(dim=0, descending=True)
         for index in indices:
