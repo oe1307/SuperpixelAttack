@@ -73,7 +73,6 @@ def main():
 
 if __name__ == "__main__":
     args = argparser()
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
     logger = setup_logger.setLevel(args.log_level)
     config = config_parser.read(args.config, args)
     main()
