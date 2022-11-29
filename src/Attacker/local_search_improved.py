@@ -63,7 +63,7 @@ class ImprovedLocalSearchProposedMethod(Attacker):
 
             # local search
             searched = [[] for _ in batch]
-            loss_storage = []
+            loss_storage, best_loss_storage = [], [best_loss.cpu().numpy()]
             while True:
                 is_upper = is_upper_best.clone()
                 for idx in batch:
@@ -79,9 +79,12 @@ class ImprovedLocalSearchProposedMethod(Attacker):
                         checkpoint[idx] += config.checkpoint * n_superpixel[idx]
                         searched[idx] = []
                     if targets[idx].shape[0] == 0:
-                        target_order = np.array(loss_storage)
-                        target_order = target_order[pre_checkpoint[idx] :, idx]
-                        target_order = np.argsort(target_order)[::-1]
+                        _loss = np.array(loss_storage)
+                        _loss = _loss[pre_checkpoint[idx] :, idx]
+                        _best_loss = np.array(best_loss_storage)
+                        _best_loss = _best_loss[pre_checkpoint[idx] : -1, idx]
+                        diff = _loss - _best_loss
+                        target_order = np.argsort(diff)[::-1]
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
                         targets[idx] = np.array(searched[idx])[target_order]
                         searched[idx] = []
@@ -98,6 +101,7 @@ class ImprovedLocalSearchProposedMethod(Attacker):
                 update = loss >= best_loss
                 x_best[update] = x_adv[update]
                 best_loss[update] = loss[update]
+                best_loss_storage.append(best_loss.cpu().numpy())
                 is_upper_best[update] = is_upper[update]
                 forward += 1
 
