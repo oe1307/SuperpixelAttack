@@ -13,9 +13,16 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class AdvancedLocalSearch(Attacker):
+class LocalSearch(Attacker):
     def __init__(self):
         assert type(config.steps) == int
+        assert config.additional_search in (
+            "best",
+            "worst",
+            "impacter",
+            "non_impacter",
+            "random",
+        )
         config.n_forward = config.steps
         self.criterion = get_criterion()
 
@@ -69,14 +76,8 @@ class AdvancedLocalSearch(Attacker):
                 for idx in batch:
                     if forward == checkpoint[idx]:
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
-                        next_superpixel = superpixel_storage[idx, level[idx]]
-                        label_pair = np.stack(
-                            [superpixel[idx].reshape(-1), next_superpixel.reshape(-1)]
-                        )
-                        pair, count = np.unique(
-                            label_pair.T, axis=0, return_counts=True
-                        )
-                        breakpoint()
+                        superpixel[idx] = superpixel_storage[idx, level[idx]]
+                        n_superpixel[idx] = superpixel[idx].max()
                         chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                         labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
                         targets[idx] = np.stack([chanel, labels], axis=1)
@@ -84,14 +85,24 @@ class AdvancedLocalSearch(Attacker):
                         pre_checkpoint[idx] = checkpoint[idx] - 1
                         checkpoint[idx] += config.checkpoint * n_superpixel[idx]
                         searched[idx] = []
-                        n_superpixel[idx] = superpixel[idx].max()
                     if targets[idx].shape[0] == 0:
+                        # decide additional search pixel
                         _loss = np.array(loss_storage)
                         _loss = _loss[pre_checkpoint[idx] :, idx]
                         _best_loss = np.array(best_loss_storage)
                         _best_loss = _best_loss[pre_checkpoint[idx] : -1, idx]
                         diff = _loss - _best_loss
-                        target_order = np.argsort(diff)[::-1]
+                        if config.additional_search == "best":
+                            target_order = np.argsort(diff)[::-1]
+                        elif config.additional_search == "worst":
+                            target_order = np.argsort(diff)
+                        elif config.additional_search == "impacter":
+                            target_order = np.argsort(np.abs(diff))[::-1]
+                        elif config.additional_search == "non_impacter":
+                            target_order = np.argsort(np.abs(diff))
+                        elif config.additional_search == "random":
+                            target_order = np.arange(len(diff))
+                            np.random.shuffle(target_order)
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
                         targets[idx] = np.array(searched[idx])[target_order]
                         searched[idx] = []
