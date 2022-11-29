@@ -13,7 +13,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class LocalSearchProposedMethod(Attacker):
+class AdvancedLocalSearch(Attacker):
     def __init__(self):
         assert type(config.steps) == int
         config.n_forward = config.steps
@@ -55,30 +55,48 @@ class LocalSearchProposedMethod(Attacker):
             for idx in batch:
                 chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                 labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-                target = np.stack([chanel, labels], axis=1)
-                np.random.shuffle(target)
-                targets.append(target)
+                _target = np.stack([chanel, labels], axis=1)
+                np.random.shuffle(_target)
+                targets.append(_target)
             checkpoint = config.checkpoint * n_superpixel
+            pre_checkpoint = np.zeros_like(batch)
 
             # local search
+            searched = [[] for _ in batch]
+            loss_storage, best_loss_storage = [], [best_loss.cpu().numpy()]
             while True:
                 is_upper = is_upper_best.clone()
                 for idx in batch:
                     if forward == checkpoint[idx]:
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
-                        superpixel[idx] = superpixel_storage[idx, level[idx]]
-                        n_superpixel[idx] = superpixel[idx].max()
+                        next_superpixel = superpixel_storage[idx, level[idx]]
+                        label_pair = np.stack(
+                            [superpixel[idx].reshape(-1), next_superpixel.reshape(-1)]
+                        )
+                        pair, count = np.unique(
+                            label_pair.T, axis=0, return_counts=True
+                        )
+                        breakpoint()
                         chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                         labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
                         targets[idx] = np.stack([chanel, labels], axis=1)
                         np.random.shuffle(targets[idx])
+                        pre_checkpoint[idx] = checkpoint[idx] - 1
                         checkpoint[idx] += config.checkpoint * n_superpixel[idx]
+                        searched[idx] = []
+                        n_superpixel[idx] = superpixel[idx].max()
                     if targets[idx].shape[0] == 0:
-                        chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                        labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-                        targets[idx] = np.stack([chanel, labels], axis=1)
-                        np.random.shuffle(targets[idx])
+                        _loss = np.array(loss_storage)
+                        _loss = _loss[pre_checkpoint[idx] :, idx]
+                        _best_loss = np.array(best_loss_storage)
+                        _best_loss = _best_loss[pre_checkpoint[idx] : -1, idx]
+                        diff = _loss - _best_loss
+                        target_order = np.argsort(diff)[::-1]
+                        assert target_order.shape[0] == np.array(searched[idx]).shape[0]
+                        targets[idx] = np.array(searched[idx])[target_order]
+                        searched[idx] = []
                     c, label = targets[idx][0]
+                    searched[idx].append((c, label))
                     targets[idx] = np.delete(targets[idx], 0, axis=0)
                     is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
                         idx, c, superpixel[idx] == label
@@ -86,9 +104,11 @@ class LocalSearchProposedMethod(Attacker):
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
+                loss_storage.append(loss.cpu().numpy())
                 update = loss >= best_loss
                 x_best[update] = x_adv[update]
                 best_loss[update] = loss[update]
+                best_loss_storage.append(best_loss.cpu().numpy())
                 is_upper_best[update] = is_upper[update]
                 forward += 1
 

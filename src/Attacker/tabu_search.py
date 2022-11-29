@@ -13,7 +13,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuSearchProposedMethod(Attacker):
+class TabuSearch(Attacker):
     def __init__(self):
         assert type(config.steps) == int
         config.n_forward = config.steps

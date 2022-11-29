@@ -1,4 +1,4 @@
-attacker: ImprovedLocalSearchMethod
+attacker: AdvancedLocalSearch
 
 norm: Linf
 epsilon: 0.01568627450980392
@@ -12,5 +12,5 @@ model:
 # hyperparameter
 steps: 100
 criterion: cw
-segments: [4, 16, 64]
+segments: [4, 16, 64, 256]
 checkpoint: 4
