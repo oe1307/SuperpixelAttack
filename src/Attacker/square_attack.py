@@ -1,13 +1,12 @@
 import math
 
-import art
 import torch
-from art.estimators.classification import PyTorchClassifier
+import torchattacks
 from torch import Tensor
 from yaspin import yaspin
 
 from base import Attacker
-from utils import change_level, config_parser, setup_logger
+from utils import config_parser, setup_logger, pbar
 
 logger = setup_logger(__name__)
 config = config_parser()
@@ -18,40 +17,25 @@ class SquareAttack(Attacker):
         config.n_forward = config.restart * config.steps
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
-        # remove misclassification images
+        attacker = torchattacks.Square(
+            self.model,
+            config.norm,
+            config.epsilon,
+            config.steps,
+            config.restart,
+            config.p_init,
+            seed=config.seed,
+        )
+        x_adv_all = []
         n_images = x_all.shape[0]
-        clean_acc = torch.zeros(n_images, dtype=torch.bool)
         n_batch = math.ceil(n_images / self.model.batch_size)
         for i in range(n_batch):
+            pbar.debug(i + 1, n_batch, "batch")
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, n_images)
             x = x_all[start:end]
             y = y_all[start:end]
-            logits = self.model(x).clone()
-            clean_acc[start:end] = logits.argmax(dim=1) == y
-
-        change_level("art", 40)
-        torch.cuda.current_device = lambda: config.device
-        model = PyTorchClassifier(
-            self.model,
-            loss=None,
-            input_shape=x_all.shape[1:],
-            nb_classes=config.n_classes,
-            clip_values=(0, 1),
-        )
-        model._device = torch.device(config.device)
-
-        attack = art.attacks.evasion.SquareAttack(
-            estimator=model,
-            eps=config.epsilon,
-            batch_size=self.model.batch_size,
-            verbose=False,
-            max_iter=config.steps,
-            p_init=config.p_init,
-            nb_restarts=config.restart,
-        )
-        with yaspin(text="Attacking...", color="cyan"):
-            x_adv = attack.generate(x_all[clean_acc].cpu().numpy())
-        x_adv_all = x_all.clone()
-        x_adv_all[clean_acc] = torch.from_numpy(x_adv).to(config.device)
+            x_adv = attacker.perturb(x, y)
+            x_adv_all.append(x_adv)
+        x_adv_all = torch.cat(x_adv_all, dim=0)
         return x_adv_all

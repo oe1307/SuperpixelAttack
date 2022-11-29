@@ -5,7 +5,7 @@ torch
 torchvision
 
 # attacker
-adversarial-robustness-toolbox
+torchattacks
 git+https://github.com/BorealisAI/advertorch.git
 scikit-image
 
