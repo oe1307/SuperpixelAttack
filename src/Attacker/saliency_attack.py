@@ -45,6 +45,10 @@ class SaliencyAttack(Attacker):
                 x = self.x_adv[start:end]
                 self.saliency_map.append(self.saliency_model(x)[0] >= config.threshold)
             self.saliency_map = torch.cat(self.saliency_map, dim=0).to(torch.bool)
+            not_detected = self.saliency_map.sum(dim=(1, 2, 3)) == 0
+            if not_detected.sum() > 0:
+                logger.warning(f"{not_detected}images not detected")
+                self.saliency_map[not_detected] = True
             self.best_loss = -100 * torch.ones(batch, device=config.device)
             self.forward = np.zeros(batch, dtype=np.int64)
 
