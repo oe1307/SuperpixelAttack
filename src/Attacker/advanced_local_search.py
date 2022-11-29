@@ -13,7 +13,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class LocalSearch(Attacker):
+class AdvancedLocalSearch(Attacker):
     def __init__(self):
         assert type(config.steps) == int
         assert config.additional_search in (

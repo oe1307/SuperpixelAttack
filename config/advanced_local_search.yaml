@@ -14,3 +14,4 @@ steps: 100
 criterion: cw
 segments: [4, 16, 64, 256]
 checkpoint: 4
+additional_search: random
