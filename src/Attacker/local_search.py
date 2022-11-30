@@ -19,7 +19,7 @@ class LocalSearch(Attacker):
     """
 
     def __init__(self):
-        self.checkparam()
+        self.check_param()
         config.n_forward = config.steps
         self.criterion = get_criterion()
 
