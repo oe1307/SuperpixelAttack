@@ -7,11 +7,11 @@ n_examples: 5000
 
 model:
     robustbench:
-        Wong2020Fast: 1000
-        Engstrom2019Robustness: 1000
-        Salman2020Do_R18: 1000
-        Salman2020Do_R50: 1000
-        Salman2020Do_50_2: 1000
+        Wong2020Fast: 1500
+        Engstrom2019Robustness: 1500
+        Salman2020Do_R18: 1500
+        Salman2020Do_R50: 1500
+        Salman2020Do_50_2: 1500
 
 # hyperparameter
 steps: 100
