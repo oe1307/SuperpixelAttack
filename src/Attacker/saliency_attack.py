@@ -59,7 +59,7 @@ class SaliencyAttack(Attacker):
                 logger.warning(f"{threshold=}:{not_detected.sum()} images not detected")
                 threshold /= 2
                 self.saliency_map[not_detected] = (
-                    self.saliency_model(x_all[not_detected])[0] >= threshold
+                    self.saliency_model(self.x_adv[not_detected])[0] >= threshold
                 )
                 _detected = self.saliency_map.sum(dim=(1, 2, 3))
                 not_detected = _detected <= (height // k_init) * (width // k_init)
