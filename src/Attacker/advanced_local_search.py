@@ -98,8 +98,6 @@ class AdvancedLocalSearch(Attacker):
                         elif config.attention_pixel == "random":
                             target_order = np.arange(len(diff))
                             np.random.shuffle(target_order)
-                        if target_order.shape[0] != np.array(searched[idx]).shape[0]:
-                            breakpoint()
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
                         target_order = target_order[: target_order.shape[0] * 2 // 3]
                         # TODO: doubled searched
