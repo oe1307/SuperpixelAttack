@@ -65,7 +65,8 @@ class LocalSearch(Attacker):
                 _target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(_target)
                 targets.append(_target)
-            checkpoint = config.checkpoint * n_superpixel
+            # TODO: which is better config.checkpoint or n_chanel in checkpoint == 4
+            checkpoint = config.checkpoint * n_superpixel + 1
             pre_checkpoint = np.zeros_like(batch)
 
             # local search
