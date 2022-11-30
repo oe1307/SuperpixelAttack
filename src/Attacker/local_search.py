@@ -14,6 +14,10 @@ config = config_parser()
 
 
 class LocalSearch(Attacker):
+    """
+    simply set checkpoint and search next superpixel
+    """
+
     def __init__(self):
         assert type(config.steps) == int
         assert config.additional_search in (
@@ -70,7 +74,8 @@ class LocalSearch(Attacker):
 
             # local search
             searched = [[] for _ in batch]
-            loss_storage, best_loss_storage = [], [best_loss.cpu().numpy()]
+            loss_storage = []
+            best_loss_storage = [best_loss.cpu().numpy()]
             while True:
                 is_upper = is_upper_best.clone()
                 for idx in batch:

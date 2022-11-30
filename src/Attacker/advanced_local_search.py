@@ -14,6 +14,11 @@ config = config_parser()
 
 
 class AdvancedLocalSearch(Attacker):
+    """
+    extract next superpixel,
+    but search many times next superpixel
+    """
+
     def __init__(self):
         assert type(config.steps) == int
         assert config.additional_search in (
@@ -49,7 +54,7 @@ class AdvancedLocalSearch(Attacker):
             superpixel_storage = np.array(superpixel_storage)
             level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, level]
-            n_superpixel = superpixel.max(axis=(1, 2))
+            n_targets = superpixel.max(axis=(1, 2))
 
             # initialize
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
@@ -60,37 +65,74 @@ class AdvancedLocalSearch(Attacker):
 
             targets = []
             for idx in batch:
-                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
+                chanel = np.tile(np.arange(n_chanel), n_targets[idx])
+                labels = np.repeat(range(1, n_targets[idx] + 1), n_chanel)
                 _target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(_target)
                 targets.append(_target)
-            checkpoint = config.checkpoint * n_superpixel
-            pre_checkpoint = np.zeros_like(batch)
+            checkpoint = config.init_checkpoint * n_targets + 1
+            pre_checkpoint = np.ones_like(batch)
 
             # local search
             searched = [[] for _ in batch]
-            loss_storage, best_loss_storage = [], [best_loss.cpu().numpy()]
+            loss_storage = []
+            best_loss_storage = [best_loss.cpu().numpy()]
             while True:
                 is_upper = is_upper_best.clone()
                 for idx in batch:
-                    if forward == checkpoint[idx]:
+                    if forward >= checkpoint[idx]:
+                        # extract target pixel
+                        _loss = np.array(loss_storage)
+                        _loss = _loss[pre_checkpoint[idx] - 1 :, idx]
+                        _best_loss = np.array(best_loss_storage)
+                        _best_loss = _best_loss[pre_checkpoint[idx] - 1 : -1, idx]
+                        diff = _loss - _best_loss
+                        if config.attention_pixel == "best":
+                            target_order = np.argsort(diff)[::-1]
+                        elif config.attention_pixel == "worst":
+                            target_order = np.argsort(diff)
+                        elif config.attention_pixel == "impacter":
+                            target_order = np.argsort(np.abs(diff))[::-1]
+                        elif config.attention_pixel == "non_impacter":
+                            target_order = np.argsort(np.abs(diff))
+                        elif config.attention_pixel == "random":
+                            target_order = np.arange(len(diff))
+                            np.random.shuffle(target_order)
+                        if target_order.shape[0] != np.array(searched[idx]).shape[0]:
+                            breakpoint()
+                        assert target_order.shape[0] == np.array(searched[idx]).shape[0]
+                        target_order = target_order[: target_order.shape[0] * 2 // 3]
+                        # TODO: doubled searched
+                        attention_pixel = np.array(searched[idx])[target_order]
+
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
-                        superpixel[idx] = superpixel_storage[idx, level[idx]]
-                        n_superpixel[idx] = superpixel[idx].max()
-                        chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                        labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-                        targets[idx] = np.stack([chanel, labels], axis=1)
+                        next_superpixel = superpixel_storage[idx, level[idx]].copy()
+                        label_pair = np.stack(
+                            [superpixel[idx].reshape(-1), next_superpixel.reshape(-1)]
+                        )
+                        pair, count = np.unique(
+                            label_pair.T, axis=0, return_counts=True
+                        )
+                        targets[idx] = []
+                        for c, label in attention_pixel:
+                            _pair = pair[pair[:, 0] == label]
+                            _count = count[pair[:, 0] == label]
+                            _target = _pair[_count >= np.average(_count)]
+                            _target[:, 0] = c
+                            targets[idx].append(_target)
+                        targets[idx] = np.concatenate(targets[idx])
                         np.random.shuffle(targets[idx])
-                        pre_checkpoint[idx] = checkpoint[idx] - 1
-                        checkpoint[idx] += config.checkpoint * n_superpixel[idx]
+                        n_targets[idx] = targets[idx].shape[0]
+                        pre_checkpoint[idx] = checkpoint[idx]
+                        checkpoint[idx] += int(n_targets[idx] * config.checkpoint)
+                        superpixel[idx] = next_superpixel.copy()
                         searched[idx] = []
                     if targets[idx].shape[0] == 0:
                         # decide additional search pixel
                         _loss = np.array(loss_storage)
-                        _loss = _loss[pre_checkpoint[idx] :, idx]
+                        _loss = _loss[pre_checkpoint[idx] - 1 :, idx]
                         _best_loss = np.array(best_loss_storage)
-                        _best_loss = _best_loss[pre_checkpoint[idx] : -1, idx]
+                        _best_loss = _best_loss[pre_checkpoint[idx] - 1 : -1, idx]
                         diff = _loss - _best_loss
                         if config.additional_search == "best":
                             target_order = np.argsort(diff)[::-1]
@@ -105,7 +147,6 @@ class AdvancedLocalSearch(Attacker):
                             np.random.shuffle(target_order)
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
                         targets[idx] = np.array(searched[idx])[target_order]
-                        searched[idx] = []
                     c, label = targets[idx][0]
                     searched[idx].append((c, label))
                     targets[idx] = np.delete(targets[idx], 0, axis=0)
