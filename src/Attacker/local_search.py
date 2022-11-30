@@ -13,9 +13,13 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuSearchProposedMethod(Attacker):
+class LocalSearch(Attacker):
+    """
+    simply set checkpoint and search next superpixel
+    """
+
     def __init__(self):
-        assert type(config.steps) == int
+        self.check_param()
         config.n_forward = config.steps
         self.criterion = get_criterion()
 
@@ -35,10 +39,10 @@ class TabuSearchProposedMethod(Attacker):
             # calculate various roughness superpixel
             with ThreadPoolExecutor(config.thread) as executor:
                 futures = [
-                    executor.submit(self.cal_superpixel, x[idx]) for idx in batch
+                    executor.submit(self.cal_superpixel, x[idx], idx, batch.max() + 1)
+                    for idx in batch
                 ]
-            superpixel_storage = [future.result() for future in futures]
-            superpixel_storage = np.array(superpixel_storage)
+            superpixel_storage = np.array([future.result() for future in futures])
             level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, level]
             n_superpixel = superpixel.max(axis=(1, 2))
@@ -48,23 +52,26 @@ class TabuSearchProposedMethod(Attacker):
             x_best = lower.clone()
             pred = self.model(x_best).softmax(1)
             best_loss = self.criterion(pred, y)
-            forward = 1
 
-            targets, weights = [], []
+            targets = []
             for idx in batch:
                 chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                 labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-                targets.append(np.stack([chanel, labels], axis=1))
-                weights.append(np.ones_like(chanel) / chanel.shape[0])
-            n_target = n_superpixel * n_chanel
-            checkpoint = config.checkpoint * n_superpixel
-            tabu_list = np.zeros_like(n_target, dtype=np.int)
+                _target = np.stack([chanel, labels], axis=1)
+                np.random.shuffle(_target)
+                targets.append(_target)
+            checkpoint = config.init_checkpoint * n_superpixel + 1
+            pre_checkpoint = np.ones_like(batch)
 
-            # tabu search
-            while True:
+            # local search
+            searched = [[] for _ in batch]
+            loss_storage = []
+            best_loss_storage = [best_loss.cpu().numpy()]
+            for forward in range(1, config.steps + 1):
                 is_upper = is_upper_best.clone()
                 for idx in batch:
-                    if forward == checkpoint[idx]:
+                    if forward >= checkpoint[idx]:
+                        # update small superpixel
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
                         superpixel[idx] = superpixel_storage[idx, level[idx]]
                         n_superpixel[idx] = superpixel[idx].max()
@@ -72,39 +79,66 @@ class TabuSearchProposedMethod(Attacker):
                         labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
                         targets[idx] = np.stack([chanel, labels], axis=1)
                         np.random.shuffle(targets[idx])
-                        checkpoint[idx] += 3 * n_superpixel[idx]
-                    while True:
-                        target_idx = np.random.choice(n_target[idx], p=weights[idx])
-                        if tabu_list[idx] == 0:
-                            tabu_list[idx] = config.tabu_size
-                            break
-                        else:
-                            tabu_list[idx] -= 1
-                            c, label = targets[idx][target_idx]
+                        pre_checkpoint[idx] = checkpoint[idx]
+                        checkpoint[idx] += config.checkpoint * n_superpixel[idx]
+                        searched[idx] = []
+                    if targets[idx].shape[0] == 0:
+                        # decide additional search pixel
+                        _loss = np.array(loss_storage)
+                        _loss = _loss[pre_checkpoint[idx] - 1 :, idx]
+                        _best_loss = np.array(best_loss_storage)
+                        _best_loss = _best_loss[pre_checkpoint[idx] - 1 : -1, idx]
+                        diff = _loss - _best_loss
+                        if config.additional_search == "best":
+                            target_order = np.argsort(diff)[::-1]
+                        elif config.additional_search == "worst":
+                            target_order = np.argsort(diff)
+                        elif config.additional_search == "impacter":
+                            target_order = np.argsort(np.abs(diff))[::-1]
+                        elif config.additional_search == "non_impacter":
+                            target_order = np.argsort(np.abs(diff))
+                        elif config.additional_search == "random":
+                            target_order = np.arange(len(diff))
+                            np.random.shuffle(target_order)
+                        assert target_order.shape[0] == np.array(searched[idx]).shape[0]
+                        targets[idx] = np.array(searched[idx])[target_order]
+                        searched[idx] = []
+                    c, label = targets[idx][0]
+                    searched[idx].append((c, label))
+                    targets[idx] = np.delete(targets[idx], 0, axis=0)
                     is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
                         idx, c, superpixel[idx] == label
                     ]
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
+                loss_storage.append(loss.cpu().numpy())
                 update = loss >= best_loss
                 x_best[update] = x_adv[update]
                 best_loss[update] = loss[update]
+                best_loss_storage.append(best_loss.cpu().numpy())
                 is_upper_best[update] = is_upper[update]
-                forward += 1
-
                 pbar.debug(forward, config.steps, "forward", f"batch: {b}")
-                if forward == config.steps:
-                    break
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
         return x_adv_all
 
-    def cal_superpixel(self, x):
+    def cal_superpixel(self, x, idx, total):
+        pbar.debug(idx + 1, total, "cal_superpixel")
         superpixel_storage = []
         for n_segments in config.segments:
             img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
             superpixel = slic(img, n_segments=n_segments)
             superpixel_storage.append(superpixel)
         return superpixel_storage
+
+    def check_param(self):
+        assert type(config.steps) == int
+        assert config.additional_search in (
+            "best",
+            "worst",
+            "impacter",
+            "non_impacter",
+            "random",
+        )

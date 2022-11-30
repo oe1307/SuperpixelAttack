@@ -13,7 +13,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class BoundaryPlusProposedMethod(Attacker):
+class BoundaryLocalSearch(Attacker):
     def __init__(self):
         assert type(config.steps) == int
         config.n_forward = config.steps
@@ -35,8 +35,7 @@ class BoundaryPlusProposedMethod(Attacker):
             # calculate various roughness superpixel
             with ThreadPoolExecutor(config.thread) as executor:
                 futures = [
-                    executor.submit(self.cal_superpixel, x[idx], idx, batch.max() + 1)
-                    for idx in batch
+                    executor.submit(self.cal_superpixel, x[idx]) for idx in batch
                 ]
             superpixel_storage = [future.result() for future in futures]
             superpixel_storage = np.array(superpixel_storage)
@@ -64,7 +63,7 @@ class BoundaryPlusProposedMethod(Attacker):
             x_best = lower.clone()
             pred = self.model(x_best).softmax(1)
             best_loss = self.criterion(pred, y)
-            forward = 1
+            forward = np.ones_like(batch)
 
             targets = []
             for idx in batch:
@@ -75,61 +74,59 @@ class BoundaryPlusProposedMethod(Attacker):
                 targets.append(target)
             checkpoint = 3 * n_superpixel
 
+            for _ in range(checkpoint.max()):
+                is_upper = is_upper_best.clone()
+                for idx in batch:
+                    if forward[idx] >= checkpoint[idx]:
+                        continue
+                    c, label = targets[idx][0]
+                    targets[idx] = np.delete(targets[idx], 0, axis=0)
+                    is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
+                        idx, c, superpixel[idx] == label
+                    ]
+                    forward[idx] += 1
+                x_adv = torch.where(is_upper, upper, lower)
+                pred = self.model(x_adv).softmax(dim=1)
+                loss = self.criterion(pred, y)
+                update = loss >= best_loss
+                x_best[update] = x_adv[update]
+                best_loss[update] = loss[update]
+                is_upper_best[update] = is_upper[update]
+
+            targets = []
+            for idx in batch:
+                chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
+                ids = np.repeat(range(n_boundary[idx]), n_chanel)
+                target = np.stack([chanel, ids], axis=1)
+                np.random.shuffle(target)
+                targets.append(target)
+            checkpoint = forward + 3 * n_boundary
+
             # local search
-            search_boundary = np.zeros_like(batch, dtype=np.bool)
             while True:
                 is_upper = is_upper_best.clone()
                 for idx in batch:
-                    if search_boundary[idx]:
-                        c, box_id = targets[idx][0]
-                        targets[idx] = np.delete(targets[idx], 0, axis=0)
-                        is_upper[idx, c, boundary_box[idx][box_id]] = ~is_upper[
-                            idx, c, boundary_box[idx][box_id]
-                        ]
-                        if forward == checkpoint[idx]:
-                            search_boundary[idx] = False
-                            level[idx] = min(level[idx] + 1, len(config.segments) - 1)
-                            superpixel[idx] = superpixel_storage[idx, level[idx]]
-                            n_superpixel[idx] = superpixel[idx].max()
-                            chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                            labels = np.repeat(
-                                range(1, n_superpixel[idx] + 1), n_chanel
-                            )
-                            targets[idx] = np.stack([chanel, labels], axis=1)
-                            np.random.shuffle(targets[idx])
-                            checkpoint[idx] += 3 * n_superpixel[idx]
-                    else:
-                        c, label = targets[idx][0]
-                        targets[idx] = np.delete(targets[idx], 0, axis=0)
-                        is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
-                            idx, c, superpixel[idx] == label
-                        ]
-                        if forward == checkpoint[idx]:
-                            if boundary_box_storage[idx][level[idx]].shape[0] == 0:
-                                level[idx] = min(
-                                    level[idx] + 1, len(config.segments) - 1
-                                )
-                                superpixel[idx] = superpixel_storage[idx, level[idx]]
-                                n_superpixel[idx] = superpixel[idx].max()
-                                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                                labels = np.repeat(
-                                    range(1, n_superpixel[idx] + 1), n_chanel
-                                )
-                                targets[idx] = np.stack([chanel, labels], axis=1)
-                                np.random.shuffle(targets[idx])
-                                checkpoint[idx] += 3 * n_superpixel[idx]
-                            else:
-                                search_boundary[idx] = True
-                                boundary_box[idx] = boundary_box_storage[idx][
-                                    level[idx]
-                                ]
-                                n_boundary[idx] = boundary_box[idx].shape[0]
-                                chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
-                                ids = np.repeat(range(n_boundary[idx]), n_chanel)
-                                target = np.stack([chanel, ids], axis=1)
-                                np.random.shuffle(target)
-                                targets[idx] = target
-                                checkpoint[idx] += 3 * n_boundary[idx]
+                    if forward[idx] >= config.n_forward:
+                        continue
+                    if forward[idx] == checkpoint[idx] or targets[idx].shape[0] == 0:
+                        level[idx] += 1
+                        if level[idx] >= len(config.segments):
+                            level[idx] = len(config.segments) - 1
+                        boundary_box[idx] = boundary_box_storage[idx][level[idx]]
+                        n_boundary[idx] = boundary_box[idx].shape[0]
+                        chanel = np.tile(np.arange(n_chanel), n_boundary[idx])
+                        ids = np.repeat(range(n_boundary[idx]), n_chanel)
+                        target = np.stack([chanel, ids], axis=1)
+                        np.random.shuffle(target)
+                        targets[idx] = target
+                        checkpoint[idx] += 3 * n_boundary[idx]
+                    if targets[idx].shape[0] == 0:
+                        continue
+                    c, box_id = targets[idx][0]
+                    targets[idx] = np.delete(targets[idx], 0, axis=0)
+                    is_upper[idx, c, boundary_box[idx][box_id]] = ~is_upper[
+                        idx, c, boundary_box[idx][box_id]
+                    ]
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
@@ -139,16 +136,15 @@ class BoundaryPlusProposedMethod(Attacker):
                 is_upper_best[update] = is_upper[update]
                 forward += 1
 
-                pbar.debug(forward, config.steps, "forward", f"batch: {b}")
-                if forward == config.steps:
+                pbar.debug(forward.min(), config.steps, "forward", f"batch: {b}")
+                if forward.min() == config.steps:
                     break
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
         return x_adv_all
 
-    def cal_superpixel(self, x, idx, total):
-        pbar.debug(idx + 1, total, "cal_superpixel")
+    def cal_superpixel(self, x):
         superpixel_storage = []
         for n_segments in config.segments:
             img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)

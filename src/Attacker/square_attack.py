@@ -3,10 +3,9 @@ import math
 import torch
 import torchattacks
 from torch import Tensor
-from yaspin import yaspin
 
 from base import Attacker
-from utils import config_parser, setup_logger, pbar
+from utils import config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)
 config = config_parser()

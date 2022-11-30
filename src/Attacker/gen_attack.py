@@ -29,6 +29,7 @@ class GenAttack(Attacker):
             rho_init=config.rho_init,
             decay=config.decay,
         )
+
         x_adv_all = []
         n_images = x_all.shape[0]
         n_batch = math.ceil(n_images / self.model.batch_size)
@@ -37,13 +38,10 @@ class GenAttack(Attacker):
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, n_images)
             x = x_all[start:end]
-            y = y_all[start:end]
-
             with torch.cuda.device(config.device):
                 torch.set_default_tensor_type(torch.cuda.FloatTensor)  # use cuda
-                x_adv = attacker.perturb(x, y)
+                x_adv = attacker.perturb(x)
                 torch.set_default_tensor_type(torch.FloatTensor)
-
             x_adv_all.append(x_adv)
-        x_adv_all = torch.concat(x_adv_all)
+        x_adv_all = torch.cat(x_adv_all, dim=0)
         return x_adv_all

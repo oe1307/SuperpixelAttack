@@ -29,4 +29,6 @@ def load_imagenet(
     logger.debug("Loading ImageNet data...")
     img, label = next(iter(dataloader))[:2]
     logger.debug("Loaded ImageNet data")
+    img = img.to(config.device)
+    label = label.to(config.device)
     return img, label
