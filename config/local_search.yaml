@@ -13,5 +13,6 @@ model:
 steps: 100
 criterion: cw
 segments: [4, 16, 64]
-checkpoint: 3
+init_checkpoint: 3
+checkpoint: 4
 additional_search: best

@@ -65,7 +65,6 @@ class LocalSearch(Attacker):
                 _target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(_target)
                 targets.append(_target)
-            # TODO: which is better config.checkpoint or n_chanel in checkpoint == 4
             checkpoint = config.init_checkpoint * n_superpixel + 1
             pre_checkpoint = np.ones_like(batch)
 
@@ -84,15 +83,15 @@ class LocalSearch(Attacker):
                         labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
                         targets[idx] = np.stack([chanel, labels], axis=1)
                         np.random.shuffle(targets[idx])
-                        pre_checkpoint[idx] = checkpoint[idx] - 1
+                        pre_checkpoint[idx] = checkpoint[idx]
                         checkpoint[idx] += config.checkpoint * n_superpixel[idx]
                         searched[idx] = []
                     if targets[idx].shape[0] == 0:
                         # decide additional search pixel
                         _loss = np.array(loss_storage)
-                        _loss = _loss[pre_checkpoint[idx] :, idx]
+                        _loss = _loss[pre_checkpoint[idx] - 1 :, idx]
                         _best_loss = np.array(best_loss_storage)
-                        _best_loss = _best_loss[pre_checkpoint[idx] : -1, idx]
+                        _best_loss = _best_loss[pre_checkpoint[idx] - 1 : -1, idx]
                         diff = _loss - _best_loss
                         if config.additional_search == "best":
                             target_order = np.argsort(diff)[::-1]
