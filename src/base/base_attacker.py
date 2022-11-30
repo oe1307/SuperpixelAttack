@@ -67,7 +67,7 @@ class Attacker:
 
         msg = (
             "\n"
-            + f"n_img = {x.shape[0]}\n"
+            + f"n_img = {x_all.shape[0]}\n"
             + f"model = {self.model.name}\n"
             + f"epsilon = {config.epsilon}\n"
             + f"forward = {config.n_forward}\n"
