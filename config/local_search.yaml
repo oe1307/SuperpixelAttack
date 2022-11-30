@@ -12,7 +12,7 @@ model:
 # hyperparameter
 steps: 100
 criterion: cw
-segments: [4, 16, 64]
+segments: [4, 16, 64, 256, 1024]
 init_checkpoint: 3
-checkpoint: 4
+checkpoint: 3
 additional_search: best
