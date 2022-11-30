@@ -13,5 +13,8 @@ model:
 steps: 100
 criterion: cw
 segments: [4, 16, 64, 256]
-checkpoint: 3
-tabu_size: 20
+init_checkpoint: 1.0
+checkpoint: 1.3
+attention_pixel: best
+ratio: 0.66
+tabu_size: 7

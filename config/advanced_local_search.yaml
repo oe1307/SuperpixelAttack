@@ -13,7 +13,8 @@ model:
 steps: 100
 criterion: cw
 segments: [4, 16, 64, 256]
-init_checkpoint: 4
-checkpoint: 1.3
-additional_search: random
-attention_pixel: best
+init_checkpoint: 1.1
+checkpoint: 1.1
+additional_search: impacter
+attention_pixel: impacter
+ratio: 0.66

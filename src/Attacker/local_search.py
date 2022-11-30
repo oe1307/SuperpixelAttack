@@ -19,14 +19,7 @@ class LocalSearch(Attacker):
     """
 
     def __init__(self):
-        assert type(config.steps) == int
-        assert config.additional_search in (
-            "best",
-            "worst",
-            "impacter",
-            "non_impacter",
-            "random",
-        )
+        self.checkparam()
         config.n_forward = config.steps
         self.criterion = get_criterion()
 
@@ -49,8 +42,7 @@ class LocalSearch(Attacker):
                     executor.submit(self.cal_superpixel, x[idx], idx, batch.max() + 1)
                     for idx in batch
                 ]
-            superpixel_storage = [future.result() for future in futures]
-            superpixel_storage = np.array(superpixel_storage)
+            superpixel_storage = np.array([future.result() for future in futures])
             level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, level]
             n_superpixel = superpixel.max(axis=(1, 2))
@@ -145,3 +137,13 @@ class LocalSearch(Attacker):
             superpixel = slic(img, n_segments=n_segments)
             superpixel_storage.append(superpixel)
         return superpixel_storage
+
+    def check_param(self):
+        assert type(config.steps) == int
+        assert config.additional_search in (
+            "best",
+            "worst",
+            "impacter",
+            "non_impacter",
+            "random",
+        )

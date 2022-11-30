@@ -20,14 +20,7 @@ class AdvancedLocalSearch(Attacker):
     """
 
     def __init__(self):
-        assert type(config.steps) == int
-        assert config.additional_search in (
-            "best",
-            "worst",
-            "impacter",
-            "non_impacter",
-            "random",
-        )
+        self.check_param()
         config.n_forward = config.steps
         self.criterion = get_criterion()
 
@@ -50,38 +43,37 @@ class AdvancedLocalSearch(Attacker):
                     executor.submit(self.cal_superpixel, x[idx], idx, batch.max() + 1)
                     for idx in batch
                 ]
-            superpixel_storage = [future.result() for future in futures]
-            superpixel_storage = np.array(superpixel_storage)
+            superpixel_storage = np.array([future.result() for future in futures])
             level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, level]
-            n_targets = superpixel.max(axis=(1, 2))
 
             # initialize
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
             x_best = lower.clone()
             pred = self.model(x_best).softmax(1)
             best_loss = self.criterion(pred, y)
-            forward = 1
 
             targets = []
+            n_superpixel = superpixel.max(axis=(1, 2))
             for idx in batch:
-                chanel = np.tile(np.arange(n_chanel), n_targets[idx])
-                labels = np.repeat(range(1, n_targets[idx] + 1), n_chanel)
+                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
+                labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
                 _target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(_target)
                 targets.append(_target)
-            checkpoint = config.init_checkpoint * n_targets + 1
+            n_targets = np.array([len(target) for target in targets])
+            checkpoint = (config.init_checkpoint * n_targets + 1).round().astype(int)
             pre_checkpoint = np.ones_like(batch)
 
             # local search
             searched = [[] for _ in batch]
             loss_storage = []
             best_loss_storage = [best_loss.cpu().numpy()]
-            while True:
+            for forward in range(1, config.steps + 1):
                 is_upper = is_upper_best.clone()
                 for idx in batch:
                     if forward >= checkpoint[idx]:
-                        # extract target pixel
+                        # decide attention pixel
                         _loss = np.array(loss_storage)
                         _loss = _loss[pre_checkpoint[idx] - 1 :, idx]
                         _best_loss = np.array(best_loss_storage)
@@ -99,18 +91,18 @@ class AdvancedLocalSearch(Attacker):
                             target_order = np.arange(len(diff))
                             np.random.shuffle(target_order)
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
-                        target_order = target_order[: target_order.shape[0] * 2 // 3]
+                        ratio = int(target_order.shape[0] * config.ratio)
+                        attention_pixel = np.array(searched[idx])[target_order[:ratio]]
                         # TODO: doubled searched
-                        attention_pixel = np.array(searched[idx])[target_order]
 
+                        # extract target pixel
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
-                        next_superpixel = superpixel_storage[idx, level[idx]].copy()
+                        pre_superpixel = superpixel[idx].copy()
+                        superpixel[idx] = superpixel_storage[idx, level[idx]]
                         label_pair = np.stack(
-                            [superpixel[idx].reshape(-1), next_superpixel.reshape(-1)]
-                        )
-                        pair, count = np.unique(
-                            label_pair.T, axis=0, return_counts=True
-                        )
+                            [pre_superpixel.reshape(-1), superpixel[idx].reshape(-1)]
+                        ).T
+                        pair, count = np.unique(label_pair, axis=0, return_counts=True)
                         targets[idx] = []
                         for c, label in attention_pixel:
                             _pair = pair[pair[:, 0] == label]
@@ -123,7 +115,6 @@ class AdvancedLocalSearch(Attacker):
                         n_targets[idx] = targets[idx].shape[0]
                         pre_checkpoint[idx] = checkpoint[idx]
                         checkpoint[idx] += int(n_targets[idx] * config.checkpoint)
-                        superpixel[idx] = next_superpixel.copy()
                         searched[idx] = []
                     if targets[idx].shape[0] == 0:
                         # decide additional search pixel
@@ -160,11 +151,7 @@ class AdvancedLocalSearch(Attacker):
                 best_loss[update] = loss[update]
                 best_loss_storage.append(best_loss.cpu().numpy())
                 is_upper_best[update] = is_upper[update]
-                forward += 1
-
                 pbar.debug(forward, config.steps, "forward", f"batch: {b}")
-                if forward == config.steps:
-                    break
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
@@ -178,3 +165,22 @@ class AdvancedLocalSearch(Attacker):
             superpixel = slic(img, n_segments=n_segments)
             superpixel_storage.append(superpixel)
         return superpixel_storage
+
+    def check_param(self):
+        assert type(config.steps) == int
+        assert config.attention_pixel in (
+            "best",
+            "worst",
+            "impacter",
+            "non_impacter",
+            "random",
+        )
+        assert config.additional_search in (
+            "best",
+            "worst",
+            "impacter",
+            "non_impacter",
+            "random",
+        )
+        assert type(config.init_checkpoint) == float
+        assert type(config.checkpoint) == float
