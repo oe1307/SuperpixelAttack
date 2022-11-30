@@ -46,22 +46,22 @@ class TabuSearch(Attacker):
             superpixel_storage = np.array([future.result() for future in futures])
             level = np.zeros_like(batch)
             superpixel = superpixel_storage[batch, level]
-            n_targets = superpixel.max(axis=(1, 2)) * n_chanel
 
             # initialize
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
             x_best = lower.clone()
             pred = self.model(x_best).softmax(1)
             best_loss = self.criterion(pred, y)
-            forward = 1
 
             targets = []
+            n_superpixel = superpixel.max(axis=(1, 2))
             for idx in batch:
-                chanel = np.tile(np.arange(n_chanel), n_targets[idx])
-                labels = np.repeat(range(1, n_targets[idx] + 1), n_chanel)
+                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
+                labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
                 _target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(_target)
                 targets.append(_target)
+            n_targets = np.array([len(target) for target in targets])
             checkpoint = (config.init_checkpoint * n_targets + 1).round().astype(int)
             pre_checkpoint = np.ones_like(batch)
 
@@ -70,7 +70,7 @@ class TabuSearch(Attacker):
             loss_storage = []
             best_loss_storage = [best_loss.cpu().numpy()]
             tabu_list = [np.zeros(n) for n in n_targets]
-            while True:
+            for forward in range(1, config.steps + 1):
                 is_upper = is_upper_best.clone()
                 for idx in batch:
                     if forward >= checkpoint[idx]:
@@ -93,14 +93,15 @@ class TabuSearch(Attacker):
                             np.random.shuffle(target_order)
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
                         ratio = int(target_order.shape[0] * config.ratio)
-                        # TODO: doubled searched
                         attention_pixel = np.array(searched[idx])[target_order[:ratio]]
+                        # TODO: doubled searched
 
                         # extract target pixel
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
-                        next_superpixel = superpixel_storage[idx, level[idx]].copy()
+                        pre_superpixel = superpixel[idx].copy()
+                        superpixel[idx] = superpixel_storage[idx, level[idx]]
                         label_pair = np.stack(
-                            [superpixel[idx].reshape(-1), next_superpixel.reshape(-1)]
+                            [pre_superpixel.reshape(-1), superpixel[idx].reshape(-1)]
                         ).T
                         pair, count = np.unique(label_pair, axis=0, return_counts=True)
                         targets[idx] = []
@@ -115,17 +116,18 @@ class TabuSearch(Attacker):
                         tabu_list[idx] = np.zeros(n_targets[idx])
                         pre_checkpoint[idx] = checkpoint[idx]
                         checkpoint[idx] += int(n_targets[idx] * config.checkpoint)
-                        superpixel[idx] = next_superpixel.copy()
                         searched[idx] = []
                     order = np.arange(n_targets[idx])
                     np.random.shuffle(order)
                     for t in order:
                         c, label = targets[idx][t]
-                        searched[idx].append((c, label))
-                        targets[idx] = np.delete(targets[idx], 0, axis=0)
-                        is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
-                            idx, c, superpixel[idx] == label
-                        ]
+                        if tabu_list[idx][t] > 0:
+                            tabu_list[idx][t] -= 1
+                        else:
+                            searched[idx].append((c, label))
+                            is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
+                                idx, c, superpixel[idx] == label
+                            ]
                 x_adv = torch.where(is_upper, upper, lower)
                 pred = self.model(x_adv).softmax(dim=1)
                 loss = self.criterion(pred, y)
@@ -135,11 +137,7 @@ class TabuSearch(Attacker):
                 best_loss[update] = loss[update]
                 best_loss_storage.append(best_loss.cpu().numpy())
                 is_upper_best[update] = is_upper[update]
-                forward += 1
-
                 pbar.debug(forward, config.steps, "forward", f"batch: {b}")
-                if forward == config.steps:
-                    break
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
