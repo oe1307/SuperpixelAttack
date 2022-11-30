@@ -52,7 +52,6 @@ class LocalSearch(Attacker):
             x_best = lower.clone()
             pred = self.model(x_best).softmax(1)
             best_loss = self.criterion(pred, y)
-            forward = 1
 
             targets = []
             for idx in batch:
@@ -68,7 +67,7 @@ class LocalSearch(Attacker):
             searched = [[] for _ in batch]
             loss_storage = []
             best_loss_storage = [best_loss.cpu().numpy()]
-            while True:
+            for forward in range(1, config.steps + 1):
                 is_upper = is_upper_best.clone()
                 for idx in batch:
                     if forward >= checkpoint[idx]:
@@ -119,11 +118,7 @@ class LocalSearch(Attacker):
                 best_loss[update] = loss[update]
                 best_loss_storage.append(best_loss.cpu().numpy())
                 is_upper_best[update] = is_upper[update]
-                forward += 1
-
                 pbar.debug(forward, config.steps, "forward", f"batch: {b}")
-                if forward == config.steps:
-                    break
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
