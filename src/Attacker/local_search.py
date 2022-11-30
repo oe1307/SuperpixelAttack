@@ -75,7 +75,7 @@ class LocalSearch(Attacker):
             while True:
                 is_upper = is_upper_best.clone()
                 for idx in batch:
-                    if forward == checkpoint[idx]:
+                    if forward >= checkpoint[idx]:
                         level[idx] = min(level[idx] + 1, len(config.segments) - 1)
                         superpixel[idx] = superpixel_storage[idx, level[idx]]
                         n_superpixel[idx] = superpixel[idx].max()
