@@ -12,7 +12,7 @@ sys.path.append("../")
 # In[ ]:
 
 
-from base import get_model
+from base import SODModel, get_model
 from utils import config_parser
 
 config = config_parser()
@@ -32,3 +32,6 @@ config.dataset = "imagenet"
 config.device = "cpu"
 for model in robustbench:
     get_model("robustbench", model, None, "../../storage/model/")
+
+
+SODModel()
