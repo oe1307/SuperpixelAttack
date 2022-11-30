@@ -36,6 +36,14 @@ class SaliencyAttack(Attacker):
             batch = self.x_adv.shape[0]
             self.upper = (self.x_adv + config.epsilon).clamp(0, 1).clone()
             self.lower = (self.x_adv - config.epsilon).clamp(0, 1).clone()
+            self.best_loss = -100 * torch.ones(batch, device=config.device)
+            self.forward = np.zeros(batch, dtype=np.int64)
+
+            k_init = config.k_init
+            split_level = 1
+            block = np.array([(None, 0, height, 0, width)] * batch)
+
+            threshold = config.threshold
             self.saliency_map = []
             n_saliency_batch = math.ceil(batch / config.saliency_batch)
             for j in range(n_saliency_batch):
@@ -43,18 +51,18 @@ class SaliencyAttack(Attacker):
                 start = j * config.saliency_batch
                 end = min((j + 1) * config.saliency_batch, batch)
                 x = self.x_adv[start:end]
-                self.saliency_map.append(self.saliency_model(x)[0] >= config.threshold)
+                self.saliency_map.append(self.saliency_model(x)[0] >= threshold)
             self.saliency_map = torch.cat(self.saliency_map, dim=0).to(torch.bool)
-            not_detected = self.saliency_map.sum(dim=(1, 2, 3)) == 0
-            if not_detected.sum() > 0:
-                logger.warning(f"{not_detected}images not detected")
-                self.saliency_map[not_detected] = True
-            self.best_loss = -100 * torch.ones(batch, device=config.device)
-            self.forward = np.zeros(batch, dtype=np.int64)
-
-            k_init = config.k_init
-            split_level = 1
-            block = np.array([(None, 0, height, 0, width)] * batch)
+            _detected = self.saliency_map.sum(dim=(1, 2, 3))
+            not_detected = _detected <= (height // k_init) * (width // k_init)
+            while not_detected.sum() > 0:
+                logger.warning(f"{threshold=}:{not_detected.sum()} images not detected")
+                threshold /= 2
+                self.saliency_map[not_detected] = (
+                    self.saliency_model(x_all[not_detected])[0] >= threshold
+                )
+                _detected = self.saliency_map.sum(dim=(1, 2, 3))
+                not_detected = _detected <= (height // k_init) * (width // k_init)
 
             # main loop
             while True:
