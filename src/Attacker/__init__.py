@@ -1,5 +1,5 @@
 from base import Attacker
-from utils import config_parser
+from utils import config_parser, setup_logger
 
 from .advanced_local_search import AdvancedLocalSearch
 from .gen_attack import GenAttack
@@ -11,27 +11,30 @@ from .saliency_attack import SaliencyAttack
 from .square_attack import SquareAttack
 from .tabu_search import TabuSearch
 
+logger = setup_logger(__name__)
 config = config_parser()
 
 
 def get_attacker() -> Attacker:
     if config.attacker == "AdvancedLocalSearch":
-        return AdvancedLocalSearch()
+        attacker = AdvancedLocalSearch()
     elif config.attacker == "GenAttack":
-        return GenAttack()
+        attacker = GenAttack()
     elif config.attacker == "HALS":
-        return HALS()
+        attacker = HALS()
     elif config.attacker == "LocalSearch":
-        return LocalSearch()
+        attacker = LocalSearch()
     elif config.attacker == "BoundaryLocalSearch":
-        return BoundaryLocalSearch()
+        attacker = BoundaryLocalSearch()
     elif config.attacker == "BoundaryPlus":
-        return BoundaryPlus()
+        attacker = BoundaryPlus()
     elif config.attacker == "SaliencyAttack":
-        return SaliencyAttack()
+        attacker = SaliencyAttack()
     elif config.attacker == "SquareAttack":
-        return SquareAttack()
+        attacker = SquareAttack()
     elif config.attacker == "TabuSearch":
-        return TabuSearch()
+        attacker = TabuSearch()
     else:
         raise NotImplementedError(config.attacker)
+    logger.debug("set attacker")
+    return attacker
