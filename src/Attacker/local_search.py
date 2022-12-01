@@ -27,6 +27,7 @@ class LocalSearch(Attacker):
         x_adv_all = []
         n_images, n_chanel = x_all.shape[:2]
         n_batch = math.ceil(n_images / self.model.batch_size)
+        updated = np.zeros((n_images, len(config.segments)))
         for b in range(n_batch):
             start = b * self.model.batch_size
             end = min((b + 1) * self.model.batch_size, n_images)
@@ -120,10 +121,12 @@ class LocalSearch(Attacker):
                 best_loss[update] = loss[update]
                 best_loss_storage.append(best_loss.cpu().numpy())
                 is_upper_best[update] = is_upper[update]
+                updated[start:end][batch, level] += update.cpu().numpy()
                 pbar.debug(forward, config.steps, "forward", f"batch: {b}")
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
+        np.save(f"{config.savedir}/updated.npy", updated)
         return x_adv_all
 
     def cal_superpixel(self, x, idx, total):
