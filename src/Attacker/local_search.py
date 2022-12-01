@@ -143,4 +143,5 @@ class LocalSearch(Attacker):
             "impacter",
             "non_impacter",
             "random",
+            "old",
         )
