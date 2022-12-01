@@ -13,7 +13,7 @@ class Neighbor(object):
     """
 
     def __init__(self, *args, **kwargs):
-        self.current_index = 0
+        self.current_index = np.zeros(1,)
         
     def get(self, *args, **kwargs):
         if True: # この条件分岐をクラス内変数でやれば拡張簡単だと思います。
@@ -22,17 +22,17 @@ class Neighbor(object):
             raise NotImplementedError()
     
     def _simple(self, targets, idx, superpixel, is_upper, *args, **kwargs):
-        c, label = targets[idx][self.current_index]
+        c, label = targets[idx][int(self.current_index[idx])]
         # searched[idx].append((c, label))
         # targets[idx] = np.delete(targets[idx], 0, axis=0)
         is_upper[idx, c, superpixel[idx] == label] = ~is_upper[
             idx, c, superpixel[idx] == label
         ]
-        self.current_index += 1
+        self.current_index[idx] += 1
         return is_upper
     
-    def reset(self):
-        self.current_index = 0
+    def reset(self, N=1):
+        self.current_index = np.zeros(N, )
 
 
 class SuperPixel(object):

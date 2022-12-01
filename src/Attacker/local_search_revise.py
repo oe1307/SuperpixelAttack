@@ -67,7 +67,8 @@ class LocalSearchRevise(Attacker):
             pre_checkpoint = np.ones_like(batch)
 
             # local search
-            searched = [[] for _ in batch]
+            # searched = [[] for _ in batch]
+            self.neighbor.reset(len(batch))
             loss_storage = []
             best_loss_storage = [best_loss.cpu().numpy()]
             for forward in range(1, config.steps + 1):
@@ -84,8 +85,8 @@ class LocalSearchRevise(Attacker):
                         np.random.shuffle(targets[idx])
                         pre_checkpoint[idx] = checkpoint[idx]
                         checkpoint[idx] += config.checkpoint * n_superpixel[idx]
-                        self.neighbor.reset()
-                    if targets[idx].shape[0] == 0:
+                        self.neighbor.reset(len(batch))
+                    if self.neighbor.current_index[idx] >= len(targets[idx]):
                         # decide additional search pixel
                         _loss = np.array(loss_storage)
                         _loss = _loss[pre_checkpoint[idx] - 1 :, idx]
@@ -105,9 +106,10 @@ class LocalSearchRevise(Attacker):
                             np.random.shuffle(target_order)
                         elif config.additional_search == "old":
                             target_order = np.arange(len(diff))
-                        assert target_order.shape[0] == np.array(searched[idx]).shape[0]
-                        targets[idx] = np.array(searched[idx])[target_order]
-                        self.neighbor.reset()
+                        assert target_order.shape[0] == np.array(targets[idx]).shape[0]
+                        print(targets[idx].shape, target_order.shape)
+                        targets[idx] = targets[idx][target_order]
+                        self.neighbor.reset(len(batch))
                     is_upper = self.neighbor.get(targets, idx, superpixel, is_upper)
                     
                 x_adv = torch.where(is_upper, upper, lower)
