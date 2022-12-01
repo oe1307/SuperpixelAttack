@@ -91,7 +91,7 @@ class AdvancedLocalSearch(Attacker):
                             target_order = np.arange(len(diff))
                             np.random.shuffle(target_order)
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
-                        ratio = int(target_order.shape[0] * config.ratio)
+                        ratio = int(target_order.shape[0] * config.ratio) + 1
                         attention_pixel = np.array(searched[idx])[target_order[:ratio]]
                         # TODO: doubled searched
 
