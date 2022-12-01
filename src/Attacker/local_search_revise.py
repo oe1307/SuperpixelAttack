@@ -8,7 +8,7 @@ from torch import Tensor
 
 from base import Attacker, get_criterion
 from utils import config_parser, pbar, setup_logger
-from get_neighbor import Neighbor, SuperPixel
+from .get_neighbor import Neighbor, SuperPixel
 
 logger = setup_logger(__name__)
 config = config_parser()

@@ -13,7 +13,7 @@ class Neighbor(object):
     """
 
     def __init__(self, *args, **kwargs):
-        self.current_index
+        self.current_index = 0
         
     def get(self, *args, **kwargs):
         if True: # この条件分岐をクラス内変数でやれば拡張簡単だと思います。
