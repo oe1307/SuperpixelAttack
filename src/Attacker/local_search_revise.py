@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class LocalSearch(Attacker):
+class LocalSearchRevise(Attacker):
     """
     simply set checkpoint and search next superpixel
     """

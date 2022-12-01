@@ -5,6 +5,7 @@ from .advanced_local_search import AdvancedLocalSearch
 from .gen_attack import GenAttack
 from .hals import HALS
 from .local_search import LocalSearch
+from .local_search_revise import LocalSearchRevise
 from .only_boundary import BoundaryLocalSearch
 from .plus_boundary import BoundaryPlus
 from .saliency_attack import SaliencyAttack
@@ -24,6 +25,8 @@ def get_attacker() -> Attacker:
         attacker = HALS()
     elif config.attacker == "LocalSearch":
         attacker = LocalSearch()
+    elif config.attacker == "LocalSearchRevise":
+        attacker = LocalSearchRevise()
     elif config.attacker == "BoundaryLocalSearch":
         attacker = BoundaryLocalSearch()
     elif config.attacker == "BoundaryPlus":
