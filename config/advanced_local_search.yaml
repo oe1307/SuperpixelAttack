@@ -12,9 +12,9 @@ model:
 # hyperparameter
 steps: 100
 criterion: cw
-segments: [4, 16, 64, 256, 1024]
-init_checkpoint: 1.4
-checkpoint: 1.4
-additional_search: impacter
-attention_pixel: impacter
-ratio: 0.8
+segments: [4, 16, 64, 256]
+init_checkpoint: 1.0
+checkpoint: 1.0
+additional_search: best
+attention_pixel: random
+ratio: 0.9
