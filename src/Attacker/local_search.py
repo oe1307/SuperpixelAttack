@@ -100,6 +100,8 @@ class LocalSearch(Attacker):
                         elif config.additional_search == "random":
                             target_order = np.arange(len(diff))
                             np.random.shuffle(target_order)
+                        elif config.additional_search == "old":
+                            target_order = np.arange(len(diff))
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
                         targets[idx] = np.array(searched[idx])[target_order]
                         searched[idx] = []
