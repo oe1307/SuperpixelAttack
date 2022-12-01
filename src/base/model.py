@@ -1,8 +1,9 @@
 from robustbench import load_model
 from torch.nn import Module
 
-from utils import config_parser, counter
+from utils import config_parser, counter, setup_logger
 
+logger = setup_logger(__name__)
 config = config_parser()
 
 
@@ -20,4 +21,5 @@ def get_model(
     model.name = model_name
     model.batch_size = batch_size
     model.forward = counter(model.forward)
+    logger.debug("Loaded model")
     return model

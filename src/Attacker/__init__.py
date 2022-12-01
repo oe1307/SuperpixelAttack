@@ -36,5 +36,5 @@ def get_attacker() -> Attacker:
         attacker = TabuSearch()
     else:
         raise NotImplementedError(config.attacker)
-    logger.debug("set attacker")
+    logger.debug("Set attacker")
     return attacker
