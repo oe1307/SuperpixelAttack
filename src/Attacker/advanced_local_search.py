@@ -134,6 +134,8 @@ class AdvancedLocalSearch(Attacker):
                         elif config.additional_search == "random":
                             target_order = np.arange(len(diff))
                             np.random.shuffle(target_order)
+                        elif config.additional_search == "old":
+                            target_order = np.arange(len(diff))
                         assert target_order.shape[0] == np.array(searched[idx]).shape[0]
                         targets[idx] = np.array(searched[idx])[target_order]
                     c, label = targets[idx][0]
@@ -181,6 +183,7 @@ class AdvancedLocalSearch(Attacker):
             "impacter",
             "non_impacter",
             "random",
+            "old",
         )
         assert type(config.init_checkpoint) == float
         assert type(config.checkpoint) == float
