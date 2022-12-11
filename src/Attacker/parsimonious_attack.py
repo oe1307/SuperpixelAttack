@@ -28,12 +28,12 @@ class ParsimoniousAttack(Attacker):
         # initialize
         init_block = (n_images, n_chanel, height // self.split, width // self.split)
         is_upper = torch.zeros(init_block, dtype=torch.bool, device=config.device)
-        loss = self.cal_loss(is_upper)
+        loss = self.calculate_loss(is_upper)
         self.forward = np.ones(n_images)
 
         # main loop
         while True:
-            is_upper, loss = self.local_search(is_upper, loss)
+            is_upper, loss = self.accelerated_local_search(is_upper, loss)
             if self.forward.min() >= config.steps:
                 break
             elif self.split > 1:
@@ -48,7 +48,7 @@ class ParsimoniousAttack(Attacker):
         x_best = torch.where(is_upper, self.upper, self.lower)
         return x_best
 
-    def local_search(self, is_upper_best, best_loss):
+    def accelerated_local_search(self, is_upper_best, best_loss):
         is_upper = is_upper_best.clone()
         loss = best_loss.clone()
         for _ in range(config.insert_deletion):
@@ -66,7 +66,7 @@ class ParsimoniousAttack(Attacker):
             if self.forward.min() >= config.steps:
                 break
 
-        loss_inverse = self.cal_loss(~is_upper)
+        loss_inverse = self.calculate_loss(~is_upper)
         update = self.forward < config.steps
         self.forward += update
         update = np.logical_and(update, (loss_inverse > best_loss).cpu().numpy())
@@ -118,7 +118,7 @@ class ParsimoniousAttack(Attacker):
                     break
                 else:
                     heapq.heappush(_max_heap, (delta_hat, element_hat))
-        all_loss = self.cal_loss(is_upper_all)
+        all_loss = self.calculate_loss(is_upper_all)
         self.forward += 1
         return is_upper_all, all_loss
 
@@ -166,11 +166,11 @@ class ParsimoniousAttack(Attacker):
                     break
                 else:
                     heapq.heappush(_max_heap, (delta_hat, element_hat))
-        loss = self.cal_loss(is_upper_all)
+        loss = self.calculate_loss(is_upper_all)
         self.forward += 1
         return is_upper_all, loss
 
-    def cal_loss(self, is_upper_all: Tensor) -> Tensor:
+    def calculate_loss(self, is_upper_all: Tensor) -> Tensor:
         n_images = is_upper_all.shape[0]
         loss = torch.zeros(n_images, device=config.device)
         num_batch = math.ceil(n_images / self.model.batch_size)

@@ -64,7 +64,7 @@ class SaliencyAttack(Attacker):
                 _detected = self.saliency_map.sum(dim=(1, 2, 3))
                 not_detected = _detected <= (height // k_init) * (width // k_init)
 
-            # main loop
+            # refine search
             while True:
                 self.refine(block, k_init, split_level)
                 if self.forward.min() >= config.steps:
