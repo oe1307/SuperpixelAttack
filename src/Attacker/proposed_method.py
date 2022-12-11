@@ -37,6 +37,7 @@ class ProposedMethod(Attacker):
 
             # search
             while (self.update_method.forward < config.steps).any():
+                pbar(self.update_method.forward.min() + 1, config.steps, "forward")
                 x_best = self.update_method.update()
 
             x_adv_all.append(x_best)
