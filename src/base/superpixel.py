@@ -16,7 +16,7 @@ class SuperpixelManager:
     def cal_superpixel(self, x):
         batch = np.arange(x.shape[0])
         if config.thread == 1:
-            superpixel_storage = np.array(
+            superpixel = np.array(
                 [self._cal_superpixel(x[idx], idx, batch.max() + 1) for idx in batch]
             )
         else:
@@ -25,9 +25,7 @@ class SuperpixelManager:
                     executor.submit(self._cal_superpixel, x[idx], idx, batch.max() + 1)
                     for idx in batch
                 ]
-            superpixel_storage = np.array([future.result() for future in futures])
-        level = np.zeros_like(batch)
-        superpixel = superpixel_storage[batch, level]
+            superpixel = np.array([future.result() for future in futures])
         return superpixel
 
     def _cal_superpixel(self, x: Tensor, idx: int, total: int) -> list:

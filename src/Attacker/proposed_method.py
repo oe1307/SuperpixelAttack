@@ -27,7 +27,6 @@ class ProposedMethod(Attacker):
             end = min((b + 1) * self.model.batch_size, n_images)
             x = x_all[start:end]
             y = y_all[start:end]
-            batch = np.arange(x.shape[0])
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
 

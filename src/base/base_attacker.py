@@ -63,7 +63,7 @@ class Attacker:
             robust_acc[start:end] = logits.argmax(dim=1) == y
             np.save(f"{config.savedir}/robust_acc.npy", robust_acc.cpu().numpy())
         total_time = time.time() - self.timekeeper
-        ASR = 100 - robust_acc.sum() / x_all.shape[0] * 100
+        attack_success_rate = 100 - robust_acc.sum() / x_all.shape[0] * 100
 
         msg = (
             "\n"
@@ -71,8 +71,8 @@ class Attacker:
             + f"model = {self.model.name}\n"
             + f"epsilon = {config.epsilon}\n"
             + f"forward = {config.n_forward}\n"
-            + f"ASR (%) = {ASR:.2f}\n"
-            + f"total time (sec) = {total_time:.2f}s\n"
+            + f"attack_success_rate = {attack_success_rate:.2f} %\n"
+            + f"total time = {total_time:.2f} s\n"
         )
         print(msg, file=open(f"{config.savedir}/summary.txt", "w"))
         logger.info(msg)

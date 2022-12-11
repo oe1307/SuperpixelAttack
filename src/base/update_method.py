@@ -32,44 +32,44 @@ class UpdateMethod:
         upper: Tensor,
     ):
         batch, n_chanel = x.shape[:2]
+        n_update_area = update_area.max()
 
         if config.initial_point == "random":
             is_upper = torch.randint(0, 2, x.shape, dtype=torch.bool)
             x_adv = torch.where(is_upper, upper, lower)
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
-            forward = 1
-            return is_upper, x_adv, loss, forward
+            self.forward = 1
 
         elif config.initial_point == "lower":
             is_upper = torch.zeros_like(x, dtype=torch.bool)
             x_adv = lower.clone()
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
-            forward = 1
-
-            targets = []
-            for idx in range(batch):
-                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-                _target = np.stack([chanel, labels], axis=1)
-                np.random.shuffle(_target)
-                targets.append(_target)
-            n_targets = np.array([len(target) for target in targets])
-            checkpoint = (config.init_checkpoint * n_targets + 1).round().astype(int)
-            pre_checkpoint = np.ones_like(batch)
-            return is_upper, x_adv, loss, forward
+            self.forward = 1
 
         elif config.initial_point == "upper":
             is_upper = torch.ones_like(x, dtype=torch.bool)
             x_adv = upper.clone()
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
-            forward = 1
-            return is_upper, x_adv, loss, forward
+            self.forward = 1
 
         else:
             raise ValueError(config.initial_point)
+
+        targets = []
+        for idx in range(batch):
+            chanel = np.tile(np.arange(n_chanel), n_update_area[idx])
+            labels = np.repeat(range(1, n_update_area[idx] + 1), n_chanel)
+            _target = np.stack([chanel, labels], axis=1)
+            np.random.shuffle(_target)
+            targets.append(_target)
+        n_targets = np.array([len(target) for target in targets])
+        self.checkpoint = (config.init_checkpoint * n_targets + 1).round().astype(int)
+        self.pre_checkpoint = np.ones_like(batch)
+
+        return is_upper, x_adv, loss
 
     def update(self):
         if config.update_method == "greedy_local_search":
