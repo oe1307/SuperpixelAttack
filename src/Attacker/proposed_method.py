@@ -1,9 +1,7 @@
 import math
-from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
-from skimage.segmentation import slic
 from torch import Tensor
 
 from base import Attacker, get_criterion
@@ -14,13 +12,7 @@ config = config_parser()
 
 
 class ProposedMethod(Attacker):
-    """
-    extract next superpixel,
-    and search many times next superpixel using tabu search
-    """
-
     def __init__(self):
-        self.check_param()
         config.n_forward = config.steps
         self.criterion = get_criterion()
 
@@ -37,16 +29,6 @@ class ProposedMethod(Attacker):
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
 
-            # calculate various roughness superpixel
-            with ThreadPoolExecutor(config.thread) as executor:
-                futures = [
-                    executor.submit(self.cal_superpixel, x[idx], idx, batch.max() + 1)
-                    for idx in batch
-                ]
-            superpixel_storage = np.array([future.result() for future in futures])
-            level = np.zeros_like(batch)
-            superpixel = superpixel_storage[batch, level]
-
             # initialize
             is_upper_best = torch.zeros_like(x, dtype=torch.bool)
             x_best = lower.clone()
@@ -54,7 +36,6 @@ class ProposedMethod(Attacker):
             best_loss = self.criterion(pred, y)
 
             targets = []
-            n_superpixel = superpixel.max(axis=(1, 2))
             for idx in batch:
                 chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
                 labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
@@ -142,24 +123,3 @@ class ProposedMethod(Attacker):
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
         return x_adv_all
-
-    def cal_superpixel(self, x, idx, total):
-        pbar.debug(idx + 1, total, "cal_superpixel")
-        superpixel_storage = []
-        for n_segments in config.segments:
-            img = (x.cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
-            superpixel = slic(img, n_segments=n_segments)
-            superpixel_storage.append(superpixel)
-        return superpixel_storage
-
-    def check_param(self):
-        assert type(config.steps) == int
-        assert config.attention_pixel in (
-            "best",
-            "worst",
-            "impacter",
-            "non_impacter",
-            "random",
-        )
-        assert type(config.init_checkpoint) == float
-        assert type(config.checkpoint) == float
