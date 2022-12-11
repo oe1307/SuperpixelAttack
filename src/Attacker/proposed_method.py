@@ -1,6 +1,5 @@
 import math
 
-import numpy as np
 import torch
 from torch import Tensor
 
@@ -33,6 +32,7 @@ class ProposedMethod(Attacker):
             # initialize
             update_area = self.update_area.initialize(x)
             self.update_method.initialize(x, y, update_area, lower, upper)
+            breakpoint()
 
             # search
             while (self.update_method.forward < config.steps).any():
