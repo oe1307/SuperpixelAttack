@@ -1,4 +1,5 @@
-from robustbench import load_model
+import robustbench
+import torchvision
 from torch.nn import Module
 
 from utils import config_parser, counter, setup_logger
@@ -13,13 +14,17 @@ def get_model(
     batch_size: int,
     model_dir: str = "../storage/model",
 ) -> Module:
-    """Get model from robustbench and set batch size."""
-    if model_container == "robustbench":
-        model = load_model(model_name, model_dir, config.dataset)
+
+    if model_container == "torchvision":
+        model = torchvision.models.get_model(model_name, weights="DEFAULT")
+    elif model_container == "robustbench":
+        model = robustbench.load_model(model_name, model_dir, config.dataset)
+    else:
+        raise NotImplementedError(model_container)
+
     model = model.to(config.device)
     model.eval()
-    model.name = model_name
-    model.batch_size = batch_size
+    model.name, model.batch_size = model_name, batch_size
     model.forward = counter(model.forward)
     logger.debug("Loaded model")
     return model

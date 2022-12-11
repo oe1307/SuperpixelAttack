@@ -13,7 +13,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class TabuSearch(Attacker):
+class ProposedMethod(Attacker):
     """
     extract next superpixel,
     and search many times next superpixel using tabu search

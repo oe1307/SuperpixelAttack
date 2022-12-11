@@ -16,6 +16,8 @@ def load_imagenet(
     model_name: str, data_dir: str = "../storage/data"
 ) -> Union[Tensor, Tensor]:
     """Load ImageNet data"""
+
+    config.dataset = "imagenet"
     config.n_classes = 1000
     data_dir = os.path.join(data_dir, "imagenet/val")
     if not os.path.exists(data_dir):
@@ -29,6 +31,5 @@ def load_imagenet(
     logger.debug("Loading ImageNet data...")
     img, label = next(iter(dataloader))[:2]
     logger.debug("Loaded ImageNet data")
-    img = img.to(config.device)
-    label = label.to(config.device)
+    img, label = img.to(config.device), label.to(config.device)
     return img, label

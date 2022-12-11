@@ -12,7 +12,7 @@ logger = setup_logger(__name__)
 config = config_parser()
 
 
-class HALS(Attacker):
+class ParsimoniousAttack(Attacker):
     def __init__(self):
         super().__init__()
         self.criterion = get_criterion()
