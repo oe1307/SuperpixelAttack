@@ -11,7 +11,7 @@ class UpdateArea:
     def __init__(self):
         pass
 
-    def get(self, x: Tensor):
+    def initialize(self, x: Tensor):
         if config.update_area == "superpixel":
             superpixel_manager = SuperpixelManager()
             superpixel = superpixel_manager.cal_superpixel()

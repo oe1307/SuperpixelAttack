@@ -2,7 +2,7 @@ attacker: ProposedMethod
 
 norm: Linf
 epsilon: 0.01568627450980392
-n_examples: 5000
+n_examples: 10
 
 model:
     robustbench:
@@ -13,6 +13,12 @@ model:
         Salman2020Do_50_2: 2500
 
 # hyperparameter
-steps: 100
+steps: 10
 criterion: cw
+update_area: superpixel
+initial_point: lower
+update_method: greedy_local_search
+
+# superpixel
 segments: [4, 16, 64, 256]
+save_wasted: True

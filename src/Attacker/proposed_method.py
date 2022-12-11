@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from base import Attacker, get_criterion
+from base import Attacker, UpdateArea, UpdateMethod, get_criterion
 from utils import config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)
@@ -15,6 +15,8 @@ class ProposedMethod(Attacker):
     def __init__(self):
         config.n_forward = config.steps
         self.criterion = get_criterion()
+        self.update_area = UpdateArea()
+        self.update_method = UpdateMethod()
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         x_adv_all = []
@@ -29,22 +31,10 @@ class ProposedMethod(Attacker):
             upper = (x + config.epsilon).clamp(0, 1).clone()
             lower = (x - config.epsilon).clamp(0, 1).clone()
 
-            # initialize
-            is_upper_best = torch.zeros_like(x, dtype=torch.bool)
-            x_best = lower.clone()
-            pred = self.model(x_best).softmax(1)
-            best_loss = self.criterion(pred, y)
-
-            targets = []
-            for idx in batch:
-                chanel = np.tile(np.arange(n_chanel), n_superpixel[idx])
-                labels = np.repeat(range(1, n_superpixel[idx] + 1), n_chanel)
-                _target = np.stack([chanel, labels], axis=1)
-                np.random.shuffle(_target)
-                targets.append(_target)
-            n_targets = np.array([len(target) for target in targets])
-            checkpoint = (config.init_checkpoint * n_targets + 1).round().astype(int)
-            pre_checkpoint = np.ones_like(batch)
+            update_area = self.update_area.initialize(x)
+            is_upper, x_adv, loss, forward = self.update_method.initialize(
+                x, y, lower, upper
+            )
 
             # local search
             searched = [[] for _ in batch]
