@@ -16,6 +16,10 @@ class InitialPoint:
         ):
             raise NotImplementedError(config.initial_point)
 
+    def set(self, model, criterion):
+        self.model = model
+        self.criterion = criterion
+
     def initialize(
         self,
         x: Tensor,
@@ -25,28 +29,28 @@ class InitialPoint:
         upper: Tensor,
     ):
         batch, n_chanel = x.shape[:2]
-        n_update_area = update_area.max()
+        n_update_area = update_area.max(axis=(1, 2))
 
         if config.initial_point == "random":
             is_upper = torch.randint(0, 2, x.shape, dtype=torch.bool)
             x_adv = torch.where(is_upper, upper, lower)
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
-            self.forward = 1
+            self.forward = np.ones(batch, dtype=np.int)
 
         elif config.initial_point == "lower":
             is_upper = torch.zeros_like(x, dtype=torch.bool)
             x_adv = lower.clone()
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
-            self.forward = 1
+            self.forward = np.ones(batch, dtype=np.int)
 
         elif config.initial_point == "upper":
             is_upper = torch.ones_like(x, dtype=torch.bool)
             x_adv = upper.clone()
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
-            self.forward = 1
+            self.forward = np.ones(batch, dtype=np.int)
 
         else:
             raise ValueError(config.initial_point)
@@ -62,6 +66,6 @@ class InitialPoint:
             _target = np.stack([chanel, labels], axis=1)
             np.random.shuffle(_target)
             self.targets.append(_target)
-        n_targets = np.array([len(_target) for _target in self.targets])
-        self.checkpoint = (config.init_checkpoint * n_targets + 1).round().astype(int)
-        self.pre_checkpoint = np.ones_like(batch)
+        self.checkpoint = [len(_target) for _target in self.targets]
+        self.checkpoint = np.array(self.checkpoint) + self.forward
+        self.pre_checkpoint = self.forward

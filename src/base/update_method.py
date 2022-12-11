@@ -7,6 +7,7 @@ config = config_parser()
 
 class UpdateMethod(InitialPoint):
     def __init__(self):
+        super().__init__()
         if config.update_method not in (
             "greedy_local_search",
             "accelerated_local_search",

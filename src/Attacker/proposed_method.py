@@ -18,6 +18,8 @@ class ProposedMethod(Attacker):
         self.update_method = UpdateMethod()
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
+        self.update_method.set(self.model, self.criterion)
+
         x_adv_all = []
         n_images = x_all.shape[0]
         n_batch = math.ceil(n_images / self.model.batch_size)
@@ -35,7 +37,7 @@ class ProposedMethod(Attacker):
             breakpoint()
 
             # search
-            while (self.update_method.forward < config.steps).any():
+            while (self.update_method.forward.min() < config.steps).any():
                 pbar(self.update_method.forward.min() + 1, config.steps, "forward")
                 x_best = self.update_method.update()
 

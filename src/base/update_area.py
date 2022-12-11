@@ -27,7 +27,8 @@ class UpdateArea:
 
         if config.update_area == "superpixel":
             self.superpixel = self.superpixel_manager.cal_superpixel(x)
-            update_area = self.superpixel[batch, np.zeros_like(batch)]
+            self.level = np.zeros_like(batch)
+            update_area = self.superpixel[batch, self.level]
 
         elif config.update_area == "random_square":
             pass
