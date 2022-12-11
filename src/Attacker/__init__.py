@@ -10,7 +10,7 @@ from .only_boundary import BoundaryLocalSearch
 from .plus_boundary import BoundaryPlus
 from .saliency_attack import SaliencyAttack
 from .square_attack import SquareAttack
-from .tabu_search import TabuSearch
+from .proposed_method import TabuSearch
 
 logger = setup_logger(__name__)
 config = config_parser()
