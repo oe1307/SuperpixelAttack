@@ -23,8 +23,16 @@ class UpdateMethod:
         ):
             raise NotImplementedError(config.update_method)
 
-    def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
+    def initialize(
+        self,
+        x: Tensor,
+        y: Tensor,
+        update_area: np.ndarray,
+        lower: Tensor,
+        upper: Tensor,
+    ):
         batch, n_chanel = x.shape[:2]
+
         if config.initial_point == "random":
             is_upper = torch.randint(0, 2, x.shape, dtype=torch.bool)
             x_adv = torch.where(is_upper, upper, lower)

@@ -9,7 +9,12 @@ config = config_parser()
 
 class UpdateArea:
     def __init__(self):
-        pass
+        if config.update_area not in (
+            "superpixel",
+            "random_square",
+            "divisional_square",
+        ):
+            raise NotImplementedError(config.update_area)
 
     def initialize(self, x: Tensor):
         if config.update_area == "superpixel":
@@ -22,7 +27,7 @@ class UpdateArea:
         elif config.update_area == "divisional_square":
             pass
         else:
-            raise NotImplementedError(config.update_area)
+            raise ValueError(config.update_area)
 
     def update(self):
         pass
