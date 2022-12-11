@@ -21,7 +21,6 @@ class GenAttack(Attacker):
         attacker = LinfGenAttack(
             self.model,
             config.epsilon,
-            # hyperparameter
             nb_samples=config.population,
             nb_iter=config.steps,
             tau=config.tau,

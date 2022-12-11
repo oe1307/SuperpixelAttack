@@ -24,7 +24,7 @@ class Attacker:
         assert not model.training
         self.model = model
         self.timekeeper = time.time()
-        config.savedir = rename_dir(f"../result/{config.dataset}/{config.attacker}")
+        config.savedir = rename_dir(f"../result/{config.attacker}")
         config_parser.save(f"{config.savedir}/config.json")
         shutil.copytree("../src", f"{config.savedir}/backup")
 
