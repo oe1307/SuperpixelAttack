@@ -1,10 +1,11 @@
 import numpy as np
 from torch import Tensor
 
-from utils import config_parser
+from utils import config_parser, setup_logger
 
 from .superpixel import SuperpixelManager
 
+logger = setup_logger(__name__)
 config = config_parser()
 
 
@@ -14,10 +15,10 @@ class UpdateArea:
             self.superpixel_manager = SuperpixelManager()
 
         elif config.update_area == "random_square":
-            pass
+            assert False
 
         elif config.update_area == "divisional_square":
-            pass
+            assert False
 
         else:
             raise NotImplementedError(config.update_area)
@@ -41,9 +42,12 @@ class UpdateArea:
 
         return update_area
 
-    def update(self):
+    def next(self, forward: np.ndarray, checkpoint: np.ndarray):
+        batch = np.arange(forward.shape[0])
+
         if config.update_area == "superpixel":
-            pass
+            self.level += forward == checkpoint
+            update_area = self.superpixel[batch, self.level]
 
         elif config.update_area == "random_square":
             pass
@@ -53,3 +57,5 @@ class UpdateArea:
 
         else:
             raise NotImplementedError(config.update_area)
+
+        return update_area

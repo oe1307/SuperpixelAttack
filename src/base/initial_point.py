@@ -16,6 +16,14 @@ class InitialPoint:
         ):
             raise NotImplementedError(config.initial_point)
 
+        if config.update_method not in (
+            "greedy_local_search",
+            "accelerated_local_search",
+            "refine_search",
+            "uniform_distribution",
+        ):
+            raise NotImplementedError(config.update_method)
+
     def set(self, model, criterion):
         self.model = model
         self.criterion = criterion
@@ -29,6 +37,7 @@ class InitialPoint:
         upper: Tensor,
     ):
         batch, n_chanel = x.shape[:2]
+        self.y, self.upper, self.lower = y, upper, lower
         n_update_area = update_area.max(axis=(1, 2))
 
         if config.initial_point == "random":
@@ -55,17 +64,28 @@ class InitialPoint:
         else:
             raise ValueError(config.initial_point)
 
-        self.is_upper_best = is_upper.clone()
-        self.x_best = x_adv.clone()
-        self.best_loss = loss.clone()
+        if config.update_method == "greedy_local_search":
+            self.targets = []
+            for idx in range(batch):
+                chanel = np.tile(np.arange(n_chanel), n_update_area[idx])
+                labels = np.repeat(range(1, n_update_area[idx] + 1), n_chanel)
+                _target = np.stack([chanel, labels], axis=1)
+                np.random.shuffle(_target)
+                self.targets.append(_target)
+            self.checkpoint = (
+                np.array([len(_target) for _target in self.targets]) + self.forward
+            )
 
-        self.targets = []
-        for idx in range(batch):
-            chanel = np.tile(np.arange(n_chanel), n_update_area[idx])
-            labels = np.repeat(range(1, n_update_area[idx] + 1), n_chanel)
-            _target = np.stack([chanel, labels], axis=1)
-            np.random.shuffle(_target)
-            self.targets.append(_target)
-        self.checkpoint = [len(_target) for _target in self.targets]
-        self.checkpoint = np.array(self.checkpoint) + self.forward
-        self.pre_checkpoint = self.forward
+        elif config.update_method == "accelerated_local_search":
+            pass
+
+        elif config.update_method == "refine_search":
+            pass
+
+        elif config.update_method == "uniform_distribution":
+            pass
+        else:
+            raise ValueError(config.update_method)
+
+        self.is_upper_best, self.x_best, self.best_loss = is_upper, x_adv, loss
+        return self.forward, self.checkpoint
