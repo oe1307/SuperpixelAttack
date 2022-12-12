@@ -21,7 +21,9 @@ class InitialPoint:
         self.y, self.upper, self.lower = y, upper, lower
 
         if config.initial_point == "random":
-            self.is_upper = torch.randint(0, 2, x.shape, dtype=torch.bool)
+            self.is_upper = torch.randint(
+                0, 2, x.shape, dtype=torch.bool, device=config.device
+            )
             self.x_adv = torch.where(self.is_upper, upper, lower)
             pred = self.model(self.x_adv).softmax(1)
             self.loss = self.criterion(pred, y)
