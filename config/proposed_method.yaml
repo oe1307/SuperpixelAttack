@@ -6,18 +6,18 @@ n_examples: 5000
 
 model:
     robustbench:
-        # Wong2020Fast: 2500
-        # Engstrom2019Robustness: 2500
-        Salman2020Do_R18: 2500
-        # Salman2020Do_R50: 2500
-        # Salman2020Do_50_2: 2500
+        # Wong2020Fast: 5000
+        # Engstrom2019Robustness: 5000
+        Salman2020Do_R18: 5000
+        # Salman2020Do_R50: 5000
+        # Salman2020Do_50_2: 5000
 
 # hyperparameter
 steps: 100
 criterion: cw
 update_area: superpixel
 initial_point: lower
-update_method: greedy_local_search
+update_method: uniform_distribution
 
 # superpixel
 segments: [4, 16, 64, 256]

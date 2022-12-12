@@ -21,6 +21,7 @@ class UpdateMethod(InitialPoint):
             # TODO: batch処理
             for idx in range(batch):
                 if self.forward[idx] >= self.checkpoint[idx]:
+                    assert self.targets[idx].shape[0] == 0
                     n_update_area = update_area[idx].max()
                     chanel = np.tile(np.arange(n_chanel), n_update_area)
                     labels = np.repeat(range(1, n_update_area + 1), n_chanel)
@@ -48,7 +49,30 @@ class UpdateMethod(InitialPoint):
             pass
 
         elif config.update_method == "uniform_distribution":
-            pass
+            for idx in range(batch):
+                if self.forward[idx] >= self.checkpoint[idx]:
+                    assert self.targets[idx].shape[0] == 0
+                    n_update_area = update_area[idx].max()
+                    chanel = np.tile(np.arange(n_chanel), n_update_area)
+                    labels = np.repeat(range(1, n_update_area + 1), n_chanel)
+                    self.targets[idx] = np.stack([chanel, labels], axis=1)
+                    np.random.shuffle(self.targets[idx])
+                    self.checkpoint[idx] += n_update_area * n_chanel
+                c, label = self.targets[idx][0]
+                self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
+                distribution = (
+                    torch.rand(x_adv.shape[1:], device=config.device) * 2 - 1
+                ) * config.epsilon
+                x_adv[idx, c, update_area[idx] == label] += distribution
+            x_adv = x_adv.clamp(self.lower, self.upper)
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
+            loss = self.criterion(pred, self.y)
+            self.forward += 1
+            update = loss >= self.best_loss
+            self.x_best[update] = x_adv[update]
+            self.best_loss[update] = loss[update]
+            self.is_upper_best[update] = is_upper[update]
 
         else:
             raise ValueError(config.update_method)
