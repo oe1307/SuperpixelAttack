@@ -27,14 +27,14 @@ class UpdateArea:
             self.update_area = self.superpixel[np.arange(self.batch), self.level]
             self.n_update_area = self.update_area.max(axis=(1, 2))
 
-            self.targets = []
+            targets = []
             for idx in range(self.batch):
                 chanel = np.tile(np.arange(self.n_chanel), self.n_update_area[idx])
                 labels = np.repeat(range(1, self.n_update_area[idx] + 1), self.n_chanel)
                 _target = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(_target)
-                self.targets.append(_target)
-            self.checkpoint = np.array([len(t) for t in self.targets]) + 1
+                targets.append(_target)
+            self.checkpoint = np.array([len(t) for t in targets]) + 1
 
         elif config.update_area == "random_square":
             self.update_area = np.zeros((self.batch, self.height, self.width))
@@ -43,7 +43,7 @@ class UpdateArea:
             s = np.random.randint(0, self.width - h)
             self.update_area[:, r : r + h, s : s + h] = 1
             chanel, labels = np.zeros(self.batch), np.ones(self.batch)
-            self.targets = np.stack([chanel, labels], axis=1)[:, None, :]
+            targets = np.stack([chanel, labels], axis=1)[:, None, :]
 
         elif config.update_area == "divisional_square":
             pass
@@ -51,22 +51,22 @@ class UpdateArea:
         else:
             raise NotImplementedError(config.update_area)
 
-        return self.update_area, self.targets
+        return self.update_area, targets
 
-    def next(self, forward: np.ndarray):
+    def next(self, forward: np.ndarray, targets: np.ndarray):
         if config.update_area == "superpixel":
             for idx in range(self.batch):
-                if forward[idx] >= self.checkpoint[idx]:
+                if targets[idx].shape[0] == 0:
                     self.level[idx] = min(self.level[idx] + 1, len(config.segments) - 1)
                     self.update_area[idx] = self.superpixel[idx, self.level[idx]]
                     self.n_update_area = self.update_area[idx].max()
                     chanel = np.tile(np.arange(self.n_chanel), self.n_update_area)
                     labels = np.repeat(range(1, self.n_update_area + 1), self.n_chanel)
-                    self.targets[idx] = np.stack([chanel, labels], axis=1)
-                    np.random.shuffle(self.targets[idx])
+                    targets[idx] = np.stack([chanel, labels], axis=1)
+                    np.random.shuffle(targets[idx])
                     self.checkpoint[idx] += self.n_update_area * self.n_chanel
                 else:
-                    self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
+                    targets[idx] = np.delete(targets[idx], 0, axis=0)
 
         elif config.update_area == "random_square":
             assert (np.ones_like(forward) * forward[0] == forward).all()
@@ -80,7 +80,7 @@ class UpdateArea:
             s = np.random.randint(0, self.width - h)
             self.update_area[:, r : r + h, s : s + h] = 1
             chanel, labels = np.zeros(self.batch), np.ones(self.batch)
-            self.targets = np.stack([chanel, labels], axis=1)[:, None, :]
+            targets = np.stack([chanel, labels], axis=1)[:, None, :]
 
         elif config.update_area == "divisional_square":
             pass
@@ -88,4 +88,4 @@ class UpdateArea:
         else:
             raise NotImplementedError(config.update_area)
 
-        return self.update_area, self.targets
+        return self.update_area, targets

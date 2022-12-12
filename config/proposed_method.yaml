@@ -16,11 +16,11 @@ model:
 steps: 100
 criterion: cw
 update_area: random_square
-initial_point: lower
+initial_point: random
 update_method: uniform_distribution
 
 # superpixel
-segments: [4, 16, 64, 256]
+segments: [4, 16, 64, 256, 1024]
 save_wasted: True
 
 # random_square

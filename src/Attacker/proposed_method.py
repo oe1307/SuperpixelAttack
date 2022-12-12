@@ -38,8 +38,8 @@ class ProposedMethod(Attacker):
             # search
             while (forward.min() < config.steps).any():
                 pbar.debug(forward.min() + 1, config.steps, "forward")
-                x_best, forward = self.update_method.step(update_area, targets)
-                update_area, targets = self.update_area.next(forward)
+                x_best, forward, targets = self.update_method.step(update_area, targets)
+                update_area, targets = self.update_area.next(forward, targets)
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
