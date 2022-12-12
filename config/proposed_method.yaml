@@ -15,7 +15,7 @@ model:
 # hyperparameter
 steps: 100
 criterion: cw
-update_area: superpixel
+update_area: random_square
 initial_point: lower
 update_method: uniform_distribution
 

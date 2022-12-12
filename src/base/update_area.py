@@ -37,13 +37,13 @@ class UpdateArea:
             self.checkpoint = np.array([len(t) for t in self.targets]) + 1
 
         elif config.update_area == "random_square":
-            self.update_area = np.zeros(self.n_chanel, self.height, self.width)
-            h = np.sqrt(self.height * self.width * config.p_init)
+            self.update_area = np.zeros((self.batch, self.height, self.width))
+            h = np.sqrt(self.height * self.width * config.p_init).round().astype(int)
             r = np.random.randint(0, self.height - h)
             s = np.random.randint(0, self.width - h)
             self.update_area[:, r : r + h, s : s + h] = 1
             chanel, labels = np.zeros(self.batch), np.ones(self.batch)
-            self.targets = np.stack([chanel, labels], axis=1)
+            self.targets = np.stack([chanel, labels], axis=1)[:, None, :]
 
         elif config.update_area == "divisional_square":
             pass
@@ -69,18 +69,18 @@ class UpdateArea:
                     self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
 
         elif config.update_area == "random_square":
-            assert np.ones_like(forward) * forward[0] == forward
-            self.update_area = np.zeros(self.n_chanel, self.height, self.width)
+            assert (np.ones_like(forward) * forward[0] == forward).all()
+            self.update_area = np.zeros((self.batch, self.height, self.width))
             half_point = (
                 np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.steps
             )
-            p = config.p_init * (half_point < forward.min()).sum()
-            h = np.sqrt(self.height * self.width * p)
+            p = config.p_init * (half_point < forward.min()).sum() / len(half_point)
+            h = np.sqrt(self.height * self.width * p).round().astype(int)
             r = np.random.randint(0, self.height - h)
             s = np.random.randint(0, self.width - h)
             self.update_area[:, r : r + h, s : s + h] = 1
             chanel, labels = np.zeros(self.batch), np.ones(self.batch)
-            self.targets = np.stack([chanel, labels], axis=1)
+            self.targets = np.stack([chanel, labels], axis=1)[:, None, :]
 
         elif config.update_area == "divisional_square":
             pass
