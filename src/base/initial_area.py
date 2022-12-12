@@ -33,14 +33,15 @@ class InitialArea:
             self.superpixel = SuperpixelManager().cal_superpixel(x)
             self.level = np.zeros(self.batch, dtype=int)
             self.update_area = self.superpixel[np.arange(self.batch), self.level]
-            self.n_update_area = self.update_area.max(axis=(1, 2))
+            n_update_area = self.update_area.max(axis=(1, 2))
 
             if config.update_method in ("greedy_local_search",):
                 assert False
             elif config.update_method in ("uniform_distribution",):
-                self.targets = [np.arange(1, n + 1) for n in self.n_update_area]
-                self.checkpoint = np.array([len(t) for t in self.targets]) + 1
-                breakpoint()
+                self.targets = [
+                    np.random.permutation(np.arange(1, n + 1)) for n in n_update_area
+                ]
+                self.checkpoint = forward + np.array([len(t) for t in self.targets])
             else:
                 raise ValueError(config.update_method)
 

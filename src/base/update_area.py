@@ -14,10 +14,18 @@ class UpdateArea(InitialArea):
 
     def next(self, forward: np.ndarray):
         if config.update_area == "superpixel":
-            if config.update_method in ("greedy_local_search",):
-                assert False
-            elif config.update_method in ("uniform_distribution",):
-                breakpoint()
+            for idx in range(self.batch):
+                if forward[idx] >= self.checkpoint[idx]:
+                    self.level[idx] = min(self.level[idx] + 1, len(config.segments) - 1)
+                    self.update_area[idx] = self.superpixel[idx, self.level[idx]]
+                    n_update_area = self.update_area[idx].max(axis=(1, 2))
+                    if config.update_method in ("greedy_local_search",):
+                        assert False
+                    elif config.update_method in ("uniform_distribution",):
+                        self.targets[idx] = np.random.permutation(
+                            np.arange(1, n_update_area + 1)
+                        )
+                self.checkpoint[idx] += self.n_update_area * self.n_chanel
 
         elif config.update_area == "random_square":
             for idx in range(self.batch):

@@ -191,7 +191,6 @@ class SaliencyAttack(Attacker):
             y = np.stack([np.tile(y1, n_blocks[0]), np.tile(y2, n_blocks[0])]).T
             c = np.repeat(_block[0], n_blocks[0] * n_blocks[1])
             _split_block = np.stack([c, x[:, 0], x[:, 1], y[:, 0], y[:, 1]], axis=1)
-            np.random.shuffle(_split_block)
-            split_block.append(_split_block)
+            split_block.append(np.random.permutation(_split_block))
         split_block = np.stack(split_block, axis=1)
         return split_block
