@@ -58,11 +58,11 @@ class InitialArea:
             self.update_area = np.zeros(
                 (self.batch, self.height, self.width), dtype=int
             )
-            half_point = (
+            self.half_point = (
                 np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.steps
             )
             for idx in range(self.batch):
-                n_half = (half_point < forward[idx]).sum()
+                n_half = (self.half_point < forward[idx]).sum()
                 p = config.p_init / 2**n_half
                 h = np.sqrt(p * self.height * self.width).round().astype(int)
                 r = np.random.randint(0, self.height - h)

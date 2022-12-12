@@ -53,7 +53,7 @@ class UpdateMethod(InitialPoint):
         elif config.update_method == "uniform_distribution":
             self.x_adv = self.x_adv.permute(0, 2, 3, 1)
             for idx in batch:
-                label = targets[idx]
+                label = targets[idx][0]
                 rand = (
                     2 * torch.rand_like(self.x_adv[idx, update_area[idx] == label]) - 1
                 ) * config.epsilon
