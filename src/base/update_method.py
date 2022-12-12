@@ -28,6 +28,7 @@ class UpdateMethod(InitialPoint):
 
         if config.update_method == "greedy_local_search":
             self.is_upper = self.is_upper_best.clone()
+            breakpoint()
             # TODO: batch処理
             for idx in batch:
                 c, label = targets[idx][0]
@@ -44,39 +45,13 @@ class UpdateMethod(InitialPoint):
             self.best_loss[update] = self.loss[update]
 
         elif config.update_method == "accelerated_local_search":
-            pass
+            assert False
 
         elif config.update_method == "refine_search":
-            pass
+            assert False
 
         elif config.update_method == "uniform_distribution":
-            labels = [np.unique(targets[idx][:, 1]) for idx in batch]
-            n_labels = np.array([len(label) for label in labels])
-            for label in range(1, n_labels.max() + 1):
-                self.x_adv = self.x_adv.permute(0, 2, 3, 1)
-                for idx in batch:
-                    rand = (
-                        2 * torch.rand_like(self.x_adv[idx, update_area[idx] == label])
-                        - 1
-                    ) * config.epsilon
-                    self.x_adv[idx, update_area[idx] == label] = (
-                        self.x_adv[idx, update_area[idx] == label] + rand
-                    )
-                self.x_adv = self.x_adv.permute(0, 3, 1, 2).clamp(
-                    self.lower, self.upper
-                )
-                pred = self.model(self.x_adv).softmax(dim=1)
-                self.loss = self.criterion(pred, self.y)
-                update = self.loss >= self.best_loss
-                update = np.logical_and(update.cpu().numpy(), label <= n_labels)
-                self.is_upper_best[update] = self.is_upper[update]
-                self.x_best[update] = self.x_adv[update]
-                self.best_loss[update] = self.loss[update]
-            self.forward += n_labels
-            # FIXME: here
-            targets = [np.zeros((1, 1)) for _ in batch]
-            for idx in batch:
-                targets[idx] = np.delete(targets[idx], 0, axis=0)
+            assert False
 
         else:
             raise ValueError(config.update_method)

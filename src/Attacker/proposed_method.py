@@ -32,14 +32,14 @@ class ProposedMethod(Attacker):
             lower = (x - config.epsilon).clamp(0, 1).clone()
 
             # initialize
-            update_area, targets = self.update_area.initialize(x)
             forward = self.update_method.initialize(x, y, lower, upper)
+            update_area, targets = self.update_area.initialize(x)
 
             # search
-            while (forward.min() < config.steps).any():
+            while forward.min() < config.steps:
                 pbar.debug(forward.min() + 1, config.steps, "forward")
-                x_best, forward, targets = self.update_method.step(update_area, targets)
-                update_area, targets = self.update_area.next(forward, targets)
+                x_best, forward = self.update_method.step(update_area, targets)
+                update_area, targets = self.update_area.next(forward)
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
