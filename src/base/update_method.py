@@ -50,16 +50,16 @@ class UpdateMethod(InitialPoint):
             pass
 
         elif config.update_method == "uniform_distribution":
+            self.x_adv = self.x_adv.permute(0, 2, 3, 1)
             for idx in batch:
-                c, label = targets[idx][0]
+                label = targets[idx][0][1]
                 rand = (
-                    2 * torch.rand_like(self.x_adv[idx, c, update_area[idx] == label])
-                    - 1
+                    2 * torch.rand_like(self.x_adv[idx, update_area[idx] == label]) - 1
                 ) * config.epsilon
-                self.x_adv[idx, c, update_area[idx] == label] = (
-                    self.x_adv[idx, c, update_area[idx] == label] + rand
+                self.x_adv[idx, update_area[idx] == label] = (
+                    self.x_adv[idx, update_area[idx] == label] + rand
                 )
-            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            self.x_adv = self.x_adv.permute(0, 3, 1, 2).clamp(self.lower, self.upper)
             pred = self.model(self.x_adv).softmax(dim=1)
             self.loss = self.criterion(pred, self.y)
             self.forward += 1
