@@ -36,17 +36,7 @@ class InitialArea:
             self.n_update_area = self.update_area.max(axis=(1, 2))
 
             if config.update_method in ("greedy_local_search",):
-                self.targets = []
-                for idx in range(self.batch):
-                    chanel = np.tile(np.arange(self.n_chanel), self.n_update_area[idx])
-                    labels = np.repeat(
-                        range(1, self.n_update_area[idx] + 1), self.n_chanel
-                    )
-                    _target = np.stack([chanel, labels], axis=1)
-                    np.random.shuffle(_target)
-                    self.targets.append(_target)
-                self.checkpoint = np.array([len(t) for t in self.targets]) + 1
-                breakpoint()
+                assert False
             elif config.update_method in ("uniform_distribution",):
                 self.targets = [np.arange(1, n + 1) for n in self.n_update_area]
                 self.checkpoint = np.array([len(t) for t in self.targets]) + 1
@@ -70,9 +60,10 @@ class InitialArea:
                 self.update_area[:, r : r + h, s : s + h] = 1
 
             if config.update_method in ("greedy_local_search",):
-                breakpoint()
+                assert False
             elif config.update_method in ("uniform_distribution",):
                 self.targets = np.ones(self.batch, dtype=int)[:, None]
+                self.checkpoint = forward + 1
             else:
                 raise ValueError(config.update_method)
 

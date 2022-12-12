@@ -15,22 +15,7 @@ class UpdateArea(InitialArea):
     def next(self, forward: np.ndarray):
         if config.update_area == "superpixel":
             if config.update_method in ("greedy_local_search",):
-                for idx in range(self.batch):
-                    if forward[idx] >= self.checkpoint[idx]:
-                        self.level[idx] = min(
-                            self.level[idx] + 1, len(config.segments) - 1
-                        )
-                        self.update_area[idx] = self.superpixel[idx, self.level[idx]]
-                        self.n_update_area = self.update_area[idx].max()
-                        chanel = np.tile(np.arange(self.n_chanel), self.n_update_area)
-                        labels = np.repeat(
-                            range(1, self.n_update_area + 1), self.n_chanel
-                        )
-                        self.targets[idx] = np.stack([chanel, labels], axis=1)
-                        np.random.shuffle(self.targets[idx])
-                        self.checkpoint[idx] += self.n_update_area * self.n_chanel
-                    else:
-                        self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
+                assert False
             elif config.update_method in ("uniform_distribution",):
                 breakpoint()
 
@@ -48,7 +33,8 @@ class UpdateArea(InitialArea):
             if config.update_method in ("greedy_local_search",):
                 breakpoint()
             elif config.update_method in ("uniform_distribution",):
-                breakpoint()
+                self.targets = np.ones(self.batch, dtype=int)[:, None]
+                self.checkpoint = forward + 1
             else:
                 raise ValueError(config.update_method)
 
