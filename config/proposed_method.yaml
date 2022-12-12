@@ -17,8 +17,11 @@ steps: 100
 criterion: cw
 update_area: superpixel
 initial_point: lower
-update_method: greedy_local_search
+update_method: uniform_distribution
 
 # superpixel
 segments: [4, 16, 64, 256]
 save_wasted: True
+
+# random_square
+p_init: 0.8

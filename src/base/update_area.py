@@ -19,7 +19,7 @@ class UpdateArea:
             raise NotImplementedError(config.update_area)
 
     def initialize(self, x: Tensor):
-        self.batch, self.n_chanel = x.shape[:2]
+        self.batch, self.n_chanel, self.height, self.width = x.shape
 
         if config.update_area == "superpixel":
             self.superpixel = SuperpixelManager().cal_superpixel(x)
@@ -37,7 +37,13 @@ class UpdateArea:
             self.checkpoint = np.array([len(t) for t in self.targets]) + 1
 
         elif config.update_area == "random_square":
-            pass
+            self.update_area = np.zeros(self.n_chanel, self.height, self.width)
+            h = np.sqrt(self.height * self.width * config.p_init)
+            r = np.random.randint(0, self.height - h)
+            s = np.random.randint(0, self.width - h)
+            self.update_area[:, r : r + h, s : s + h] = 1
+            chanel, labels = np.zeros(self.batch), np.ones(self.batch)
+            self.targets = np.stack([chanel, labels], axis=1)
 
         elif config.update_area == "divisional_square":
             pass
@@ -63,7 +69,18 @@ class UpdateArea:
                     self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
 
         elif config.update_area == "random_square":
-            pass
+            assert np.ones_like(forward) * forward[0] == forward
+            self.update_area = np.zeros(self.n_chanel, self.height, self.width)
+            half_point = (
+                np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.steps
+            )
+            p = config.p_init * (half_point < forward.min()).sum()
+            h = np.sqrt(self.height * self.width * p)
+            r = np.random.randint(0, self.height - h)
+            s = np.random.randint(0, self.width - h)
+            self.update_area[:, r : r + h, s : s + h] = 1
+            chanel, labels = np.zeros(self.batch), np.ones(self.batch)
+            self.targets = np.stack([chanel, labels], axis=1)
 
         elif config.update_area == "divisional_square":
             pass
