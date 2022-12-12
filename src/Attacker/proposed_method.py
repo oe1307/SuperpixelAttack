@@ -39,7 +39,7 @@ class ProposedMethod(Attacker):
 
             # search
             while (forward.min() < config.steps).any():
-                pbar(self.update_method.forward.min() + 1, config.steps, "forward")
+                pbar.debug(forward.min() + 1, config.steps, "forward")
                 update_area = self.update_area.next(forward, checkpoint)
                 x_best, forward, checkpoint = self.update_method.step(update_area)
 
