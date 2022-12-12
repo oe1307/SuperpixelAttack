@@ -17,7 +17,7 @@ steps: 100
 criterion: cw
 update_area: superpixel
 initial_point: lower
-update_method: uniform_distribution
+update_method: greedy_local_search
 
 # superpixel
 segments: [4, 16, 64, 256]

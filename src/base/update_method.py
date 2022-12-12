@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import torch
 
@@ -13,23 +15,22 @@ class UpdateMethod(InitialPoint):
     def __init__(self):
         super().__init__()
 
-    def step(self, update_area: np.ndarray):
-        batch, n_chanel = self.x_best.shape[:2]
-        is_upper = self.is_upper_best.clone()
+        if config.update_method not in (
+            "greedy_local_search",
+            "accelerated_local_search",
+            "refine_search",
+            "uniform_distribution",
+        ):
+            raise NotImplementedError(config.update_method)
+
+    def step(self, update_area: np.ndarray, targets: List[np.ndarray]):
+        batch = np.arange(self.x_adv.shape[0])
 
         if config.update_method == "greedy_local_search":
+            is_upper = self.is_upper_best.clone()
             # TODO: batch処理
-            for idx in range(batch):
-                if self.forward[idx] >= self.checkpoint[idx]:
-                    assert self.targets[idx].shape[0] == 0
-                    n_update_area = update_area[idx].max()
-                    chanel = np.tile(np.arange(n_chanel), n_update_area)
-                    labels = np.repeat(range(1, n_update_area + 1), n_chanel)
-                    self.targets[idx] = np.stack([chanel, labels], axis=1)
-                    np.random.shuffle(self.targets[idx])
-                    self.checkpoint[idx] += n_update_area * n_chanel
-                c, label = self.targets[idx][0]
-                self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
+            for idx in batch:
+                c, label = targets[idx][0]
                 is_upper[idx, c, update_area[idx] == label] = ~is_upper[
                     idx, c, update_area[idx] == label
                 ]
@@ -49,32 +50,25 @@ class UpdateMethod(InitialPoint):
             pass
 
         elif config.update_method == "uniform_distribution":
-            for idx in range(batch):
-                if self.forward[idx] >= self.checkpoint[idx]:
-                    assert self.targets[idx].shape[0] == 0
-                    n_update_area = update_area[idx].max()
-                    chanel = np.tile(np.arange(n_chanel), n_update_area)
-                    labels = np.repeat(range(1, n_update_area + 1), n_chanel)
-                    self.targets[idx] = np.stack([chanel, labels], axis=1)
-                    np.random.shuffle(self.targets[idx])
-                    self.checkpoint[idx] += n_update_area * n_chanel
-                c, label = self.targets[idx][0]
-                self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
-                distribution = (
-                    torch.rand(x_adv.shape[1:], device=config.device) * 2 - 1
+            for idx in batch:
+                c, label = targets[idx][0]
+                rand = (
+                    2 * torch.rand_like(self.x_adv[idx, c, update_area[idx] == label])
+                    - 1
                 ) * config.epsilon
-                x_adv[idx, c, update_area[idx] == label] += distribution
-            x_adv = x_adv.clamp(self.lower, self.upper)
-            x_adv = torch.where(is_upper, self.upper, self.lower)
-            pred = self.model(x_adv).softmax(dim=1)
-            loss = self.criterion(pred, self.y)
+                self.x_adv[idx, c, update_area[idx] == label] = (
+                    self.x_adv[idx, c, update_area[idx] == label] + rand
+                )
+            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            pred = self.model(self.x_adv).softmax(dim=1)
+            self.loss = self.criterion(pred, self.y)
             self.forward += 1
-            update = loss >= self.best_loss
-            self.x_best[update] = x_adv[update]
-            self.best_loss[update] = loss[update]
-            self.is_upper_best[update] = is_upper[update]
+            update = self.loss >= self.best_loss
+            self.is_upper_best[update] = self.is_upper[update]
+            self.x_best[update] = self.x_adv[update]
+            self.best_loss[update] = self.loss[update]
 
         else:
             raise ValueError(config.update_method)
 
-        return self.x_best, self.forward, self.checkpoint
+        return self.x_best, self.forward
