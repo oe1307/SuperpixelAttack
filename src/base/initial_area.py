@@ -26,7 +26,7 @@ class InitialArea:
         ):
             raise NotImplementedError(config.update_method)
 
-    def initialize(self, x: Tensor):
+    def initialize(self, x: Tensor, forward: np.ndarray):
         self.batch, self.n_chanel, self.height, self.width = x.shape
 
         if config.update_area == "superpixel":
@@ -58,17 +58,20 @@ class InitialArea:
             self.update_area = np.zeros(
                 (self.batch, self.height, self.width), dtype=int
             )
-            h = np.sqrt(self.height * self.width * config.p_init).round().astype(int)
-            r = np.random.randint(0, self.height - h)
-            s = np.random.randint(0, self.width - h)
-            self.update_area[:, r : r + h, s : s + h] = 1
+            half_point = (
+                np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.steps
+            )
+            for idx in range(self.batch):
+                n_half = (half_point < forward[idx]).sum()
+                p = config.p_init / 2**n_half
+                h = np.sqrt(p * self.height * self.width).round().astype(int)
+                r = np.random.randint(0, self.height - h)
+                s = np.random.randint(0, self.width - h)
+                self.update_area[:, r : r + h, s : s + h] = 1
 
-            if config.update_method in ("greedy_local_search"):
-                chanel = np.zeros(self.batch, dtype=int)
-                labels = np.ones(self.batch, dtype=int)
-                self.targets = np.stack([chanel, labels], axis=1)
+            if config.update_method in ("greedy_local_search",):
                 breakpoint()
-            elif config.update_method in ("uniform_distribution"):
+            elif config.update_method in ("uniform_distribution",):
                 self.targets = np.ones(self.batch, dtype=int)[:, None]
             else:
                 raise ValueError(config.update_method)
@@ -77,6 +80,6 @@ class InitialArea:
             assert False
 
         else:
-            raise NotImplementedError(config.update_area)
+            raise ValueError(config.update_method)
 
         return self.update_area, self.targets

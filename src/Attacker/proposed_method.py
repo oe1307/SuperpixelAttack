@@ -33,7 +33,7 @@ class ProposedMethod(Attacker):
 
             # initialize
             forward = self.update_method.initialize(x, y, lower, upper)
-            update_area, targets = self.update_area.initialize(x)
+            update_area, targets = self.update_area.initialize(x, forward)
 
             # search
             while forward.min() < config.steps:

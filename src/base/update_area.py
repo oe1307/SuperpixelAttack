@@ -42,19 +42,19 @@ class UpdateArea(InitialArea):
                 np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.steps
             )
             for idx in range(self.batch):
-                n_half = np.sum([half_point < f for f in forward], axis=1)
+                n_half = (half_point < forward[idx]).sum()
                 p = config.p_init / 2**n_half
-                h = np.sqrt(self.height * self.width * p).round().astype(int)
+                h = np.sqrt(p * self.height * self.width).round().astype(int)
                 r = np.random.randint(0, self.height - h)
                 s = np.random.randint(0, self.width - h)
-            breakpoint()
-            self.update_area[:, r : r + h, s : s + h] = 1
+                self.update_area[:, r : r + h, s : s + h] = 1
+
             if config.update_method in ("greedy_local_search",):
-                chanel, labels = np.zeros(self.batch), np.ones(self.batch)
-                self.targets = np.stack([chanel, labels], axis=1)[:, None]
                 breakpoint()
             elif config.update_method in ("uniform_distribution",):
-                breakpoint()
+                self.targets = np.ones(self.batch, dtype=int)[:, None]
+            else:
+                raise ValueError(config.update_method)
 
         elif config.update_area == "divisional_square":
             assert False

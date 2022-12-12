@@ -61,7 +61,6 @@ class UpdateMethod(InitialPoint):
                     self.x_adv[idx, update_area[idx] == label] + rand
                 )
             self.x_adv = self.x_adv.permute(0, 3, 1, 2).clamp(self.lower, self.upper)
-            self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
             pred = self.model(self.x_adv).softmax(dim=1)
             self.loss = self.criterion(pred, self.y)
             self.forward += 1
