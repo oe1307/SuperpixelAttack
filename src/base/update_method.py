@@ -27,21 +27,21 @@ class UpdateMethod(InitialPoint):
         batch = np.arange(self.x_adv.shape[0])
 
         if config.update_method == "greedy_local_search":
-            is_upper = self.is_upper_best.clone()
+            self.is_upper = self.is_upper_best.clone()
             # TODO: batch処理
             for idx in batch:
                 c, label = targets[idx][0]
-                is_upper[idx, c, update_area[idx] == label] = ~is_upper[
+                self.is_upper[idx, c, update_area[idx] == label] = ~self.is_upper[
                     idx, c, update_area[idx] == label
                 ]
-            x_adv = torch.where(is_upper, self.upper, self.lower)
-            pred = self.model(x_adv).softmax(dim=1)
-            loss = self.criterion(pred, self.y)
+            self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
+            pred = self.model(self.x_adv).softmax(dim=1)
+            self.loss = self.criterion(pred, self.y)
             self.forward += 1
-            update = loss >= self.best_loss
-            self.x_best[update] = x_adv[update]
-            self.best_loss[update] = loss[update]
-            self.is_upper_best[update] = is_upper[update]
+            update = self.loss >= self.best_loss
+            self.is_upper_best[update] = self.is_upper[update]
+            self.x_best[update] = self.x_adv[update]
+            self.best_loss[update] = self.loss[update]
 
         elif config.update_method == "accelerated_local_search":
             pass
