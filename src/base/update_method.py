@@ -51,7 +51,6 @@ class UpdateMethod(InitialPoint):
             assert False
 
         elif config.update_method == "uniform_distribution":
-            breakpoint()
             self.x_adv = self.x_adv.permute(0, 2, 3, 1)
             for idx in batch:
                 label = targets[idx]
@@ -61,7 +60,7 @@ class UpdateMethod(InitialPoint):
                 self.x_adv[idx, update_area[idx] == label] = (
                     self.x_adv[idx, update_area[idx] == label] + rand
                 )
-            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            self.x_adv = self.x_adv.permute(0, 3, 1, 2).clamp(self.lower, self.upper)
             self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
             pred = self.model(self.x_adv).softmax(dim=1)
             self.loss = self.criterion(pred, self.y)
@@ -74,4 +73,4 @@ class UpdateMethod(InitialPoint):
         else:
             raise ValueError(config.update_method)
 
-        return self.x_best, self.forward, targets
+        return self.x_best, self.forward
