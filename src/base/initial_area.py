@@ -41,7 +41,7 @@ class InitialArea:
                 self.targets = [
                     np.random.permutation(np.arange(1, n + 1)) for n in n_update_area
                 ]
-                self.checkpoint = forward + np.array([len(t) for t in self.targets])
+                self.checkpoint = forward + n_update_area
             else:
                 raise ValueError(config.update_method)
 

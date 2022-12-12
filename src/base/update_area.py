@@ -18,7 +18,7 @@ class UpdateArea(InitialArea):
                 if forward[idx] >= self.checkpoint[idx]:
                     self.level[idx] = min(self.level[idx] + 1, len(config.segments) - 1)
                     self.update_area[idx] = self.superpixel[idx, self.level[idx]]
-                    _n_update_area = self.update_area[idx].max(axis=(1, 2))
+                    _n_update_area = self.update_area[idx].max()
                     if config.update_method in ("greedy_local_search",):
                         assert False
                     elif config.update_method in ("uniform_distribution",):
