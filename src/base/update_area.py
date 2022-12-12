@@ -47,6 +47,7 @@ class UpdateArea:
 
         if config.update_area == "superpixel":
             self.level += forward == checkpoint
+            self.level = self.level.clip(0, len(config.segments) - 1)
             update_area = self.superpixel[batch, self.level]
 
         elif config.update_area == "random_square":
