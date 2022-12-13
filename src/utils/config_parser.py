@@ -3,6 +3,7 @@ import json
 import os
 import pprint
 import socket
+from typing import List
 
 import git
 import yaml
@@ -17,26 +18,27 @@ class ConfigParser:
     def __init__(self):
         self.config = AttrDict()
 
-    def read(self, path=None, args=None):
-        reader = dict()
+    def read(self, path: str = None, args=None, param: List[str] = None):
+        self.config = dict()
         if path is not None:
             logger.info(f"\n [ READ ] {path}")
-            reader.update(yaml.safe_load(open(path, mode="r")))
+            self.config.update(yaml.safe_load(open(path, mode="r")))
         if args is not None:
             args = vars(args)
-            for k in args:
-                if args[k] is None and k in reader:
-                    args[k] = reader[k]
-            reader.update(args)
-        msg = pprint.pformat(reader, width=40)
+            assert args.keys() & self.config.keys() == set()
+            self.config.update(args)
+        if param is not None:
+            param = {p.split("=")[0]: eval(p.split("=")[1]) for p in param}
+            assert param.keys() & self.config.keys() == set(param)
+            self.config.update(param)
+        msg = pprint.pformat(self.config, width=40)
         logger.info(f"{msg}\n")
-        self.config.update(reader)
         return self.config
 
     def __call__(self):
         return self.config
 
-    def save(self, path):
+    def save(self, path: str):
         change_level("git", 30)
         self.config.datetime = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
         self.config.hostname = socket.gethostname()
