@@ -1,6 +1,7 @@
 from typing import List
 
 import numpy as np
+import torch
 
 from utils import config_parser, setup_logger
 
@@ -41,9 +42,27 @@ class UpdateMethod(InitialPoint):
 
         elif config.update_method == "uniform_distribution":
             if config.update_area == "superpixel":
-                breakpoint()
+                for idx in range(self.batch):
+                    c, label = targets[idx][0]
+                    rand = torch.rand_like(
+                        self.x_adv[idx, c, update_area[idx] == label]
+                    )
+                    rand = (2 * rand - 1) * config.epsilon
+                    self.x_adv[idx, c, update_area[idx] == label] += rand
+                self.x_adv = self.x_adv.clamp(self.lower, self.upper)
             elif config.update_area == "random_square":
-                breakpoint()
+                self.x_adv = self.x_adv.permute(0, 2, 3, 1)
+                rand = 2 * torch.rand_like(self.x_adv[update_area]) - 1
+                self.x_adv[update_area] += rand * config.epsilon
+                self.x_adv = self.x_adv.permute(0, 3, 1, 2)
+                self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            pred = self.model(self.x_adv).softmax(dim=1)
+            self.loss = self.criterion(pred, self.y)
+            self.forward += 1
+            update = self.loss >= self.best_loss
+            self.is_upper_best[update] = self.is_upper[update]
+            self.x_best[update] = self.x_adv[update]
+            self.best_loss[update] = self.loss[update]
 
         else:
             raise ValueError(config.update_method)

@@ -32,14 +32,14 @@ class InitialArea:
                 labels = np.repeat(range(1, n_update_area + 1), self.n_chanel)
                 _target = np.stack([chanel, labels], axis=1)
                 self.targets.append(np.random.permutation(_target))
-            self.checkpoint = np.array([len(t) for t in self.targets]) + 1
+            self.checkpoint = forward + np.array([len(t) for t in self.targets])
 
         elif config.update_area == "random_square":
-            self.update_area = np.zeros(
-                (self.batch, self.height, self.width), dtype=int
-            )
             self.half_point = (
                 np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.steps
+            )
+            self.update_area = np.zeros(
+                (self.batch, self.height, self.width), dtype=bool
             )
             for idx in range(self.batch):
                 n_half = (self.half_point < forward[idx]).sum()
@@ -47,7 +47,7 @@ class InitialArea:
                 h = np.sqrt(p * self.height * self.width).round().astype(int)
                 r = np.random.randint(0, self.height - h)
                 s = np.random.randint(0, self.width - h)
-                self.update_area[:, r : r + h, s : s + h] = 1
+                self.update_area[idx, r : r + h, s : s + h] = True
             self.targets = None
 
         elif config.update_area == "divisional_square":
