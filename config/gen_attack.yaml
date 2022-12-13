@@ -17,8 +17,8 @@ model:
         Salman2020Do_50_2: 100
 
 # hyperparameter
-population: 10
-steps: 10
+population: 6
+steps: 17 # 100step: 17, 1_000step: 167, 10_000step: 1667
 tau: 0.1
 alpha_init: 0.4
 rho_init: 0.5

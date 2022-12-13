@@ -51,7 +51,7 @@ class ParsimoniousAttack(Attacker):
     def accelerated_local_search(self, is_upper_best, best_loss):
         is_upper = is_upper_best.clone()
         loss = best_loss.clone()
-        for _ in range(config.insert_deletion):
+        for _ in range(config.insert_and_deletion):
             is_upper, loss = self.insert(is_upper, loss)
             update = loss > best_loss
             is_upper_best[update] = is_upper[update]

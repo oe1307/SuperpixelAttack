@@ -20,6 +20,7 @@ model:
 steps: 100
 criterion: cw
 update_area: random_square
+search_channel_wise: True
 initial_point: random
 update_method: uniform_distribution
 

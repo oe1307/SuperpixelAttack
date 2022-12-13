@@ -20,4 +20,4 @@ model:
 steps: 100
 criterion: ce
 initial_split: 32
-insert_deletion: 1
+insert_and_deletion: 1
