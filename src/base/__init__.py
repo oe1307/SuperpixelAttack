@@ -2,7 +2,7 @@ from .base_attacker import Attacker
 from .criterion import get_criterion
 from .imagenet import load_imagenet
 from .initial_point import InitialPoint
-from .model import get_model
+from .models import get_model
 from .saliency_model import SODModel
 from .superpixel import SuperpixelManager
 from .update_area import UpdateArea
