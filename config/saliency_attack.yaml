@@ -7,7 +7,7 @@ n_examples: 5000
 model:
     torchvision:
         resnet50: 1000
-        vgg16_bn: 600
+        vgg16_bn: 500
 
     robustbench:
         Wong2020Fast: 1000
