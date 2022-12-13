@@ -12,22 +12,30 @@ config = config_parser()
 
 
 def get_model(
-    model_container: str,
-    model_name: str,
-    batch_size: int,
-    model_dir: str = "../storage/model",
+    model_name: str, batch_size: int, model_dir: str = "../storage/model"
 ) -> Module:
 
-    if model_container == "torchvision":
+    if model_name in (
+        "resnet50",
+        "vgg16_bn",
+    ):
         model = torchvision.models.get_model(model_name, weights="DEFAULT")
         transform = get_transform(model_name)
-    elif model_container == "robustbench":
+
+    elif model_name in (
+        "Wong2020Fast",
+        "Engstrom2019Robustness",
+        "Salman2020Do_R18",
+        "Salman2020Do_R50",
+        "Salman2020Do_50_2",
+    ):
         model = robustbench.load_model(model_name, model_dir, "imagenet")
         transform = get_preprocessing(
             BenchmarkDataset.imagenet, ThreatModel(config.norm), model_name, None
         )
+
     else:
-        raise NotImplementedError(model_container)
+        raise NotImplementedError(model_name)
 
     model = model.to(config.device)
     model.eval()

@@ -50,16 +50,15 @@ def argparser():
 
 def main():
     torch.set_num_threads(config.thread)
-    for model_container, models in config.model.items():
-        for model_name, batch_size in models.items():
-            print(f"{model_name}")
-            reproducibility(config.seed)
-            config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-            attacker = get_attacker()
-            model, transform = get_model(model_container, model_name, batch_size)
-            data, label = load_imagenet(transform)
-            attacker.attack(model, data, label)
-            torch.cuda.empty_cache()
+    for model_name, batch_size in config.model.items():
+        print(f"{model_name}")
+        reproducibility(config.seed)
+        config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        attacker = get_attacker()
+        model, transform = get_model(model_name, batch_size)
+        data, label = load_imagenet(transform)
+        attacker.attack(model, data, label)
+        torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":

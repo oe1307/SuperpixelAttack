@@ -5,16 +5,16 @@ epsilon: 0.01568627450980392
 n_examples: 5000
 
 model:
-    torchvision:
-        resnet50: 5000
-        vgg16_bn: 5000
+    # torchvision
+    resnet50: 5000
+    vgg16_bn: 5000
 
-    robustbench:
-        Wong2020Fast: 5000
-        Engstrom2019Robustness: 5000
-        Salman2020Do_R18: 5000
-        Salman2020Do_R50: 5000
-        Salman2020Do_50_2: 5000
+    # robustbench
+    Wong2020Fast: 5000
+    Engstrom2019Robustness: 5000
+    Salman2020Do_R18: 5000
+    Salman2020Do_R50: 5000
+    Salman2020Do_50_2: 5000
 
 # hyperparameter
 step: 100
