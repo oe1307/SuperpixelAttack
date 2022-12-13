@@ -17,29 +17,30 @@ class InitialPoint:
         self.criterion = criterion
 
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
-        batch = x.shape[0]
-        self.y, self.upper, self.lower = y, upper, lower
+        self.y = y
+        self.upper = upper
+        self.lower = lower
 
         if config.initial_point == "random":
             self.is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)
             self.x_adv = torch.where(self.is_upper, upper, lower)
             pred = self.model(self.x_adv).softmax(1)
             self.loss = self.criterion(pred, y)
-            self.forward = np.ones(batch, dtype=np.int)
+            self.forward = np.ones(x.shape[0], dtype=np.int)
 
         elif config.initial_point == "lower":
             self.is_upper = torch.zeros_like(x, dtype=torch.bool)
             self.x_adv = lower.clone()
             pred = self.model(self.x_adv).softmax(1)
             self.loss = self.criterion(pred, y)
-            self.forward = np.ones(batch, dtype=np.int)
+            self.forward = np.ones(x.shape[0], dtype=np.int)
 
         elif config.initial_point == "upper":
             self.is_upper = torch.ones_like(x, dtype=torch.bool)
             self.x_adv = upper.clone()
             pred = self.model(self.x_adv).softmax(1)
             self.loss = self.criterion(pred, y)
-            self.forward = np.ones(batch, dtype=np.int)
+            self.forward = np.ones(x.shape[0], dtype=np.int)
 
         else:
             raise ValueError(config.initial_point)
