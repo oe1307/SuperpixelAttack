@@ -19,7 +19,6 @@ class ConfigParser:
         self.config = AttrDict()
 
     def read(self, path: str = None, args=None, param: List[str] = None):
-        self.config = dict()
         if path is not None:
             logger.info(f"\n [ READ ] {path}")
             self.config.update(yaml.safe_load(open(path, mode="r")))
