@@ -31,7 +31,7 @@ class ConfigParser:
             del self.config["param"]
             assert param.keys() & self.config.keys() == set(param)
             self.config.update(param)
-        msg = pprint.pformat(self.config, width=40)
+        msg = pprint.pformat(dict(self.config), width=40)
         logger.info(f"{msg}\n")
         return self.config
 
