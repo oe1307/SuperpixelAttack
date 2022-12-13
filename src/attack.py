@@ -59,6 +59,7 @@ def main():
             model, transform = get_model(model_container, model_name, batch_size)
             data, label = load_imagenet(transform)
             attacker.attack(model, data, label)
+            torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
