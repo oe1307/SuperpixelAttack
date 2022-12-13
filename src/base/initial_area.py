@@ -25,14 +25,19 @@ class InitialArea:
             self.superpixel = SuperpixelManager().cal_superpixel(x)
             self.level = np.zeros(self.batch, dtype=int)
             self.update_area = self.superpixel[np.arange(self.batch), self.level]
-            self.targets = []
-            for idx in range(self.batch):
-                n_update_area = self.update_area[idx].max()
-                chanel = np.tile(np.arange(self.n_chanel), n_update_area)
-                labels = np.repeat(range(1, n_update_area + 1), self.n_chanel)
-                _target = np.stack([chanel, labels], axis=1)
-                self.targets.append(np.random.permutation(_target))
-            self.checkpoint = forward + np.array([len(t) for t in self.targets])
+            n_update_area = self.update_area.max(axis=(1, 2))
+            if config.channel_wise:
+                self.targets = []
+                for idx in range(self.batch):
+                    chanel = np.tile(np.arange(self.n_chanel), n_update_area[idx])
+                    labels = np.repeat(range(1, n_update_area[idx] + 1), self.n_chanel)
+                    _target = np.stack([chanel, labels], axis=1)
+                    self.targets.append(np.random.permutation(_target))
+            else:
+                self.targets = []
+                for idx in range(self.batch):
+                    labels = range(1, n_update_area[idx] + 1)
+                    self.targets.append(np.random.permutation(labels))
 
         elif config.update_area == "random_square":
             self.half_point = (
@@ -48,7 +53,10 @@ class InitialArea:
                 r = np.random.randint(0, self.height - h)
                 s = np.random.randint(0, self.width - h)
                 self.update_area[idx, r : r + h, s : s + h] = True
-            self.targets = None
+            if config.channel_wise:
+                self.targets = np.random.permutation(np.arange(self.n_chanel))
+            else:
+                self.targets = np.ones(self.batch, dtype=int)[:, None]
 
         elif config.update_area == "divisional_square":
             assert False
@@ -56,4 +64,5 @@ class InitialArea:
         else:
             raise ValueError(config.update_method)
 
+        self.checkpoint = forward + np.array([len(t) for t in self.targets])
         return self.update_area, self.targets
