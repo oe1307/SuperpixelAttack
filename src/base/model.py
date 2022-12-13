@@ -34,10 +34,10 @@ def get_model(
 
 
 def get_prepocessing(model_name: str):
-    if model_name == "inception_v3":
-        prepocessing = T.Compose([T.Resize(342), T.CenterCrop(299), T.ToTensor()])
-    elif model_name == "resnet50":
+    if model_name == "resnet50":
         prepocessing = T.Compose([T.Resize(232), T.CenterCrop(224), T.ToTensor()])
+    elif model_name == "vgg16_bn":
+        prepocessing = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
     else:
         raise NotImplementedError(model_name)
     return prepocessing

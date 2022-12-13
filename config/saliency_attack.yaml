@@ -6,8 +6,8 @@ n_examples: 5000
 
 model:
     torchvision:
-        inception_v3: 1000
         resnet50: 1000
+        vgg16_bn: 1000
 
     robustbench:
         Wong2020Fast: 1000

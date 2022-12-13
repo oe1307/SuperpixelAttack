@@ -6,15 +6,15 @@ n_examples: 5000
 
 model:
     torchvision:
-        inception_v3: 300
-        resnet50: 300
+        resnet50: 200
+        vgg16_bn: 200
 
     robustbench:
-        Wong2020Fast: 300
-        Engstrom2019Robustness: 300
-        Salman2020Do_R18: 300
-        Salman2020Do_R50: 300
-        Salman2020Do_50_2: 300
+        Wong2020Fast: 200
+        Engstrom2019Robustness: 200
+        Salman2020Do_R18: 200
+        Salman2020Do_R50: 200
+        Salman2020Do_50_2: 200
 
 # hyperparameter
 population: 6

@@ -36,7 +36,7 @@ for model in robustbench:
 # In[ ]:
 
 
-torchvision = ["inception_v3", "resnet50"]
+torchvision = ["resnet50", "vgg16_bn"]
 config.device = "cpu"
 for model in torchvision:
     get_model("torchvision", model, None, "../../storage/model/")

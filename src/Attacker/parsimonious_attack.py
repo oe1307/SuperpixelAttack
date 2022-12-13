@@ -26,6 +26,7 @@ class ParsimoniousAttack(Attacker):
         n_images, n_chanel, height, width = x.shape
 
         # initialize
+        assert height % self.split == 0 and width % self.split == 0
         init_block = (n_images, n_chanel, height // self.split, width // self.split)
         is_upper = torch.zeros(init_block, dtype=torch.bool, device=config.device)
         loss = self.calculate_loss(is_upper)
