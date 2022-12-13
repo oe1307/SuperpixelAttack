@@ -27,8 +27,10 @@ class UpdateArea(InitialArea):
                         _target = range(1, n_update_area + 1)
                     self.targets[idx] = np.random.permutation(_target)
                     self.checkpoint[idx] += len(_target)
+                    breakpoint()
                 else:
                     self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
+                    breakpoint()
 
         elif config.update_area == "random_square":
             for idx in range(self.batch):
@@ -40,11 +42,17 @@ class UpdateArea(InitialArea):
                     r = np.random.randint(0, self.height - h)
                     s = np.random.randint(0, self.width - h)
                     self.update_area[idx, r : r + h, s : s + h] = True
-                if config.channel_wise:
-                    self.targets[idx] = np.random.permutation(np.arange(self.n_chanel))
+                    if config.channel_wise:
+                        self.targets[idx] = np.random.permutation(
+                            np.arange(self.n_chanel)
+                        )
+                        breakpoint()
+                    else:
+                        self.targets[idx] = np.ones(1, dtype=int)[:, None]
+                        breakpoint()
+                    self.checkpoint[idx] += self.targets[idx].shape[0]
                 else:
-                    self.targets[idx] = np.ones(1, dtype=int)[:, None]
-                self.checkpoint[idx] += self.targets[idx].shape[0]
+                    self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
 
         elif config.update_area == "divisional_square":
             assert False

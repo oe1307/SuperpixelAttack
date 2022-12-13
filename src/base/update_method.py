@@ -41,7 +41,7 @@ class UpdateMethod(InitialPoint):
             assert False
 
         elif config.update_method == "uniform_distribution":
-            if config.update_area == "superpixel":
+            if config.update_area == "superpixel" and config.channel_wise:
                 for idx in range(self.batch):
                     c, label = targets[idx][0]
                     rand = torch.rand_like(
@@ -49,6 +49,22 @@ class UpdateMethod(InitialPoint):
                     )
                     rand = (2 * rand - 1) * config.epsilon
                     self.x_adv[idx, c, update_area[idx] == label] += rand
+                self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            elif config.update_area == "superpixel":
+                for idx in range(self.batch):
+                    label = targets[idx][0]
+                    rand = torch.rand_like(
+                        self.x_adv[idx, :, update_area[idx] == label]
+                    )
+                    rand = (2 * rand - 1) * config.epsilon
+                    self.x_adv[idx, :, update_area[idx] == label] += rand
+                self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            elif config.update_area == "random_square" and config.channel_wise:
+                for idx in range(self.batch):
+                    c = targets[idx][0]
+                    rand = torch.rand_like(self.x_adv[idx, c, update_area[idx]])
+                    rand = (2 * rand - 1) * config.epsilon
+                    self.x_adv[idx, c, update_area[idx]] += rand
                 self.x_adv = self.x_adv.clamp(self.lower, self.upper)
             elif config.update_area == "random_square":
                 self.x_adv = self.x_adv.permute(0, 2, 3, 1)
