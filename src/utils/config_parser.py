@@ -29,6 +29,7 @@ class ConfigParser:
             self.config.update(args)
         if param is not None:
             param = {p.split("=")[0]: eval(p.split("=")[1]) for p in param}
+            del self.config["param"]
             assert param.keys() & self.config.keys() == set(param)
             self.config.update(param)
         msg = pprint.pformat(self.config, width=40)

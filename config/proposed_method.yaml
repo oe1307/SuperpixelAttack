@@ -6,16 +6,16 @@ n_examples: 5000
 
 model:
     robustbench:
-        # Wong2020Fast: 5000
-        # Engstrom2019Robustness: 5000
+        Wong2020Fast: 5000
+        Engstrom2019Robustness: 5000
         Salman2020Do_R18: 5000
-        # Salman2020Do_R50: 5000
-        # Salman2020Do_50_2: 5000
+        Salman2020Do_R50: 5000
+        Salman2020Do_50_2: 5000
 
 # hyperparameter
 steps: 100
 criterion: cw
-update_area: superpixel
+update_area: random_square
 initial_point: random
 update_method: uniform_distribution
 

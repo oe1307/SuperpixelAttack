@@ -23,19 +23,10 @@ def argparser():
         required=True,
     )
     parser.add_argument(
-        "--n_examples",
-        type=int,
-        default=None,
-    )
-    parser.add_argument(
-        "--steps",
-        type=int,
-        default=None,
-    )
-    parser.add_argument(
-        "--epsilon",
-        type=float,
-        default=None,
+        "-p",
+        "--param",
+        type=str,
+        nargs="*",
     )
     parser.add_argument(
         "--thread",
@@ -73,7 +64,7 @@ def main():
 if __name__ == "__main__":
     args = argparser()
     logger = setup_logger.setLevel(args.log_level)
-    config = config_parser.read(args.config, args)
+    config = config_parser.read(args.config, args, args.param)
     main()
 
 else:
