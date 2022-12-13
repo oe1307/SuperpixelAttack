@@ -30,3 +30,6 @@ save_wasted: True
 
 # random_square
 p_init: 0.8
+
+# split_square
+initial_split: 32

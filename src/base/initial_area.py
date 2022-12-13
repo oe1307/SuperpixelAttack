@@ -14,7 +14,7 @@ class InitialArea:
         if config.update_area not in (
             "superpixel",
             "random_square",
-            "divisional_square",
+            "split_square",
         ):
             raise NotImplementedError(config.update_area)
 
@@ -58,8 +58,25 @@ class InitialArea:
             else:
                 self.targets = np.ones(1, dtype=int)
 
-        elif config.update_area == "divisional_square":
-            assert False
+        elif config.update_area == "split_square":
+            breakpoint()
+            self.split = config.initial_split
+            assert self.height % self.split == 0
+            h = self.height // self.split
+            assert self.width % self.split == 0
+            w = self.width // self.split
+            self.update_area = np.arange(h * w).reshape(h, w)
+            self.update_area = np.repeat(self.update_area, self.split, axis=0)
+            self.update_area = np.repeat(self.update_area, self.split, axis=1)
+            if config.channel_wise:
+                chanel = np.tile(np.arange(self.n_chanel), h * w)
+                labels = np.repeat(range(1, h * w + 1), self.n_chanel)
+                self.targets = np.stack([chanel, labels], axis=1)
+                np.random.shuffle(self.targets)
+            else:
+                self.targets = np.arange(1, h * w + 1)
+                breakpoint()
+                np.random.shuffle(self.targets)
 
         else:
             raise ValueError(config.update_method)

@@ -39,7 +39,7 @@ class SaliencyAttack(Attacker):
             self.upper = (self.x + config.epsilon).clamp(0, 1).clone()
             self.lower = (self.x - config.epsilon).clamp(0, 1).clone()
             self.best_loss = -100 * torch.ones(batch, device=config.device)
-            self.forward = np.zeros(batch, dtype=np.int64)
+            self.forward = np.zeros(batch, dtype=int)
 
             k_init = config.k_init
             split_level = 1
@@ -104,7 +104,7 @@ class SaliencyAttack(Attacker):
                 (split_blocks.shape[0], batch), device=config.device
             )
             for i, block in enumerate(split_blocks):
-                _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
+                _block = torch.zeros_like(self.x_adv, dtype=bool)
                 for idx, b in enumerate(block):
                     _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
                 _block = _block & self.saliency_detection

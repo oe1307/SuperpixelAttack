@@ -48,7 +48,7 @@ class UpdateArea(InitialArea):
             else:
                 self.targets = np.delete(self.targets, 0)
 
-        elif config.update_area == "divisional_square":
+        elif config.update_area == "split_square":
             assert False
 
         else:

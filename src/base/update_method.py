@@ -1,5 +1,3 @@
-from typing import List
-
 import numpy as np
 import torch
 
@@ -18,7 +16,7 @@ class UpdateMethod(InitialPoint):
         if config.update_area not in (
             "superpixel",
             "random_square",
-            "divisional_square",
+            "split_square",
         ):
             raise NotImplementedError(config.update_area)
 

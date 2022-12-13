@@ -29,8 +29,13 @@ class ConfigParser:
         if param is not None:
             for p in param:
                 k, v = p.split("=")
-                assert k in self.config.keys()
-                self.config[k] = type(self.config[k])(v)
+                assert k in self.config
+                if type(self.config[k]) in (int, float, str):
+                    self.config[k] = type(self.config[k])(v)
+                elif type(self.config[k]) is bool:
+                    self.config[k] = eval(v)
+                else:
+                    raise NotImplementedError(type(self.config[k]))
             del self.config["param"]
         msg = pprint.pformat(dict(self.config), width=40)
         logger.info(f"{msg}\n")
