@@ -33,6 +33,7 @@ config.device = "cpu"
 for model in robustbench:
     get_model("robustbench", model, None, "../../storage/model/")
 
+
 # In[ ]:
 
 
@@ -42,7 +43,11 @@ config.device = "cpu"
 for model in torchvision:
     get_model("torchvision", model, None, "../../storage/model/")
 
+
 # In[ ]:
 
 
-SODModel()
+saliency_model = SODModel()
+
+
+# In[ ]:
