@@ -56,8 +56,8 @@ def main():
             reproducibility(config.seed)
             config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
             attacker = get_attacker()
-            data, label = load_imagenet(model_name)
-            model = get_model(model_container, model_name, batch_size)
+            model, preprocessing = get_model(model_container, model_name, batch_size)
+            data, label = load_imagenet(model_name, preprocessing)
             attacker.attack(model, data, label)
 
 

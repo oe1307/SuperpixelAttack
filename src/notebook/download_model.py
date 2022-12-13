@@ -28,7 +28,6 @@ robustbench = [
     "Salman2020Do_R50",
     "Salman2020Do_50_2",
 ]
-config.dataset = "imagenet"
 config.device = "cpu"
 for model in robustbench:
     get_model("robustbench", model, None, "../../storage/model/")
@@ -38,7 +37,6 @@ for model in robustbench:
 
 
 torchvision = ["inception_v3", "resnet50"]
-config.dataset = "imagenet"
 config.device = "cpu"
 for model in torchvision:
     get_model("torchvision", model, None, "../../storage/model/")
