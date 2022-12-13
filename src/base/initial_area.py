@@ -33,13 +33,11 @@ class InitialArea:
                     labels = np.repeat(range(1, n_update_area[idx] + 1), self.n_chanel)
                     _target = np.stack([chanel, labels], axis=1)
                     self.targets.append(np.random.permutation(_target))
-                    breakpoint()
             else:
                 self.targets = []
                 for idx in range(self.batch):
                     labels = range(1, n_update_area[idx] + 1)
                     self.targets.append(np.random.permutation(labels))
-                    breakpoint()
 
         elif config.update_area == "random_square":
             self.half_point = (
@@ -57,10 +55,8 @@ class InitialArea:
                 self.update_area[idx, r : r + h, s : s + h] = True
             if config.channel_wise:
                 self.targets = np.random.permutation(np.arange(self.n_chanel))
-                breakpoint()
             else:
-                self.targets = np.ones(self.batch, dtype=int)[:, None]
-                breakpoint()
+                self.targets = np.ones(1, dtype=int)
 
         elif config.update_area == "divisional_square":
             assert False
@@ -68,5 +64,4 @@ class InitialArea:
         else:
             raise ValueError(config.update_method)
 
-        self.checkpoint = forward + np.array([len(t) for t in self.targets])
         return self.update_area, self.targets

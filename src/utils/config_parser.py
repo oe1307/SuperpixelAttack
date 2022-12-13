@@ -27,10 +27,11 @@ class ConfigParser:
             assert args.keys() & self.config.keys() == set()
             self.config.update(args)
         if param is not None:
-            param = {p.split("=")[0]: eval(p.split("=")[1]) for p in param}
+            for p in param:
+                k, v = p.split("=")
+                assert k in self.config.keys()
+                self.config[k] = type(self.config[k])(v)
             del self.config["param"]
-            assert param.keys() & self.config.keys() == set(param)
-            self.config.update(param)
         msg = pprint.pformat(dict(self.config), width=40)
         logger.info(f"{msg}\n")
         return self.config

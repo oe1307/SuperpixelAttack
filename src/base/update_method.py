@@ -30,7 +30,7 @@ class UpdateMethod(InitialPoint):
         ):
             raise NotImplementedError(config.update_method)
 
-    def step(self, update_area: np.ndarray, targets: List[np.ndarray]):
+    def step(self, update_area: np.ndarray, targets):
         if config.update_method == "greedy_local_search":
             assert False
 
@@ -51,20 +51,21 @@ class UpdateMethod(InitialPoint):
                     self.x_adv[idx, c, update_area[idx] == label] += rand
                 self.x_adv = self.x_adv.clamp(self.lower, self.upper)
             elif config.update_area == "superpixel":
+                self.x_adv = self.x_adv.permute(0, 2, 3, 1)
                 for idx in range(self.batch):
                     label = targets[idx][0]
-                    rand = torch.rand_like(
-                        self.x_adv[idx, :, update_area[idx] == label]
-                    )
+                    rand = torch.rand_like(self.x_adv[idx, update_area[idx] == label])
                     rand = (2 * rand - 1) * config.epsilon
-                    self.x_adv[idx, :, update_area[idx] == label] += rand
+                    self.x_adv[idx, update_area[idx] == label] += rand
+                self.x_adv = self.x_adv.permute(0, 3, 1, 2)
                 self.x_adv = self.x_adv.clamp(self.lower, self.upper)
             elif config.update_area == "random_square" and config.channel_wise:
-                for idx in range(self.batch):
-                    c = targets[idx][0]
-                    rand = torch.rand_like(self.x_adv[idx, c, update_area[idx]])
-                    rand = (2 * rand - 1) * config.epsilon
-                    self.x_adv[idx, c, update_area[idx]] += rand
+                self.x_adv = self.x_adv.permute(1, 0, 2, 3)
+                c = targets[0]
+                rand = torch.rand_like(self.x_adv[c, update_area])
+                rand = (2 * rand - 1) * config.epsilon
+                self.x_adv[c, update_area] += rand
+                self.x_adv = self.x_adv.permute(1, 0, 2, 3)
                 self.x_adv = self.x_adv.clamp(self.lower, self.upper)
             elif config.update_area == "random_square":
                 self.x_adv = self.x_adv.permute(0, 2, 3, 1)
