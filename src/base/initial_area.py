@@ -36,7 +36,7 @@ class InitialArea:
 
         elif config.update_area == "random_square":
             self.half_point = (
-                np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.steps
+                np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.step
             )
             self.update_area = np.zeros(
                 (self.batch, self.height, self.width), dtype=bool

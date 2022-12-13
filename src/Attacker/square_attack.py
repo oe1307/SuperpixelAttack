@@ -13,14 +13,14 @@ config = config_parser()
 
 class SquareAttack(Attacker):
     def __init__(self):
-        config.n_forward = config.restart * config.steps
+        config.n_forward = config.restart * config.step
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         attacker = torchattacks.Square(
             self.model,
             config.norm,
             config.epsilon,
-            config.steps,
+            config.step,
             config.restart,
             config.p_init,
             seed=config.seed,

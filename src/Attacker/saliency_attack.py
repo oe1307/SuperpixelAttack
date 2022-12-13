@@ -15,7 +15,7 @@ class SaliencyAttack(Attacker):
     def __init__(self):
         super().__init__()
         self.criterion = get_criterion()
-        config.n_forward = config.steps
+        config.n_forward = config.step
 
         # saliency model
         self.saliency_model = SODModel()
@@ -67,7 +67,7 @@ class SaliencyAttack(Attacker):
             # refine search
             while True:
                 self.refine(block, k_init, split_level)
-                if self.forward.min() >= config.steps:
+                if self.forward.min() >= config.step:
                     break
                 elif k_init > 1:
                     assert k_init % 2 == 0
@@ -99,7 +99,7 @@ class SaliencyAttack(Attacker):
                 for idx, b in enumerate(block):
                     _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
                 _block = _block & self.saliency_map
-                condition1 = self.forward < config.steps
+                condition1 = self.forward < config.step
                 condition2 = (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
                 condition = condition1 & condition2
                 x_adv = torch.where(_block, self.upper, self.x_adv)
@@ -116,7 +116,7 @@ class SaliencyAttack(Attacker):
                     f"{split_level = }",
                     f"forward = {self.forward.min()}",
                 )
-                if self.forward.min() >= config.steps:
+                if self.forward.min() >= config.step:
                     logger.debug("")
                     break
         else:
@@ -132,7 +132,7 @@ class SaliencyAttack(Attacker):
                 for idx, b in enumerate(block):
                     _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
                 _block = _block & self.saliency_map
-                condition1 = self.forward < config.steps
+                condition1 = self.forward < config.step
                 condition2 = (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
                 condition = condition1 & condition2
                 x_adv = torch.where(_block, self.upper, self.x_adv)
@@ -148,7 +148,7 @@ class SaliencyAttack(Attacker):
                     f"{split_level = }",
                     f"forward = {self.forward.min()}",
                 )
-                if self.forward.min() >= config.steps:
+                if self.forward.min() >= config.step:
                     logger.debug("")
                     break
 
@@ -175,7 +175,7 @@ class SaliencyAttack(Attacker):
                 self.x_adv[lower_update],
             )
             self.best_loss[update] = loss[update]
-            if k > 1 and self.forward.min() < config.steps:
+            if k > 1 and self.forward.min() < config.step:
                 k //= 2
                 self.refine(block, k, split_level + 1)
 

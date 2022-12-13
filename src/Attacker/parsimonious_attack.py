@@ -16,7 +16,7 @@ class ParsimoniousAttack(Attacker):
     def __init__(self):
         super().__init__()
         self.criterion = get_criterion()
-        config.n_forward = config.steps
+        config.n_forward = config.step
 
     def _attack(self, x: Tensor, y: Tensor):
         self.y = y
@@ -34,7 +34,7 @@ class ParsimoniousAttack(Attacker):
         # main loop
         while True:
             is_upper, loss = self.accelerated_local_search(is_upper, loss)
-            if self.forward.min() >= config.steps:
+            if self.forward.min() >= config.step:
                 break
             elif self.split > 1:
                 is_upper = torch.repeat_interleave(is_upper, 2, dim=2)
@@ -56,18 +56,18 @@ class ParsimoniousAttack(Attacker):
             update = loss > best_loss
             is_upper_best[update] = is_upper[update]
             best_loss[update] = loss[update]
-            if self.forward.min() >= config.steps:
+            if self.forward.min() >= config.step:
                 break
 
             is_upper, loss = self.deletion(is_upper, loss)
             update = loss > best_loss
             is_upper_best[update] = is_upper[update]
             best_loss[update] = loss[update]
-            if self.forward.min() >= config.steps:
+            if self.forward.min() >= config.step:
                 break
 
         loss_inverse = self.calculate_loss(~is_upper)
-        update = self.forward < config.steps
+        update = self.forward < config.step
         self.forward += update
         update = np.logical_and(update, (loss_inverse > best_loss).cpu().numpy())
         is_upper_best[update] = is_upper[update]
@@ -89,7 +89,7 @@ class ParsimoniousAttack(Attacker):
             searched = []
             is_upper = is_upper_all[elements[:, 0]].clone()
             for i, (idx, c, h, w) in enumerate(elements):
-                if self.forward[idx] >= config.steps:
+                if self.forward[idx] >= config.step:
                     continue
                 assert is_upper[i, c, h, w].item() is False
                 is_upper[i, c, h, w] = True
@@ -137,7 +137,7 @@ class ParsimoniousAttack(Attacker):
             searched = []
             is_upper = is_upper_all[elements[:, 0]].clone()
             for i, (idx, c, h, w) in enumerate(elements):
-                if self.forward[idx] >= config.steps:
+                if self.forward[idx] >= config.step:
                     continue
                 assert is_upper[i, c, h, w].item() is True
                 is_upper[i, c, h, w] = False

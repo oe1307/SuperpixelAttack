@@ -12,7 +12,7 @@ config = config_parser()
 
 class ProposedMethod(Attacker):
     def __init__(self):
-        config.n_forward = config.steps
+        config.n_forward = config.step
         self.criterion = get_criterion()
         self.update_area = UpdateArea()
         self.update_method = UpdateMethod()
@@ -36,8 +36,8 @@ class ProposedMethod(Attacker):
             update_area, targets = self.update_area.initialize(x, forward)
 
             # search
-            while forward.min() < config.steps:
-                pbar.debug(forward.min() + 1, config.steps, "forward")
+            while forward.min() < config.step:
+                pbar.debug(forward.min() + 1, config.step, "forward")
                 x_best, forward = self.update_method.step(update_area, targets)
                 update_area, targets = self.update_area.next(forward)
 

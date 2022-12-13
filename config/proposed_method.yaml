@@ -17,7 +17,7 @@ model:
         Salman2020Do_50_2: 5000
 
 # hyperparameter
-steps: 100
+step: 100
 criterion: cw
 update_area: random_square
 search_channel_wise: True

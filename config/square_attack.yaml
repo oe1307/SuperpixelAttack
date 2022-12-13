@@ -17,6 +17,6 @@ model:
         Salman2020Do_50_2: 1000
 
 # hyperparameter
-steps: 100
+step: 100
 p_init: 0.8
 restart: 1

@@ -14,7 +14,7 @@ config = config_parser()
 class GenAttack(Attacker):
     def __init__(self):
         super().__init__()
-        config.n_forward = config.steps * config.population
+        config.n_forward = config.step * config.population
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         torch.use_deterministic_algorithms(False)  # for advertorch
@@ -22,7 +22,7 @@ class GenAttack(Attacker):
             self.model,
             config.epsilon,
             nb_samples=config.population,
-            nb_iter=config.steps,
+            nb_iter=config.step,
             tau=config.tau,
             alpha_init=config.alpha_init,
             rho_init=config.rho_init,

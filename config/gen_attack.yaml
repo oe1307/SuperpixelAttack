@@ -6,19 +6,19 @@ n_examples: 5000
 
 model:
     torchvision:
-        inception_v3: 100
-        resnet50: 100
+        inception_v3: 300
+        resnet50: 300
 
     robustbench:
-        Wong2020Fast: 100
-        Engstrom2019Robustness: 100
-        Salman2020Do_R18: 100
-        Salman2020Do_R50: 100
-        Salman2020Do_50_2: 100
+        Wong2020Fast: 300
+        Engstrom2019Robustness: 300
+        Salman2020Do_R18: 300
+        Salman2020Do_R50: 300
+        Salman2020Do_50_2: 300
 
 # hyperparameter
 population: 6
-steps: 17 # 100step: 17, 1_000step: 167, 10_000step: 1667
+step: 17 # 100step: 17, 1_000step: 167, 10_000step: 1667
 tau: 0.1
 alpha_init: 0.4
 rho_init: 0.5
