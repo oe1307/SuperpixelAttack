@@ -1,5 +1,6 @@
 import robustbench
 import torchvision
+from torchvision import transforms as T
 from torch.nn import Module
 
 from utils import config_parser, counter, setup_logger
@@ -34,8 +35,9 @@ def get_model(
 
 def get_prepocessing(model_name: str):
     if model_name == "inception_v3":
-        return torchvision.models.Inception_V3_Weights.IMAGENET1K_V1.transforms()
+        prepocessing = T.Compose([T.Resize(342), T.CenterCrop(299), T.ToTensor()])
     elif model_name == "resnet50":
-        return torchvision.models.ResNet50_Weights.IMAGENET1K_V2.transforms()
+        prepocessing = T.Compose([T.Resize(232), T.CenterCrop(224), T.ToTensor()])
     else:
         raise NotImplementedError(model_name)
+    return prepocessing

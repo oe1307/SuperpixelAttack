@@ -3,6 +3,7 @@ import math
 import numpy as np
 import torch
 from torch import Tensor
+from torchvision import transforms as T
 
 from base import Attacker, SODModel, get_criterion
 from utils import config_parser, pbar, setup_logger
@@ -19,6 +20,7 @@ class SaliencyAttack(Attacker):
 
         # saliency model
         self.saliency_model = SODModel()
+        self.saliency_transform = T.Resize(256)
         weights = torch.load(config.saliency_weight)
         self.saliency_model.load_state_dict(weights["model"])
         self.saliency_model.to(config.device)
@@ -31,11 +33,11 @@ class SaliencyAttack(Attacker):
         for i in range(n_batch):
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, n_images)
-            self.x_adv = x_all[start:end].clone()
+            self.x = x_all[start:end]
             self.y = y_all[start:end]
-            batch = self.x_adv.shape[0]
-            self.upper = (self.x_adv + config.epsilon).clamp(0, 1).clone()
-            self.lower = (self.x_adv - config.epsilon).clamp(0, 1).clone()
+            batch = self.x.shape[0]
+            self.upper = (self.x + config.epsilon).clamp(0, 1).clone()
+            self.lower = (self.x - config.epsilon).clamp(0, 1).clone()
             self.best_loss = -100 * torch.ones(batch, device=config.device)
             self.forward = np.zeros(batch, dtype=np.int64)
 
@@ -44,27 +46,32 @@ class SaliencyAttack(Attacker):
             block = np.array([(None, 0, height, 0, width)] * batch)
 
             threshold = config.threshold
-            self.saliency_map = []
+            self.saliency_detection = []
             n_saliency_batch = math.ceil(batch / config.saliency_batch)
             for j in range(n_saliency_batch):
                 pbar.debug(j + 1, n_saliency_batch, "saliency map")
                 start = j * config.saliency_batch
                 end = min((j + 1) * config.saliency_batch, batch)
-                x = self.x_adv[start:end]
-                self.saliency_map.append(self.saliency_model(x)[0] >= threshold)
-            self.saliency_map = torch.cat(self.saliency_map, dim=0).to(torch.bool)
-            _detected = self.saliency_map.sum(dim=(1, 2, 3))
-            not_detected = _detected <= (height // k_init) * (width // k_init)
+                img = torch.stack(
+                    [self.saliency_transform(x) for x in self.x[start:end]]
+                )
+                saliency_map = self.saliency_model(img)[0]
+                saliency_map = T.Resize(self.x.shape[2])(saliency_map)
+                self.saliency_detection.append(saliency_map >= threshold)
+            self.saliency_detection = torch.cat(self.saliency_detection, dim=0).to(bool)
+            detected_pixels = self.saliency_detection.sum(dim=(1, 2, 3))
+            not_detected = detected_pixels <= (height // k_init) * (width // k_init)
             while not_detected.sum() > 0:
                 logger.warning(f"{threshold=}:{not_detected.sum()} images not detected")
                 threshold /= 2
-                self.saliency_map[not_detected] = (
-                    self.saliency_model(self.x_adv[not_detected])[0] >= threshold
+                self.saliency_detection[not_detected] = (
+                    self.saliency_model(self.x[not_detected])[0] >= threshold
                 )
-                _detected = self.saliency_map.sum(dim=(1, 2, 3))
-                not_detected = _detected <= (height // k_init) * (width // k_init)
+                detected_pixels = self.saliency_detection.sum(dim=(1, 2, 3))
+                not_detected = detected_pixels <= (height // k_init) * (width // k_init)
 
             # refine search
+            self.x_adv = self.x.clone()
             while True:
                 self.refine(block, k_init, split_level)
                 if self.forward.min() >= config.step:
@@ -98,7 +105,7 @@ class SaliencyAttack(Attacker):
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
                     _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
-                _block = _block & self.saliency_map
+                _block = _block & self.saliency_detection
                 condition1 = self.forward < config.step
                 condition2 = (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
                 condition = condition1 & condition2
@@ -131,7 +138,7 @@ class SaliencyAttack(Attacker):
                 _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
                 for idx, b in enumerate(block):
                     _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
-                _block = _block & self.saliency_map
+                _block = _block & self.saliency_detection
                 condition1 = self.forward < config.step
                 condition2 = (_block.sum(dim=(1, 2, 3)) != 0).cpu().numpy()
                 condition = condition1 & condition2
