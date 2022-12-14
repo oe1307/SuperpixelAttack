@@ -13,6 +13,7 @@ class UniformDistribution(BaseMethod):
         super().__init__()
 
     def step(self, update_area: np.ndarray, targets):
+        self.x_adv = self.x_best.clone()
         if config.update_area == "superpixel" and config.channel_wise:
             for idx in range(self.batch):
                 c, label = targets[idx][0]
