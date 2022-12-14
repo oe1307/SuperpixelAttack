@@ -51,7 +51,9 @@ class HALS(BaseMethod):
                 self.mode = "inverse"
 
         if self.mode == "inverse":
-            loss_inverse = self.calculate_loss(~is_upper)
+            x_inverse = torch.where(~is_upper, self.upper, self.lower)
+            pred = self.model(x_inverse).softmax(dim=1)
+            loss_inverse = self.criterion(pred, self.y)
             update1 = self.forward < config.step
             self.forward += update1
             update2 = (loss_inverse > self.best_loss).cpu().numpy()
@@ -177,12 +179,24 @@ class HALS(BaseMethod):
                 delta_hat, element_hat = heapq.heappop(_max_heap)
                 delta_tilde = _max_heap[0][0]
                 if delta_hat <= delta_tilde and delta_hat < 0:
-                    if config.channel_wise:
+                    if config.update_area == "superpixel" and config.channel_wise:
                         c, label = element_hat
                         is_upper[idx, c, update_area[idx] == label] = d
-                    else:
+                    elif config.update_area == "superpixel":
                         label = element_hat
                         is_upper[idx][idx, :, update_area[idx] == label] = d
+                    elif config.update_area == "split_square" and config.channel_wise:
+                        c, label = element_hat
+                        is_upper[idx, c, update_area == label] = d
+                    elif config.update_area == "split_square":
+                        label = element_hat
+                        is_upper[idx, :, update_area == label] = d
+                    elif config.update_area == "saliency_map" and config.channel_wise:
+                        c, label = element_hat
+                        is_upper[idx, c, update_area[idx] == label] = d
+                    elif config.update_area == "saliency_map":
+                        label = element_hat
+                        is_upper[idx, :, update_area[idx] == label] = d
                 elif delta_hat <= delta_tilde and delta_hat >= 0:
                     break
                 else:
