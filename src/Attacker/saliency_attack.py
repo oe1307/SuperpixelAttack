@@ -33,11 +33,11 @@ class SaliencyAttack(Attacker):
         for i in range(n_batch):
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, n_images)
-            self.x = x_all[start:end]
+            x = x_all[start:end]
             self.y = y_all[start:end]
-            batch = self.x.shape[0]
-            self.upper = (self.x + config.epsilon).clamp(0, 1).clone()
-            self.lower = (self.x - config.epsilon).clamp(0, 1).clone()
+            batch = x.shape[0]
+            self.upper = (x + config.epsilon).clamp(0, 1).clone()
+            self.lower = (x - config.epsilon).clamp(0, 1).clone()
             self.best_loss = -100 * torch.ones(batch, device=config.device)
             self.forward = np.zeros(batch, dtype=int)
 
@@ -53,10 +53,10 @@ class SaliencyAttack(Attacker):
                 start = j * config.saliency_batch
                 end = min((j + 1) * config.saliency_batch, batch)
                 img = torch.stack(
-                    [self.saliency_transform(x) for x in self.x[start:end]]
+                    [self.saliency_transform(x_idx) for x_idx in x[start:end]]
                 )
                 saliency_map = self.saliency_model(img)[0]
-                saliency_map = T.Resize(self.x.shape[2])(saliency_map)
+                saliency_map = T.Resize(x.shape[2])(saliency_map)
                 self.saliency_detection.append(saliency_map >= threshold)
                 del saliency_map
             self.saliency_detection = torch.cat(self.saliency_detection, dim=0).to(bool)
@@ -74,7 +74,7 @@ class SaliencyAttack(Attacker):
                 not_detected = detected_pixels <= (height // k_init) * (width // k_init)
 
             # refine search
-            self.x_adv = self.x.clone()
+            self.x_adv = x.clone()
             while True:
                 self.refine(block, k_init, split_level)
                 if self.forward.min() >= config.step:
@@ -84,6 +84,7 @@ class SaliencyAttack(Attacker):
                     k_init //= 2
             x_adv_all.append(self.x_adv)
         x_adv_all = torch.concat(x_adv_all)
+        del self.x_adv, self.upper, self.lower, self.best_loss, self.forward
         return x_adv_all
 
     def refine(self, search_block, k, split_level):
