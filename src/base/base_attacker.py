@@ -78,3 +78,4 @@ class Attacker:
         )
         print(msg, file=open(f"{config.savedir}/summary.txt", "w"))
         logger.info(msg)
+        config_parser.save(f"{config.savedir}/config.json")

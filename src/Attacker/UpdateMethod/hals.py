@@ -76,7 +76,6 @@ class HALS(BaseMethod):
                     idx, c, update_area[idx] == label
                 ]
                 self.forward[idx] += 1
-                targets[idx] = targets[idx][1:]
             x_adv = torch.where(is_upper, self.upper, self.lower)
             pred = self.model(x_adv).softmax(dim=1)
             loss = self.criterion(pred, self.y)
@@ -86,6 +85,7 @@ class HALS(BaseMethod):
                 c, label = targets[idx][0]
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
+                targets[idx] = targets[idx][1:]
         elif config.update_area == "superpixel":
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
@@ -95,7 +95,6 @@ class HALS(BaseMethod):
                     idx, :, update_area[idx] == label
                 ]
                 self.forward[idx] += 1
-                targets[idx] = targets[idx][1:]
             x_adv = torch.where(is_upper, self.upper, self.lower)
             pred = self.model(x_adv).softmax(dim=1)
             loss = self.criterion(pred, self.y)
@@ -105,6 +104,7 @@ class HALS(BaseMethod):
                 label = targets[idx][0]
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, label))
+                targets[idx] = targets[idx][1:]
         elif config.update_area == "split_square" and config.channel_wise:
             is_upper = is_upper.permute(1, 2, 3, 0)
             c, label = targets[0]
@@ -140,7 +140,6 @@ class HALS(BaseMethod):
                     idx, c, update_area[idx] == label
                 ]
                 self.forward[idx] += 1
-                targets[idx] = targets[idx][1:]
             x_adv = torch.where(is_upper, self.upper, self.lower)
             pred = self.model(x_adv).softmax(dim=1)
             loss = self.criterion(pred, self.y)
@@ -150,6 +149,7 @@ class HALS(BaseMethod):
                 c, label = targets[idx][0]
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
+                targets[idx] = targets[idx][1:]
         elif config.update_area == "saliency_map":
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
@@ -159,7 +159,6 @@ class HALS(BaseMethod):
                     idx, :, update_area[idx] == label
                 ]
                 self.forward[idx] += 1
-                targets[idx] = targets[idx][1:]
             x_adv = torch.where(is_upper, self.upper, self.lower)
             pred = self.model(x_adv).softmax(dim=1)
             loss = self.criterion(pred, self.y)
@@ -169,6 +168,7 @@ class HALS(BaseMethod):
                 label = targets[idx][0]
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, label))
+                targets[idx] = targets[idx][1:]
         return targets
 
     def update(self, update_area):

@@ -1,3 +1,4 @@
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -51,6 +52,7 @@ class Superpixel:
     def cal_superpixel(self, x):
         """calculate superpixel with multi-threading"""
         batch = np.arange(x.shape[0])
+        timekeeper = time.time()
         if config.thread == 1:
             superpixel = np.array(
                 [self._cal_superpixel(x[idx], idx, batch.max() + 1) for idx in batch]
@@ -62,6 +64,7 @@ class Superpixel:
                     for idx in batch
                 ]
             superpixel = np.array([future.result() for future in futures])
+        config.superpixel_cal_time = timekeeper - time.time()
         return superpixel
 
     def _cal_superpixel(self, x: Tensor, idx: int, total: int) -> list:
