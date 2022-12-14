@@ -105,7 +105,7 @@ class SaliencyMap:
                     self.targets[idx] = np.random.permutation(labels[labels != -1])
             else:
                 if config.channel_wise:
-                    self.targets = np.delete(self.targets, 0, axis=0)
+                    self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
                 else:
-                    self.targets = np.delete(self.targets, 0)
+                    self.targets[idx] = np.delete(self.targets[idx], 0)
         return self.update_area, self.targets
