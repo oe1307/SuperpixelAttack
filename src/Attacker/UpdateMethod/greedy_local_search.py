@@ -20,7 +20,7 @@ class GreedyLocalSearch(BaseMethod):
                 is_upper[idx, c, update_area[idx] == label] = ~is_upper[
                     idx, c, update_area[idx] == label
                 ]
-                targets[idx] = np.delete(targets[idx], 0, axis=0)
+                targets[idx] = targets[idx][1:]
             x_adv = torch.where(is_upper, self.upper, self.lower)
         elif config.update_area == "superpixel":
             is_upper = is_upper.permute(0, 2, 3, 1)
@@ -31,28 +31,28 @@ class GreedyLocalSearch(BaseMethod):
             is_upper[update_area == labels] = ~is_upper[update_area == labels]
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
-            targets = [np.delete(targets[idx], 0) for idx in range(self.batch)]
+            targets = [targets[idx][1:] for idx in range(self.batch)]
         elif config.update_area == "split_square" and config.channel_wise:
             is_upper = is_upper.permute(1, 2, 3, 0)
             c, label = targets[0]
             is_upper[c, update_area == label] = ~is_upper[c, update_area == label]
             is_upper = is_upper.permute(3, 0, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
-            targets = np.delete(targets, 0, axis=0)
+            targets = targets[1:]
         elif config.update_area == "split_square":
             is_upper = is_upper.permute(0, 2, 3, 1)
             label = targets[0]
             is_upper[update_area == label] = ~is_upper[update_area == label]
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
-            targets = np.delete(targets, 0)
+            targets = targets[1:]
         elif config.update_area == "saliency_map" and config.channel_wise:
             for idx in range(self.batch):
                 c, label = targets[idx][0]
                 is_upper[idx, c, update_area[idx] == label] = ~is_upper[
                     idx, c, update_area[idx] == label
                 ]
-                targets[idx] = np.delete(targets[idx], 0, axis=0)
+                targets[idx] = targets[idx][1:]
             x_adv = torch.where(is_upper, self.upper, self.lower)
         elif config.update_area == "saliency_map":
             is_upper = is_upper.permute(0, 2, 3, 1)
@@ -63,20 +63,20 @@ class GreedyLocalSearch(BaseMethod):
             is_upper[update_area == labels] = ~is_upper[update_area == labels]
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
-            targets = [np.delete(targets[idx], 0) for idx in range(self.batch)]
+            targets = [targets[idx][1:] for idx in range(self.batch)]
         elif config.update_area == "random_square" and config.channel_wise:
             is_upper = is_upper.permute(1, 0, 2, 3)
             c = targets[0]
             is_upper[c, update_area] = ~is_upper[c, update_area]
             is_upper = is_upper.permute(1, 0, 2, 3)
             x_adv = torch.where(is_upper, self.upper, self.lower)
-            targets = np.delete(targets, 0)
+            targets = targets[1:]
         elif config.update_area == "random_square":
             is_upper = is_upper.permute(0, 2, 3, 1)
             is_upper[update_area] = ~is_upper[update_area]
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
-            targets = np.delete(targets, 0)
+            targets = targets[1:]
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
         self.forward += 1
