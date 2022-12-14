@@ -46,4 +46,6 @@ class SplitSquare:
             else:
                 self.targets = np.arange(h * w)
                 np.random.shuffle(self.targets)
+        else:
+            self.targets = np.delete(self.targets, 0)
         return self.update_area, self.targets
