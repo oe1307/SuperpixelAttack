@@ -1,5 +1,4 @@
-import math
-
+import numpy as np
 import torch
 from torch import Tensor
 
@@ -25,7 +24,7 @@ class ProposedMethod(Attacker):
 
         x_adv_all = []
         n_images = x_all.shape[0]
-        n_batch = math.ceil(n_images / self.model.batch_size)
+        n_batch = np.ceil(n_images / self.model.batch_size)
         for b in range(n_batch):
             start = b * self.model.batch_size
             end = min((b + 1) * self.model.batch_size, n_images)

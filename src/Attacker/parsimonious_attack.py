@@ -1,5 +1,4 @@
 import heapq
-import math
 
 import numpy as np
 import torch
@@ -81,7 +80,7 @@ class ParsimoniousAttack(Attacker):
         all_elements = (~is_upper_all).nonzero()
 
         # search in elementary
-        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+        num_batch = np.ceil(all_elements.shape[0] / self.model.batch_size)
         for i in range(num_batch):
             pbar.debug(i + 1, num_batch, "insert")
             start = i * self.model.batch_size
@@ -129,7 +128,7 @@ class ParsimoniousAttack(Attacker):
         all_elements = is_upper_all.nonzero()
 
         # search in elementary
-        num_batch = math.ceil(all_elements.shape[0] / self.model.batch_size)
+        num_batch = np.ceil(all_elements.shape[0] / self.model.batch_size)
         for i in range(num_batch):
             pbar.debug(i + 1, num_batch, "deletion")
             start = i * self.model.batch_size
@@ -174,7 +173,7 @@ class ParsimoniousAttack(Attacker):
     def calculate_loss(self, is_upper_all: Tensor) -> Tensor:
         n_images = is_upper_all.shape[0]
         loss = torch.zeros(n_images, device=config.device)
-        num_batch = math.ceil(n_images / self.model.batch_size)
+        num_batch = np.ceil(n_images / self.model.batch_size)
         for i in range(num_batch):
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, n_images)
