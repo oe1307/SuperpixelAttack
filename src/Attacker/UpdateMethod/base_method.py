@@ -17,7 +17,7 @@ class BaseMethod:
         self.criterion = criterion
 
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
-        self.batch = x.shape[0]
+        self.batch, self.n_channel, self.height, self.width = x.shape
         self.y = y.clone()
         self.upper = upper.clone()
         self.lower = lower.clone()
