@@ -37,12 +37,13 @@ class ProposedMethod(Attacker):
             # initialize
             forward = self.update_method.initialize(x, y, lower, upper)
             update_area, targets = self.update_area.initialize(x, forward)
+            pbar.debug(forward.min(), config.step, "forward")
 
             # search
             while forward.min() < config.step:
-                pbar.debug(forward.min() + 1, config.step, "forward")
                 x_best, forward = self.update_method.step(update_area, targets)
                 update_area, targets = self.update_area.next(forward)
+                pbar.debug(forward.min(), config.step, "forward")
 
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)

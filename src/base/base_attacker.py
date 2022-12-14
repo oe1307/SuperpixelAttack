@@ -64,7 +64,7 @@ class Attacker:
             robust_acc[start:end] = logits.argmax(dim=1) == y
             np.save(f"{config.savedir}/robust_acc.npy", robust_acc.cpu().numpy())
         total_time = time.time() - self.timekeeper
-        attack_success_rate = 100 - robust_acc.sum() / x_all.shape[0] * 100
+        attack_success_rate = 100 - robust_acc.sum() / config.n_examples * 100
 
         msg = (
             "\n"
