@@ -15,5 +15,5 @@ def set_update_area():
     elif config.update_area == "random_square":
         update_area = RandomSquare()
     else:
-        raise NotImplementedError()
+        raise NotImplementedError(update_area)
     return update_area

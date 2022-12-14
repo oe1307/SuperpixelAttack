@@ -18,5 +18,5 @@ def set_update_method():
     elif config.update_method == "uniform_distribution":
         update_method = UniformDistribution()
     else:
-        raise NotImplementedError()
+        raise NotImplementedError(config.update_method)
     return update_method
