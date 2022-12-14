@@ -18,9 +18,9 @@ class BaseMethod:
 
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
         self.batch = x.shape[0]
-        self.y = y
-        self.upper = upper
-        self.lower = lower
+        self.y = y.clone()
+        self.upper = upper.clone()
+        self.lower = lower.clone()
 
         if config.initial_point == "random":
             self.is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)
