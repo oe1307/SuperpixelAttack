@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from utils import config_parser, pbar, setup_logger
+from utils import config_parser, setup_logger
 
 from .base_method import BaseMethod
 
