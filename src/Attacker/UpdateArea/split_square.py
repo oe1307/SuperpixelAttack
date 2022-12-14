@@ -22,7 +22,7 @@ class SplitSquare:
         self.update_area = np.repeat(self.update_area, self.split, axis=1)
         if config.channel_wise:
             channel = np.tile(np.arange(self.n_channel), h * w)
-            labels = np.repeat(range(1, h * w + 1), self.n_channel)
+            labels = np.repeat(range(h * w), self.n_channel)
             self.targets = np.stack([channel, labels], axis=1)
             np.random.shuffle(self.targets)
         else:
@@ -40,12 +40,15 @@ class SplitSquare:
             self.update_area = np.repeat(self.update_area, self.split, axis=1)
             if config.channel_wise:
                 channel = np.tile(np.arange(self.n_channel), h * w)
-                labels = np.repeat(range(1, h * w + 1), self.n_channel)
+                labels = np.repeat(range(h * w), self.n_channel)
                 self.targets = np.stack([channel, labels], axis=1)
                 np.random.shuffle(self.targets)
             else:
                 self.targets = np.arange(h * w)
                 np.random.shuffle(self.targets)
         else:
-            self.targets = np.delete(self.targets, 0)
+            if config.channel_wise:
+                self.targets = np.delete(self.targets, 0, axis=0)
+            else:
+                self.targets = np.delete(self.targets, 0)
         return self.update_area, self.targets

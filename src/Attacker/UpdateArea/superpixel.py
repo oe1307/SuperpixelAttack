@@ -47,7 +47,10 @@ class Superpixel:
                     _target = np.arange(1, _n_update_area + 1)
                 self.targets[idx] = np.random.permutation(_target)
             else:
-                self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
+                if config.channel_wise:
+                    self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
+                else:
+                    self.targets[idx] = np.delete(self.targets[idx], 0)
         return self.update_area, self.targets
 
     def cal_superpixel(self, x):
