@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import torch
 from torch import Tensor
@@ -27,7 +29,7 @@ class SaliencyAttack(Attacker):
     def _attack(self, x_all: Tensor, y_all: Tensor):
         x_adv_all = []
         n_images, n_chanel, height, width = x_all.shape
-        n_batch = np.ceil(n_images / self.model.batch_size)
+        n_batch = math.ceil(n_images / self.model.batch_size)
         for i in range(n_batch):
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, n_images)
@@ -45,7 +47,7 @@ class SaliencyAttack(Attacker):
 
             threshold = config.threshold
             self.saliency_detection = []
-            n_saliency_batch = np.ceil(batch / config.saliency_batch)
+            n_saliency_batch = math.ceil(batch / config.saliency_batch)
             for j in range(n_saliency_batch):
                 pbar.debug(j + 1, n_saliency_batch, "saliency map")
                 start = j * config.saliency_batch

@@ -1,3 +1,4 @@
+import math
 import shutil
 import time
 
@@ -29,7 +30,7 @@ class Attacker:
 
         # remove misclassification images
         clean_acc = torch.zeros(config.n_examples, dtype=torch.bool)
-        n_batch = np.ceil(config.n_examples / self.model.batch_size)
+        n_batch = math.ceil(config.n_examples / self.model.batch_size)
         for i in range(n_batch):
             start = i * self.model.batch_size
             end = min((i + 1) * self.model.batch_size, config.n_examples)

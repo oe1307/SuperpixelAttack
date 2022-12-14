@@ -1,4 +1,5 @@
-import numpy as np
+import math
+
 import torch
 import torchattacks
 from torch import Tensor
@@ -26,7 +27,7 @@ class SquareAttack(Attacker):
         )
         x_adv_all = []
         n_images = x_all.shape[0]
-        n_batch = np.ceil(n_images / self.model.batch_size)
+        n_batch = math.ceil(n_images / self.model.batch_size)
         for i in range(n_batch):
             pbar.debug(i + 1, n_batch, "batch")
             start = i * self.model.batch_size

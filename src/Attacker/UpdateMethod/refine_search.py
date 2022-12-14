@@ -10,12 +10,12 @@ from .base_method import BaseMethod
 config = config_parser()
 
 
-class HALS(BaseMethod):
+class RefineSearch(BaseMethod):
     def __init__(self):
         super().__init__()
         self.local_search = True
         if config.update_area == "random_square":
-            raise NotImplementedError("HALS does not support random_square")
+            raise NotImplementedError("RefineSearch does not support random_square")
 
     def step(self, update_area: np.ndarray, targets):
         if self.local_search:
