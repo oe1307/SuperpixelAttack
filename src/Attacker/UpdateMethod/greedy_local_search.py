@@ -22,37 +22,37 @@ class GreedyLocalSearch(BaseMethod):
                 ]
             self.x_adv = torch.where(is_upper, self.upper, self.lower)
         elif config.update_area == "superpixel":
-            self.x_adv = self.x_adv.permute(0, 2, 3, 1)
+            is_upper = is_upper.permute(0, 2, 3, 1)
             labels = [t[0] for t in targets]
             labels = np.repeat(labels, update_area.shape[1])
             labels = np.repeat(labels, update_area.shape[2])
             labels = labels.reshape(update_area.shape)
             is_upper[update_area == labels] = ~is_upper[update_area == labels]
+            is_upper = is_upper.permute(0, 3, 1, 2)
             self.x_adv = torch.where(is_upper, self.upper, self.lower)
-            self.x_adv = self.x_adv.permute(0, 3, 1, 2)
         elif config.update_area == "random_square" and config.channel_wise:
-            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
+            is_upper = is_upper.permute(1, 0, 2, 3)
             c = targets[0]
             is_upper[c, update_area] = ~is_upper[c, update_area]
+            is_upper = is_upper.permute(1, 0, 2, 3)
             self.x_adv = torch.where(is_upper, self.upper, self.lower)
-            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
         elif config.update_area == "random_square":
-            self.x_adv = self.x_adv.permute(0, 2, 3, 1)
+            is_upper = is_upper.permute(0, 2, 3, 1)
             is_upper[update_area] = ~is_upper[update_area]
+            is_upper = is_upper.permute(0, 3, 1, 2)
             self.x_adv = torch.where(is_upper, self.upper, self.lower)
-            self.x_adv = self.x_adv.permute(0, 3, 1, 2)
         elif config.update_area == "split_square" and config.channel_wise:
-            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
+            is_upper = is_upper.permute(1, 0, 2, 3)
             c, label = targets[0]
             is_upper[c, update_area == label] = ~is_upper[c, update_area == label]
+            is_upper = is_upper.permute(1, 0, 2, 3)
             self.x_adv = torch.where(is_upper, self.upper, self.lower)
-            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
         elif config.update_area == "split_square":
-            self.x_adv = self.x_adv.permute(0, 2, 3, 1)
+            is_upper = is_upper.permute(0, 2, 3, 1)
             label = targets[0]
             is_upper[update_area == label] = ~is_upper[update_area == label]
+            is_upper = is_upper.permute(0, 3, 1, 2)
             self.x_adv = torch.where(is_upper, self.upper, self.lower)
-            self.x_adv = self.x_adv.permute(0, 3, 1, 2)
         pred = self.model(self.x_adv).softmax(dim=1)
         self.loss = self.criterion(pred, self.y)
         self.forward += 1
