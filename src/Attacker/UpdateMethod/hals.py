@@ -24,9 +24,8 @@ class HALS(BaseMethod):
             self.mode = "insert"
 
         if self.mode == "insert":
-            targets = self.insert_deletion(update_area, targets)
-            insert_end = np.array([t.shape[0] for t in targets]) == 0
-            if insert_end.all() or self.forward.min() >= config.step:
+            targets, search_end = self.insert_deletion(update_area, targets)
+            if search_end or self.forward.min() >= config.step:
                 is_upper, x_adv, loss = self.update(update_area)
                 update = loss > self.best_loss
                 self.is_upper_best[update] = is_upper[update]
@@ -40,9 +39,8 @@ class HALS(BaseMethod):
             self.mode = "deletion"
 
         if self.mode == "deletion":
-            targets = self.insert_deletion(update_area, targets)
-            deletion_end = np.array([t.shape[0] for t in targets]) == 0
-            if deletion_end.all() or self.forward.min() >= config.step:
+            targets, search_end = self.insert_deletion(update_area, targets)
+            if search_end or self.forward.min() >= config.step:
                 is_upper, x_adv, loss = self.update(update_area)
                 update = loss > self.best_loss
                 self.is_upper_best[update] = is_upper[update]
@@ -86,6 +84,7 @@ class HALS(BaseMethod):
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
                 targets[idx] = targets[idx][1:]
+            search_end = np.array([t.shape[0] == 0 for t in targets]).all()
         elif config.update_area == "superpixel":
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
@@ -105,6 +104,7 @@ class HALS(BaseMethod):
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, label))
                 targets[idx] = targets[idx][1:]
+            search_end = np.array([t.shape[0] == 0 for t in targets]).all()
         elif config.update_area == "split_square" and config.channel_wise:
             is_upper = is_upper.permute(1, 2, 3, 0)
             c, label = targets[0]
@@ -118,11 +118,12 @@ class HALS(BaseMethod):
             for idx in range(self.batch):
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
+            search_end = targets.shape[0] == 0
         elif config.update_area == "split_square":
-            is_upper = is_upper.permute(0, 2, 3, 1)
+            is_upper = is_upper.permute(2, 3, 0, 1)
             label = targets[0]
             is_upper[update_area == label] = ~is_upper[update_area == label]
-            is_upper = is_upper.permute(0, 3, 1, 2)
+            is_upper = is_upper.permute(2, 3, 0, 1)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             pred = self.model(x_adv).softmax(dim=1)
             loss = self.criterion(pred, self.y)
@@ -131,6 +132,7 @@ class HALS(BaseMethod):
             for idx in range(self.batch):
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, label))
+            search_end = targets.shape[0] == 0
         elif config.update_area == "saliency_map" and config.channel_wise:
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
@@ -150,6 +152,7 @@ class HALS(BaseMethod):
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
                 targets[idx] = targets[idx][1:]
+            search_end = np.array([t.shape[0] == 0 for t in targets]).all()
         elif config.update_area == "saliency_map":
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
@@ -169,7 +172,8 @@ class HALS(BaseMethod):
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, label))
                 targets[idx] = targets[idx][1:]
-        return targets
+            search_end = np.array([t.shape[0] == 0 for t in targets]).all()
+        return targets, search_end
 
     def update(self, update_area):
         is_upper = self.is_upper_best.clone()

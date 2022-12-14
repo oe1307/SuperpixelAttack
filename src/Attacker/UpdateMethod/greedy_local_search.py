@@ -40,10 +40,10 @@ class GreedyLocalSearch(BaseMethod):
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = targets[1:]
         elif config.update_area == "split_square":
-            is_upper = is_upper.permute(0, 2, 3, 1)
+            is_upper = is_upper.permute(2, 3, 0, 1)
             label = targets[0]
             is_upper[update_area == label] = ~is_upper[update_area == label]
-            is_upper = is_upper.permute(0, 3, 1, 2)
+            is_upper = is_upper.permute(2, 3, 0, 1)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = targets[1:]
         elif config.update_area == "saliency_map" and config.channel_wise:
