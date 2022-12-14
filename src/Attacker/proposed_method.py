@@ -2,10 +2,10 @@ import math
 
 import torch
 from torch import Tensor
-
-from base import Attacker, get_criterion
 from UpdateArea import set_update_area
 from UpdateMethod import set_update_method
+
+from base import Attacker, get_criterion
 from utils import config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)

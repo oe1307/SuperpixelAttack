@@ -27,6 +27,7 @@ def argparser():
         "--param",
         type=str,
         nargs="*",
+        help="e.g.) -p step=100 n_examples=1000",
     )
     parser.add_argument(
         "--thread",

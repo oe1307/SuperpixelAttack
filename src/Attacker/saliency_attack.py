@@ -58,6 +58,7 @@ class SaliencyAttack(Attacker):
                 saliency_map = self.saliency_model(img)[0]
                 saliency_map = T.Resize(self.x.shape[2])(saliency_map)
                 self.saliency_detection.append(saliency_map >= threshold)
+                del saliency_map
             self.saliency_detection = torch.cat(self.saliency_detection, dim=0).to(bool)
             detected_pixels = self.saliency_detection.sum(dim=(1, 2, 3))
             not_detected = detected_pixels <= (height // k_init) * (width // k_init)
