@@ -26,9 +26,8 @@ class GreedyLocalSearch(BaseMethod):
             labels = [t[0] for t in targets]
             labels = np.repeat(labels, update_area.shape[1])
             labels = np.repeat(labels, update_area.shape[2])
-            breakpoint()
-            is_upper[update_area == label] = ~is_upper[update_area == label]
-            breakpoint()
+            labels = labels.reshape(update_area.shape)
+            is_upper[update_area == labels] = ~is_upper[update_area == labels]
             self.x_adv = torch.where(is_upper, self.upper, self.lower)
             self.x_adv = self.x_adv.permute(0, 3, 1, 2)
         elif config.update_area == "random_square" and config.channel_wise:
