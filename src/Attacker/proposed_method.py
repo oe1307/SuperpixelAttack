@@ -3,7 +3,9 @@ import math
 import torch
 from torch import Tensor
 
-from base import Attacker, UpdateArea, UpdateMethod, get_criterion
+from base import Attacker, get_criterion
+from UpdateArea import set_update_area
+from UpdateMethod import set_update_method
 from utils import config_parser, pbar, setup_logger
 
 logger = setup_logger(__name__)
@@ -14,8 +16,8 @@ class ProposedMethod(Attacker):
     def __init__(self):
         config.n_forward = config.step
         self.criterion = get_criterion()
-        self.update_area = UpdateArea()
-        self.update_method = UpdateMethod()
+        self.update_area = set_update_area()
+        self.update_method = set_update_method()
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         self.update_method.set(self.model, self.criterion)

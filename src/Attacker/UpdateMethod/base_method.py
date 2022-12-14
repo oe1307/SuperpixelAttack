@@ -7,7 +7,7 @@ from utils import config_parser
 config = config_parser()
 
 
-class InitialPoint:
+class BaseMethod:
     def __init__(self):
         if config.initial_point not in ("random", "lower", "upper"):
             raise NotImplementedError(config.initial_point)
