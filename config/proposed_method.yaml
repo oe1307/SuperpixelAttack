@@ -28,9 +28,6 @@ update_method: greedy_local_search
 segments: [4, 16, 64, 256, 1024]
 save_wasted: True
 
-# random_square
-p_init: 0.8
-
 # split_square
 initial_split: 32
 
@@ -38,3 +35,6 @@ initial_split: 32
 saliency_batch: 100
 threshold: 0.1
 k_init: 16
+
+# random_square
+p_init: 0.8
