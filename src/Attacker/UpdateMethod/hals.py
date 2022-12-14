@@ -188,19 +188,25 @@ class HALS(BaseMethod):
                         is_upper[idx, c, update_area[idx] == label] = d
                     elif config.update_area == "superpixel":
                         label = element_hat
-                        is_upper[idx][idx, :, update_area[idx] == label] = d
+                        is_upper[idx].permute(0, 2, 3, 1)[
+                            idx, update_area[idx] == label
+                        ] = d
                     elif config.update_area == "split_square" and config.channel_wise:
                         c, label = element_hat
                         is_upper[idx, c, update_area == label] = d
                     elif config.update_area == "split_square":
                         label = element_hat
-                        is_upper[idx, :, update_area == label] = d
+                        is_upper[idx].permute(0, 2, 3, 1)[
+                            idx, update_area[idx] == label
+                        ] = d
                     elif config.update_area == "saliency_map" and config.channel_wise:
                         c, label = element_hat
                         is_upper[idx, c, update_area[idx] == label] = d
                     elif config.update_area == "saliency_map":
                         label = element_hat
-                        is_upper[idx, :, update_area[idx] == label] = d
+                        is_upper[idx].premute(0, 2, 3, 1)[
+                            idx, update_area[idx] == label
+                        ] = d
                 elif delta_hat <= delta_tilde and delta_hat >= 0:
                     break
                 else:
