@@ -28,9 +28,10 @@ robustbench = [
     "Salman2020Do_R50",
     "Salman2020Do_50_2",
 ]
+config.norm = "Linf"
 config.device = "cpu"
 for model in robustbench:
-    get_model("robustbench", model, None, "../../storage/model/")
+    get_model(model, None, "../../storage/model/")
 
 
 # In[ ]:
@@ -39,7 +40,7 @@ for model in robustbench:
 torchvision = ["resnet50", "vgg16_bn"]
 config.device = "cpu"
 for model in torchvision:
-    get_model("torchvision", model, None, "../../storage/model/")
+    get_model(model, None, "../../storage/model/")
 
 
 # In[ ]:
