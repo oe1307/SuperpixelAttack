@@ -11,7 +11,7 @@ class RandomSquare:
         pass
 
     def initialize(self, x: Tensor, forward: np.ndarray):
-        self.batch, self.n_chanel, self.height, self.width = x.shape
+        self.batch, self.n_channel, self.height, self.width = x.shape
         self.half_point = (
             np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.step
         )
@@ -24,7 +24,7 @@ class RandomSquare:
             s = np.random.randint(0, self.width - h)
             self.update_area[idx, r : r + h, s : s + h] = True
         if config.channel_wise:
-            self.targets = np.random.permutation(np.arange(self.n_chanel))
+            self.targets = np.random.permutation(np.arange(self.n_channel))
         else:
             self.targets = np.ones(1, dtype=int)
         return self.update_area, self.targets
@@ -40,7 +40,7 @@ class RandomSquare:
                 s = np.random.randint(0, self.width - h)
                 self.update_area[idx, r : r + h, s : s + h] = True
             if config.channel_wise:
-                self.targets = np.random.permutation(np.arange(self.n_chanel))
+                self.targets = np.random.permutation(np.arange(self.n_channel))
             else:
                 self.targets = np.ones(1, dtype=int)
         else:

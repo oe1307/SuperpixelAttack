@@ -21,14 +21,14 @@ class SaliencyAttack(Attacker):
         # saliency model
         self.saliency_model = SODModel()
         self.saliency_transform = T.Resize(256)
-        weights = torch.load(config.saliency_weight)
+        weights = torch.load("../storage/model/saliency/saliency_weight.pth")
         self.saliency_model.load_state_dict(weights["model"])
         self.saliency_model.to(config.device)
         self.saliency_model.eval()
 
     def _attack(self, x_all: Tensor, y_all: Tensor):
         x_adv_all = []
-        n_images, n_chanel, height, width = x_all.shape
+        n_images, n_channel, height, width = x_all.shape
         n_batch = math.ceil(n_images / self.model.batch_size)
         for i in range(n_batch):
             start = i * self.model.batch_size
@@ -55,20 +55,22 @@ class SaliencyAttack(Attacker):
                 img = torch.stack(
                     [self.saliency_transform(x_idx) for x_idx in x[start:end]]
                 )
-                saliency_map = self.saliency_model(img)[0]
-                saliency_map = T.Resize(x.shape[2])(saliency_map)
-                self.saliency_detection.append(saliency_map >= threshold)
-            self.saliency_detection = torch.cat(self.saliency_detection, dim=0).to(bool)
-            detected_pixels = self.saliency_detection.sum(dim=(1, 2, 3))
+                saliency_map = self.saliency_model(img)[0].cpu()
+                saliency_map = [
+                    T.Resize(self.height)(m).numpy()[0] for m in saliency_map
+                ]
+                self.saliency_detection.append(np.array(saliency_map) >= threshold)
+            self.saliency_detection = np.concatenate(self.saliency_detection, axis=0)
+            detected_pixels = self.saliency_detection.sum(axis=(1, 2))
             not_detected = detected_pixels <= (height // k_init) * (width // k_init)
             while not_detected.sum() > 0:
                 logger.warning(
                     f"{threshold=} -> {not_detected.sum()} images not detected"
                 )
                 threshold /= 2
-                saliency_map = self.saliency_model(x[not_detected])[0]
+                saliency_map = self.saliency_model(x[not_detected])[0].cpu().numpy()
                 self.saliency_detection[not_detected] = saliency_map >= threshold
-                detected_pixels = self.saliency_detection.sum(dim=(1, 2, 3))
+                detected_pixels = self.saliency_detection.sum(axis=(1, 2))
                 not_detected = detected_pixels <= (height // k_init) * (width // k_init)
 
             # refine search
@@ -86,11 +88,11 @@ class SaliencyAttack(Attacker):
         return x_adv_all
 
     def refine(self, search_block, k, split_level):
-        batch, n_chanel = self.x_adv.shape[:2]
+        batch, n_channel = self.x_adv.shape[:2]
 
         if split_level == 1:
             split_blocks = []
-            for c in range(n_chanel):
+            for c in range(n_channel):
                 search_block[:, 0] = c
                 split_blocks.append(self.split(search_block, k))
             split_blocks = np.concatenate(split_blocks)

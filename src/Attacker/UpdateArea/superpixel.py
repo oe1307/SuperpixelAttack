@@ -14,7 +14,7 @@ class Superpixel:
         pass
 
     def initialize(self, x: Tensor, forward: np.ndarray):
-        self.batch, self.n_chanel = x.shape[:2]
+        self.batch, self.n_channel = x.shape[:2]
         self.superpixel = self.cal_superpixel(x)
         self.level = np.zeros(self.batch, dtype=int)
         self.update_area = self.superpixel[np.arange(self.batch), self.level]
@@ -22,9 +22,9 @@ class Superpixel:
         if config.channel_wise:
             self.targets = []
             for idx in range(self.batch):
-                chanel = np.tile(np.arange(self.n_chanel), n_update_area[idx])
-                labels = np.repeat(range(1, n_update_area[idx] + 1), self.n_chanel)
-                _target = np.stack([chanel, labels], axis=1)
+                channel = np.tile(np.arange(self.n_channel), n_update_area[idx])
+                labels = np.repeat(range(1, n_update_area[idx] + 1), self.n_channel)
+                _target = np.stack([channel, labels], axis=1)
                 self.targets.append(np.random.permutation(_target))
         else:
             self.targets = []
@@ -40,9 +40,9 @@ class Superpixel:
                 self.update_area[idx] = self.superpixel[idx, self.level[idx]]
                 _n_update_area = self.update_area[idx].max()
                 if config.channel_wise:
-                    chanel = np.tile(np.arange(self.n_chanel), _n_update_area)
-                    labels = np.repeat(range(1, _n_update_area + 1), self.n_chanel)
-                    _target = np.stack([chanel, labels], axis=1)
+                    channel = np.tile(np.arange(self.n_channel), _n_update_area)
+                    labels = np.repeat(range(1, _n_update_area + 1), self.n_channel)
+                    _target = np.stack([channel, labels], axis=1)
                 else:
                     _target = np.arange(1, _n_update_area + 1)
                 self.targets[idx] = np.random.permutation(_target)
