@@ -84,7 +84,7 @@ class HALS(BaseMethod):
                 c, label = targets[idx][0]
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
-        elif config.udpate_area == "superpixel":
+        elif config.update_area == "superpixel":
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
                     continue
