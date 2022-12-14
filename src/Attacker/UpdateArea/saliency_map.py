@@ -83,7 +83,9 @@ class SaliencyMap:
         for idx in range(self.batch):
             if self.targets[idx].shape[0] == 1:
                 # split_square
-                self.split //= 2
+                if self.split > 1:
+                    assert self.split % 2 == 0
+                    self.split //= 2
                 h = self.height // self.split
                 w = self.width // self.split
                 self.update_area = np.arange(h * w).reshape(1, h, w)
