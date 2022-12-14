@@ -6,23 +6,23 @@ n_examples: 5000
 
 model:
     # torchvision
-    resnet50: 5000
-    vgg16_bn: 5000
+    # resnet50: 5000
+    # vgg16_bn: 5000
 
     # robustbench
-    Wong2020Fast: 5000
-    Engstrom2019Robustness: 5000
-    Salman2020Do_R18: 5000
-    Salman2020Do_R50: 5000
-    Salman2020Do_50_2: 5000
+    # Wong2020Fast: 5000
+    # Engstrom2019Robustness: 5000
+    Salman2020Do_R18: 3000
+    # Salman2020Do_R50: 5000
+    # Salman2020Do_50_2: 5000
 
 # hyperparameter
 step: 100
 criterion: cw
-update_area: random_square
+update_area: superpixel
 channel_wise: True
-initial_point: random
-update_method: uniform_distribution
+initial_point: lower
+update_method: greedy_local_search
 
 # superpixel
 segments: [4, 16, 64, 256, 1024]
