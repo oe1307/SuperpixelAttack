@@ -65,7 +65,7 @@ class HALS(BaseMethod):
     def insert_deletion(self, update_area, targets):
         is_upper = self.is_upper_best.clone()
 
-        if config.udpate_area == "superpixel" and config.channel_wise:
+        if config.update_area == "superpixel" and config.channel_wise:
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
                     continue
