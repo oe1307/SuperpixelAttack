@@ -42,12 +42,12 @@ class GreedyLocalSearch(BaseMethod):
             self.is_upper = self.is_upper.permute(0, 3, 1, 2)
             self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
         elif config.update_area == "split_square" and config.channel_wise:
-            self.is_upper = self.is_upper.permute(1, 0, 2, 3)
+            self.is_upper = self.is_upper.permute(1, 2, 3, 0)
             c, label = targets[0]
             self.is_upper[c, update_area == label] = ~self.is_upper[
                 c, update_area == label
             ]
-            self.is_upper = self.is_upper.permute(1, 0, 2, 3)
+            self.is_upper = self.is_upper.permute(3, 0, 1, 2)
             self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
         elif config.update_area == "split_square":
             self.is_upper = self.is_upper.permute(0, 2, 3, 1)
