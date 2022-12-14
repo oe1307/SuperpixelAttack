@@ -8,13 +8,12 @@ config = config_parser()
 
 class RandomSquare:
     def __init__(self):
-        pass
-
-    def initialize(self, x: Tensor, forward: np.ndarray):
-        self.batch, self.n_channel, self.height, self.width = x.shape
         self.half_point = (
             np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.step
         )
+
+    def initialize(self, x: Tensor, forward: np.ndarray):
+        self.batch, self.n_channel, self.height, self.width = x.shape
         self.update_area = np.zeros((self.batch, self.height, self.width), dtype=bool)
         for idx in range(self.batch):
             n_half = (self.half_point < forward[idx]).sum()

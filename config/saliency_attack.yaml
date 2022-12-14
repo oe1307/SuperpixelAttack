@@ -17,10 +17,9 @@ model:
     Salman2020Do_50_2: 500
 
 # hyperparameter
-saliency_weight: ../storage/model/saliency/saliency_weight.pth
-saliency_batch: 100
-threshold: 0.1
 step: 100
 criterion: cw
 k_init: 16
+saliency_batch: 100
+threshold: 0.1
 

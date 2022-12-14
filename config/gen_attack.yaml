@@ -18,7 +18,7 @@ model:
 
 # hyperparameter
 population: 6
-step: 17 # 100step: 17, 1_000step: 167, 10_000step: 1667
+step: 17
 tau: 0.1
 alpha_init: 0.4
 rho_init: 0.5
