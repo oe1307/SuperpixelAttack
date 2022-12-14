@@ -38,7 +38,7 @@ class Attacker:
             y = y_all[start:end]
             logits = self.model(x).clone()
             clean_acc[start:end] = logits.argmax(dim=1) == y
-        config.clean_acc = clean_acc.sum()
+        config.clean_acc = clean_acc.sum().item()
 
         x_adv = self._attack(x_all[clean_acc], y_all[clean_acc])
         x_adv_all = x_all.clone()
