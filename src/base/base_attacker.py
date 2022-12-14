@@ -42,6 +42,7 @@ class Attacker:
         x_adv = self._attack(x_all[clean_acc], y_all[clean_acc])
         x_adv_all = x_all.clone()
         x_adv_all[clean_acc] = x_adv
+        torch.cuda.empty_cache()
 
         # calculate robust accuracy
         assert x_adv_all.shape == x_all.shape
