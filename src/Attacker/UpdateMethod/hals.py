@@ -3,7 +3,7 @@ import heapq
 import numpy as np
 import torch
 
-from utils import config_parser, pbar
+from utils import config_parser
 
 from .base_method import BaseMethod
 

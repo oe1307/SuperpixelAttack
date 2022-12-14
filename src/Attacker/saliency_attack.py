@@ -56,9 +56,7 @@ class SaliencyAttack(Attacker):
                     [self.saliency_transform(x_idx) for x_idx in x[start:end]]
                 )
                 saliency_map = self.saliency_model(img)[0].cpu()
-                saliency_map = [
-                    T.Resize(self.height)(m).numpy()[0] for m in saliency_map
-                ]
+                saliency_map = [T.Resize(height)(m).numpy()[0] for m in saliency_map]
                 self.saliency_detection.append(np.array(saliency_map) >= threshold)
             self.saliency_detection = np.concatenate(self.saliency_detection, axis=0)
             detected_pixels = self.saliency_detection.sum(axis=(1, 2))

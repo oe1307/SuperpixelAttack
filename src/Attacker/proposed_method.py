@@ -6,6 +6,7 @@ from torch import Tensor
 from base import Attacker, get_criterion
 from utils import config_parser, pbar, setup_logger
 
+from .RemoveSearch import set_search_remover
 from .UpdateArea import set_update_area
 from .UpdateMethod import set_update_method
 
@@ -19,6 +20,7 @@ class ProposedMethod(Attacker):
         self.criterion = get_criterion()
         self.update_area = set_update_area()
         self.update_method = set_update_method()
+        self.remove_search = set_search_remover(self.update_area, self.update_method)
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         self.update_method.set(self.model, self.criterion)
@@ -37,12 +39,14 @@ class ProposedMethod(Attacker):
             # initialize
             forward = self.update_method.initialize(x, y, lower, upper)
             update_area, targets = self.update_area.initialize(x, forward)
+            targets = self.remove_search.initialize(update_area, targets, forward)
             pbar.debug(forward.min(), config.step, "forward")
 
             # search
             while forward.min() < config.step:
                 x_best, forward, targets = self.update_method.step(update_area, targets)
                 update_area, targets = self.update_area.next(forward, targets)
+                targets = self.remove_search.remove(update_area, targets, forward)
                 pbar.debug(forward.min(), config.step, "forward")
 
             x_adv_all.append(x_best)
