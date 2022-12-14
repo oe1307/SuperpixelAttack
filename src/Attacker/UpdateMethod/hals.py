@@ -25,7 +25,9 @@ class HALS(BaseMethod):
 
         if self.mode == "insert":
             targets = self.insert_deletion(update_area, targets)
-            if targets.shape[0] == 0 or self.forward.min() >= config.step:
+            insert_end = np.array([t.shape[0] for t in targets]) == 0
+            if insert_end.all() or self.forward.min() >= config.step:
+                is_upper, x_adv, loss = self.update(update_area)
                 update = loss > self.best_loss
                 self.is_upper_best[update] = is_upper[update]
                 self.x_best[update] = x_adv[update]
@@ -39,7 +41,9 @@ class HALS(BaseMethod):
 
         if self.mode == "deletion":
             targets = self.insert_deletion(update_area, targets)
-            if targets.shape[0] == 0 or self.forward.min() >= config.step:
+            deletion_end = np.array([t.shape[0] for t in targets]) == 0
+            if deletion_end.all() or self.forward.min() >= config.step:
+                is_upper, x_adv, loss = self.update(update_area)
                 update = loss > self.best_loss
                 self.is_upper_best[update] = is_upper[update]
                 self.x_best[update] = x_adv[update]
@@ -58,9 +62,8 @@ class HALS(BaseMethod):
 
         return self.x_best, self.forward, targets
 
-    def insert_deletion(self, targets):
+    def insert_deletion(self, update_area, targets):
         is_upper = self.is_upper_best.clone()
-        loss = self.best_loss.clone()
 
         if config.udpate_area == "superpixel" and config.channel_wise:
             for idx in range(self.batch):
@@ -70,16 +73,121 @@ class HALS(BaseMethod):
                 is_upper[idx, c, update_area[idx] == label] = ~is_upper[
                     idx, c, update_area[idx] == label
                 ]
-            self.x_adv = torch.where(is_upper, self.upper, self.lower)
-            pred = self.model(self.x_adv).softmax(dim=1)
+                self.forward[idx] += 1
+                targets[idx] = targets[idx][1:]
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
             loss = self.criterion(pred, self.y)
             for idx in range(self.batch):
                 if targets[idx].shape[0] == 0:
                     continue
                 c, label = targets[idx][0]
-                delta = (self.best_loss[idx] - loss[i]).item()
-                heapq.heappush(
-                    self.max_heap[idx],
-                    (-loss[idx, c].cpu().numpy(), (c, label)),
-                )
-        return is_upper, loss, targets
+                delta = (self.best_loss[idx] - loss[idx]).item()
+                heapq.heappush(self.max_heap[idx], (delta, (c, label)))
+        elif config.udpate_area == "superpixel":
+            for idx in range(self.batch):
+                if targets[idx].shape[0] == 0:
+                    continue
+                label = targets[idx][0]
+                is_upper[idx, :, update_area[idx] == label] = ~is_upper[
+                    idx, :, update_area[idx] == label
+                ]
+                self.forward[idx] += 1
+                targets[idx] = targets[idx][1:]
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
+            loss = self.criterion(pred, self.y)
+            for idx in range(self.batch):
+                if targets[idx].shape[0] == 0:
+                    continue
+                label = targets[idx][0]
+                delta = (self.best_loss[idx] - loss[idx]).item()
+                heapq.heappush(self.max_heap[idx], (delta, label))
+        elif config.update_area == "split_square" and config.channel_wise:
+            is_upper = is_upper.permute(1, 2, 3, 0)
+            c, label = targets[0]
+            is_upper[c, update_area == label] = ~is_upper[c, update_area == label]
+            is_upper = is_upper.permute(3, 0, 1, 2)
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
+            loss = self.criterion(pred, self.y)
+            self.forward += 1
+            targets = targets[1:]
+            for idx in range(self.batch):
+                delta = (self.best_loss[idx] - loss[idx]).item()
+                heapq.heappush(self.max_heap[idx], (delta, (c, label)))
+        elif config.update_area == "split_square":
+            is_upper = is_upper.permute(0, 2, 3, 1)
+            label = targets[0]
+            is_upper[update_area == label] = ~is_upper[update_area == label]
+            is_upper = is_upper.permute(0, 3, 1, 2)
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
+            loss = self.criterion(pred, self.y)
+            self.forward += 1
+            targets = targets[1:]
+            for idx in range(self.batch):
+                delta = (self.best_loss[idx] - loss[idx]).item()
+                heapq.heappush(self.max_heap[idx], (delta, label))
+        elif config.update_area == "saliency_map" and config.channel_wise:
+            for idx in range(self.batch):
+                if targets[idx].shape[0] == 0:
+                    continue
+                c, label = targets[idx][0]
+                is_upper[idx, c, update_area[idx] == label] = ~is_upper[
+                    idx, c, update_area[idx] == label
+                ]
+                self.forward[idx] += 1
+                targets[idx] = targets[idx][1:]
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
+            loss = self.criterion(pred, self.y)
+            for idx in range(self.batch):
+                if targets[idx].shape[0] == 0:
+                    continue
+                c, label = targets[idx][0]
+                delta = (self.best_loss[idx] - loss[idx]).item()
+                heapq.heappush(self.max_heap[idx], (delta, (c, label)))
+        elif config.update_area == "saliency_map":
+            for idx in range(self.batch):
+                if targets[idx].shape[0] == 0:
+                    continue
+                label = targets[idx][0]
+                is_upper[idx, :, update_area[idx] == label] = ~is_upper[
+                    idx, :, update_area[idx] == label
+                ]
+                self.forward[idx] += 1
+                targets[idx] = targets[idx][1:]
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
+            loss = self.criterion(pred, self.y)
+            for idx in range(self.batch):
+                if targets[idx].shape[0] == 0:
+                    continue
+                label = targets[idx][0]
+                delta = (self.best_loss[idx] - loss[idx]).item()
+                heapq.heappush(self.max_heap[idx], (delta, label))
+        return targets
+
+    def update(self, update_area):
+        is_upper = self.is_upper_best.clone()
+        d = self.mode == "insert"
+        for idx, _max_heap in enumerate(self.max_heap):
+            while len(_max_heap) > 1:
+                delta_hat, element_hat = heapq.heappop(_max_heap)
+                delta_tilde = _max_heap[0][0]
+                if delta_hat <= delta_tilde and delta_hat < 0:
+                    if config.channel_wise:
+                        c, label = element_hat
+                        is_upper[idx, c, update_area[idx] == label] = d
+                    else:
+                        label = element_hat
+                        is_upper[idx][idx, :, update_area[idx] == label] = d
+                elif delta_hat <= delta_tilde and delta_hat >= 0:
+                    break
+                else:
+                    heapq.heappush(_max_heap, (delta_hat, element_hat))
+        x_adv = torch.where(is_upper, self.upper, self.lower)
+        pred = self.model(x_adv).softmax(dim=1)
+        loss = self.criterion(pred, self.y)
+        return is_upper, x_adv, loss

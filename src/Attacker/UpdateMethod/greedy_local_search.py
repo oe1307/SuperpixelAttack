@@ -32,16 +32,17 @@ class GreedyLocalSearch(BaseMethod):
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = [np.delete(targets[idx], 0) for idx in range(self.batch)]
-        elif config.update_area == "random_square" and config.channel_wise:
-            is_upper = is_upper.permute(1, 0, 2, 3)
-            c = targets[0]
-            is_upper[c, update_area] = ~is_upper[c, update_area]
-            is_upper = is_upper.permute(1, 0, 2, 3)
+        elif config.update_area == "split_square" and config.channel_wise:
+            is_upper = is_upper.permute(1, 2, 3, 0)
+            c, label = targets[0]
+            is_upper[c, update_area == label] = ~is_upper[c, update_area == label]
+            is_upper = is_upper.permute(3, 0, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = np.delete(targets, 0)
-        elif config.update_area == "random_square":
+        elif config.update_area == "split_square":
             is_upper = is_upper.permute(0, 2, 3, 1)
-            is_upper[update_area] = ~is_upper[update_area]
+            label = targets[0]
+            is_upper[update_area == label] = ~is_upper[update_area == label]
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = np.delete(targets, 0)
@@ -63,17 +64,16 @@ class GreedyLocalSearch(BaseMethod):
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = [np.delete(targets[idx], 0) for idx in range(self.batch)]
-        elif config.update_area == "split_square" and config.channel_wise:
-            is_upper = is_upper.permute(1, 2, 3, 0)
-            c, label = targets[0]
-            is_upper[c, update_area == label] = ~is_upper[c, update_area == label]
-            is_upper = is_upper.permute(3, 0, 1, 2)
+        elif config.update_area == "random_square" and config.channel_wise:
+            is_upper = is_upper.permute(1, 0, 2, 3)
+            c = targets[0]
+            is_upper[c, update_area] = ~is_upper[c, update_area]
+            is_upper = is_upper.permute(1, 0, 2, 3)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = np.delete(targets, 0)
-        elif config.update_area == "split_square":
+        elif config.update_area == "random_square":
             is_upper = is_upper.permute(0, 2, 3, 1)
-            label = targets[0]
-            is_upper[update_area == label] = ~is_upper[update_area == label]
+            is_upper[update_area] = ~is_upper[update_area]
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = np.delete(targets, 0)
