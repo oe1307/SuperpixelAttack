@@ -70,8 +70,8 @@ class ParsimoniousAttack(Attacker):
         update = self.forward < config.step
         self.forward += update
         update = np.logical_and(update, (loss_inverse > best_loss).cpu().numpy())
-        is_upper_best[update] = is_upper[update]
-        best_loss[update] = loss[update]
+        is_upper_best[update] = ~is_upper[update]
+        best_loss[update] = loss_inverse[update]
         return is_upper_best, best_loss
 
     def insert(self, is_upper_all, all_loss):
