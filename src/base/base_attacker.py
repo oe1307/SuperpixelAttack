@@ -73,8 +73,8 @@ class Attacker:
             + f"model = {self.model.name}\n"
             + f"epsilon = {config.epsilon}\n"
             + f"forward = {config.n_forward}\n"
-            + f"attack success rate = {attack_success_rate:.2f} %\n"
             + f"total time = {total_time:.2f} s\n"
+            + f"attack success rate = {attack_success_rate:.2f} %\n"
         )
         print(msg, file=open(f"{config.savedir}/summary.txt", "w"))
         logger.info(msg)
