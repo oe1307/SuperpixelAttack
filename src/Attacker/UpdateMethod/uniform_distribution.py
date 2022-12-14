@@ -30,20 +30,6 @@ class UniformDistribution(BaseMethod):
                 self.x_adv[idx, update_area[idx] == label] += rand
             self.x_adv = self.x_adv.permute(0, 3, 1, 2)
             self.x_adv = self.x_adv.clamp(self.lower, self.upper)
-        elif config.update_area == "random_square" and config.channel_wise:
-            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
-            c = targets[0]
-            rand = torch.rand_like(self.x_adv[c, update_area])
-            rand = (2 * rand - 1) * config.epsilon
-            self.x_adv[c, update_area] += rand
-            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
-            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
-        elif config.update_area == "random_square":
-            self.x_adv = self.x_adv.permute(0, 2, 3, 1)
-            rand = 2 * torch.rand_like(self.x_adv[update_area]) - 1
-            self.x_adv[update_area] += rand * config.epsilon
-            self.x_adv = self.x_adv.permute(0, 3, 1, 2)
-            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
         elif config.update_area == "split_square" and config.channel_wise:
             self.x_adv = self.x_adv.permute(1, 2, 3, 0)
             c, label = targets[0]
@@ -59,6 +45,36 @@ class UniformDistribution(BaseMethod):
             rand = (2 * rand - 1) * config.epsilon
             self.x_adv[update_area == label] += rand
             self.x_adv = self.x_adv.permute(2, 3, 0, 1)
+            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+        elif config.update_area == "saliency_map" and config.channel_wise:
+            for idx in range(self.batch):
+                c, label = targets[idx][0]
+                rand = torch.rand_like(self.x_adv[idx, c, update_area[idx] == label])
+                rand = (2 * rand - 1) * config.epsilon
+                self.x_adv[idx, c, update_area[idx] == label] += rand
+            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+        elif config.update_area == "saliency_map":
+            self.x_adv = self.x_adv.permute(0, 2, 3, 1)
+            for idx in range(self.batch):
+                label = targets[idx][0]
+                rand = torch.rand_like(self.x_adv[idx, update_area[idx] == label])
+                rand = (2 * rand - 1) * config.epsilon
+                self.x_adv[idx, update_area[idx] == label] += rand
+            self.x_adv = self.x_adv.permute(0, 3, 1, 2)
+            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+        elif config.update_area == "random_square" and config.channel_wise:
+            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
+            c = targets[0]
+            rand = torch.rand_like(self.x_adv[c, update_area])
+            rand = (2 * rand - 1) * config.epsilon
+            self.x_adv[c, update_area] += rand
+            self.x_adv = self.x_adv.permute(1, 0, 2, 3)
+            self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+        elif config.update_area == "random_square":
+            self.x_adv = self.x_adv.permute(0, 2, 3, 1)
+            rand = 2 * torch.rand_like(self.x_adv[update_area]) - 1
+            self.x_adv[update_area] += rand * config.epsilon
+            self.x_adv = self.x_adv.permute(0, 3, 1, 2)
             self.x_adv = self.x_adv.clamp(self.lower, self.upper)
         else:
             raise NotImplementedError(config.update_area)

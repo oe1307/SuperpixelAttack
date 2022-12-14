@@ -41,6 +41,22 @@ class GreedyLocalSearch(BaseMethod):
             self.is_upper[update_area] = ~self.is_upper[update_area]
             self.is_upper = self.is_upper.permute(0, 3, 1, 2)
             self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
+        elif config.update_area == "saliency_map" and config.channel_wise:
+            for idx in range(self.batch):
+                c, label = targets[idx][0]
+                self.is_upper[idx, c, update_area[idx] == label] = ~self.is_upper[
+                    idx, c, update_area[idx] == label
+                ]
+            self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
+        elif config.update_area == "saliency_map":
+            self.is_upper = self.is_upper.permute(0, 2, 3, 1)
+            labels = [t[0] for t in targets]
+            labels = np.repeat(labels, update_area.shape[1])
+            labels = np.repeat(labels, update_area.shape[2])
+            labels = labels.reshape(update_area.shape)
+            self.is_upper[update_area == labels] = ~self.is_upper[update_area == labels]
+            self.is_upper = self.is_upper.permute(0, 3, 1, 2)
+            self.x_adv = torch.where(self.is_upper, self.upper, self.lower)
         elif config.update_area == "split_square" and config.channel_wise:
             self.is_upper = self.is_upper.permute(1, 2, 3, 0)
             c, label = targets[0]

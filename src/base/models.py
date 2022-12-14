@@ -1,3 +1,5 @@
+from typing import Callable, Union
+
 import robustbench
 import torchvision
 from robustbench.data import get_preprocessing
@@ -13,7 +15,7 @@ config = config_parser()
 
 def get_model(
     model_name: str, batch_size: int, model_dir: str = "../storage/model"
-) -> Module:
+) -> Union[Module, Callable]:
 
     if model_name in (
         "resnet50",
