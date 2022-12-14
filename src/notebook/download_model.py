@@ -28,6 +28,7 @@ robustbench = [
     "Salman2020Do_R50",
     "Salman2020Do_50_2",
 ]
+config.norm = "Linf"
 config.device = "cpu"
 for model in robustbench:
     get_model(model, None, "../../storage/model/")
