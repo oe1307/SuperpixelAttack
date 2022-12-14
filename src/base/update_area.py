@@ -24,7 +24,7 @@ class UpdateArea(InitialArea):
                         labels = np.repeat(range(1, _n_update_area + 1), self.n_chanel)
                         _target = np.stack([chanel, labels], axis=1)
                     else:
-                        _target = range(1, _n_update_area + 1)
+                        _target = np.arange(1, _n_update_area + 1)
                     self.targets[idx] = np.random.permutation(_target)
                 else:
                     self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
@@ -49,7 +49,21 @@ class UpdateArea(InitialArea):
                 self.targets = np.delete(self.targets, 0)
 
         elif config.update_area == "split_square":
-            assert False
+            if self.targets.shape[0] == 1:
+                self.split //= 2
+                h = self.height // self.split
+                w = self.width // self.split
+                self.update_area = np.arange(h * w).reshape(h, w)
+                self.update_area = np.repeat(self.update_area, self.split, axis=0)
+                self.update_area = np.repeat(self.update_area, self.split, axis=1)
+                if config.channel_wise:
+                    chanel = np.tile(np.arange(self.n_chanel), h * w)
+                    labels = np.repeat(range(1, h * w + 1), self.n_chanel)
+                    self.targets = np.stack([chanel, labels], axis=1)
+                    np.random.shuffle(self.targets)
+                else:
+                    self.targets = np.arange(h * w)
+                    np.random.shuffle(self.targets)
 
         else:
             raise NotImplementedError(config.update_area)

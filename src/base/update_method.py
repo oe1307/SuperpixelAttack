@@ -71,6 +71,24 @@ class UpdateMethod(InitialPoint):
                 self.x_adv[update_area] += rand * config.epsilon
                 self.x_adv = self.x_adv.permute(0, 3, 1, 2)
                 self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            elif config.update_area == "split_square" and config.channel_wise:
+                self.x_adv = self.x_adv.permute(1, 2, 3, 0)
+                c, label = targets[0]
+                rand = torch.rand_like(self.x_adv[c, update_area == label])
+                rand = (2 * rand - 1) * config.epsilon
+                self.x_adv[c, update_area == label] += rand
+                self.x_adv = self.x_adv.permute(3, 0, 1, 2)
+                self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            elif config.update_area == "split_square":
+                self.x_adv = self.x_adv.permute(2, 3, 0, 1)
+                label = targets[0]
+                rand = torch.rand_like(self.x_adv[update_area == label])
+                rand = (2 * rand - 1) * config.epsilon
+                self.x_adv[update_area == label] += rand
+                self.x_adv = self.x_adv.permute(2, 3, 0, 1)
+                self.x_adv = self.x_adv.clamp(self.lower, self.upper)
+            else:
+                raise NotImplementedError(config.update_area)
             pred = self.model(self.x_adv).softmax(dim=1)
             self.loss = self.criterion(pred, self.y)
             self.forward += 1

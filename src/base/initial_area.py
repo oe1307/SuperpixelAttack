@@ -59,7 +59,6 @@ class InitialArea:
                 self.targets = np.ones(1, dtype=int)
 
         elif config.update_area == "split_square":
-            breakpoint()
             self.split = config.initial_split
             assert self.height % self.split == 0
             h = self.height // self.split
@@ -74,8 +73,7 @@ class InitialArea:
                 self.targets = np.stack([chanel, labels], axis=1)
                 np.random.shuffle(self.targets)
             else:
-                self.targets = np.arange(1, h * w + 1)
-                breakpoint()
+                self.targets = np.arange(h * w)
                 np.random.shuffle(self.targets)
 
         else:
