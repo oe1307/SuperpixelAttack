@@ -38,7 +38,7 @@ class GreedyLocalSearch(BaseMethod):
             is_upper[c, update_area == label] = ~is_upper[c, update_area == label]
             is_upper = is_upper.permute(3, 0, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
-            targets = np.delete(targets, 0)
+            targets = np.delete(targets, 0, axis=0)
         elif config.update_area == "split_square":
             is_upper = is_upper.permute(0, 2, 3, 1)
             label = targets[0]
