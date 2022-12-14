@@ -16,6 +16,8 @@ class RefineSearch(BaseMethod):
             raise NotImplementedError("HALS does not support random_square")
 
     def step(self, update_area: np.ndarray, targets):
+        # 先にすべての分割をここで手に入れる
+
         k_init = config.k_init
         split_level = 1
         if config.update_area == "saliency_map":
@@ -26,7 +28,7 @@ class RefineSearch(BaseMethod):
                 assert k_init % 2 == 0
                 k_init //= 2
         self.forward = np.ones(self.batch) * config.step
-        return self.x_best, self.forward
+        return self.x_best, self.forward, targets
 
     def refine(self, update_area, k, split_level):
         if config.update_area == "superpixel" and config.channel_wise:

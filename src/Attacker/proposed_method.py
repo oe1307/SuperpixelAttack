@@ -41,8 +41,8 @@ class ProposedMethod(Attacker):
 
             # search
             while forward.min() < config.step:
-                x_best, forward = self.update_method.step(update_area, targets)
-                update_area, targets = self.update_area.next(forward)
+                x_best, forward, targets = self.update_method.step(update_area, targets)
+                update_area, targets = self.update_area.next(forward, targets)
                 pbar.debug(forward.min(), config.step, "forward")
 
             x_adv_all.append(x_best)

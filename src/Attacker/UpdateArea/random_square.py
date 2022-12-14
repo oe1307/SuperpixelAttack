@@ -23,13 +23,13 @@ class RandomSquare:
             s = np.random.randint(0, self.width - h)
             self.update_area[idx, r : r + h, s : s + h] = True
         if config.channel_wise:
-            self.targets = np.random.permutation(np.arange(self.n_channel))
+            targets = np.random.permutation(np.arange(self.n_channel))
         else:
-            self.targets = np.ones(1, dtype=int)
-        return self.update_area, self.targets
+            targets = np.ones(1, dtype=int)
+        return self.update_area, targets
 
-    def next(self, forward: np.ndarray):
-        if self.targets.shape[0] == 1:
+    def next(self, forward: np.ndarray, targets):
+        if targets.shape[0] == 0:
             self.update_area = np.zeros_like(self.update_area)
             for idx in range(self.batch):
                 n_half = (self.half_point < forward[idx]).sum()
@@ -39,9 +39,7 @@ class RandomSquare:
                 s = np.random.randint(0, self.width - h)
                 self.update_area[idx, r : r + h, s : s + h] = True
             if config.channel_wise:
-                self.targets = np.random.permutation(np.arange(self.n_channel))
+                targets = np.random.permutation(np.arange(self.n_channel))
             else:
-                self.targets = np.ones(1, dtype=int)
-        else:
-            self.targets = np.delete(self.targets, 0)
-        return self.update_area, self.targets
+                targets = np.ones(1, dtype=int)
+        return self.update_area, targets

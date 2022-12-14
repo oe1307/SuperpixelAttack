@@ -20,22 +20,22 @@ class Superpixel:
         self.update_area = self.superpixel[np.arange(self.batch), self.level]
         n_update_area = self.update_area.max(axis=(1, 2))
         if config.channel_wise:
-            self.targets = []
+            targets = []
             for idx in range(self.batch):
                 channel = np.tile(np.arange(self.n_channel), n_update_area[idx])
                 labels = np.repeat(range(1, n_update_area[idx] + 1), self.n_channel)
                 _target = np.stack([channel, labels], axis=1)
-                self.targets.append(np.random.permutation(_target))
+                targets.append(np.random.permutation(_target))
         else:
-            self.targets = []
+            targets = []
             for idx in range(self.batch):
                 labels = range(1, n_update_area[idx] + 1)
-                self.targets.append(np.random.permutation(labels))
-        return self.update_area, self.targets
+                targets.append(np.random.permutation(labels))
+        return self.update_area, targets
 
-    def next(self, forward: np.ndarray):
+    def next(self, forward: np.ndarray, targets):
         for idx in range(self.batch):
-            if self.targets[idx].shape[0] == 1:
+            if targets[idx].shape[0] == 0:
                 self.level[idx] = min(self.level[idx] + 1, len(config.segments) - 1)
                 self.update_area[idx] = self.superpixel[idx, self.level[idx]]
                 _n_update_area = self.update_area[idx].max()
@@ -45,13 +45,8 @@ class Superpixel:
                     _target = np.stack([channel, labels], axis=1)
                 else:
                     _target = np.arange(1, _n_update_area + 1)
-                self.targets[idx] = np.random.permutation(_target)
-            else:
-                if config.channel_wise:
-                    self.targets[idx] = np.delete(self.targets[idx], 0, axis=0)
-                else:
-                    self.targets[idx] = np.delete(self.targets[idx], 0)
-        return self.update_area, self.targets
+                targets[idx] = np.random.permutation(_target)
+        return self.update_area, targets
 
     def cal_superpixel(self, x):
         """calculate superpixel with multi-threading"""

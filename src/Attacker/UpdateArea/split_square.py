@@ -23,15 +23,15 @@ class SplitSquare:
         if config.channel_wise:
             channel = np.tile(np.arange(self.n_channel), h * w)
             labels = np.repeat(range(h * w), self.n_channel)
-            self.targets = np.stack([channel, labels], axis=1)
-            np.random.shuffle(self.targets)
+            targets = np.stack([channel, labels], axis=1)
+            np.random.shuffle(targets)
         else:
-            self.targets = np.arange(h * w)
-            np.random.shuffle(self.targets)
-        return self.update_area, self.targets
+            targets = np.arange(h * w)
+            np.random.shuffle(targets)
+        return self.update_area, targets
 
-    def next(self, forward: np.ndarray):
-        if self.targets.shape[0] == 1:
+    def next(self, forward: np.ndarray, targets):
+        if targets.shape[0] == 0:
             if self.split > 1:
                 assert self.split % 2 == 0
                 self.split //= 2
@@ -43,14 +43,9 @@ class SplitSquare:
             if config.channel_wise:
                 channel = np.tile(np.arange(self.n_channel), h * w)
                 labels = np.repeat(range(h * w), self.n_channel)
-                self.targets = np.stack([channel, labels], axis=1)
-                np.random.shuffle(self.targets)
+                targets = np.stack([channel, labels], axis=1)
+                np.random.shuffle(targets)
             else:
-                self.targets = np.arange(h * w)
-                np.random.shuffle(self.targets)
-        else:
-            if config.channel_wise:
-                self.targets = np.delete(self.targets, 0, axis=0)
-            else:
-                self.targets = np.delete(self.targets, 0)
-        return self.update_area, self.targets
+                targets = np.arange(h * w)
+                np.random.shuffle(targets)
+        return self.update_area, targets
