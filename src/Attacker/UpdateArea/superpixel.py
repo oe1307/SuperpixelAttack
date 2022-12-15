@@ -12,7 +12,7 @@ config = config_parser()
 
 class Superpixel:
     def __init__(self):
-        pass
+        config.superpixel_cal_time = 0
 
     def initialize(self, x: Tensor, forward: np.ndarray):
         self.batch, self.n_channel = x.shape[:2]
@@ -64,7 +64,7 @@ class Superpixel:
                     for idx in batch
                 ]
             superpixel = np.array([future.result() for future in futures])
-        config.superpixel_cal_time = time.time() - timekeeper
+        config.superpixel_cal_time += time.time() - timekeeper
         return superpixel
 
     def _cal_superpixel(self, x: Tensor, idx: int, total: int) -> list:

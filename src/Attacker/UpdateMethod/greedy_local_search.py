@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import torch
 
@@ -11,6 +13,7 @@ config = config_parser()
 class GreedyLocalSearch(BaseMethod):
     def __init__(self):
         super().__init__()
+        config.forward_time = 0
 
     def step(self, update_area: np.ndarray, targets):
         is_upper = self.is_upper_best.clone()
@@ -77,8 +80,10 @@ class GreedyLocalSearch(BaseMethod):
             is_upper = is_upper.permute(0, 3, 1, 2)
             x_adv = torch.where(is_upper, self.upper, self.lower)
             targets = targets[1:]
+        timekeeper = time.time()
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
+        config.forward_time += time.time() - timekeeper
         self.forward += 1
         update = loss >= self.best_loss
         self.is_upper_best[update] = is_upper[update]

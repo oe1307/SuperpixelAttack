@@ -1,10 +1,11 @@
-import numpy as np
 import math
+
+import numpy as np
 import torch
 from torchvision import transforms as T
 
-from utils import config_parser, pbar, setup_logger
 from base import SODModel
+from utils import config_parser, pbar, setup_logger
 
 from .base_remover import Remover
 
