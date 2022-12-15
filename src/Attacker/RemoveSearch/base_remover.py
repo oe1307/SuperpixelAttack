@@ -3,8 +3,8 @@ class Remover:
         self.update_area = update_area
         self.update_method = update_method
 
-    def initialize(update_area, targets, forward):
+    def initialize(self, update_area, targets, forward):
         return targets
 
-    def remove(update_area, targets, forward):
+    def remove(self, update_area, targets, forward):
         return targets

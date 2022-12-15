@@ -23,10 +23,10 @@ update_area: superpixel
 channel_wise: True
 initial_point: lower
 update_method: greedy_local_search
-remove_search: saliency
+remove_search: 
 
 # superpixel
-segments: [4, 16, 64, 256, 1024]
+segments: [4, 16, 64, 256]
 
 # split_square
 initial_split: 32

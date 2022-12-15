@@ -8,7 +8,7 @@ config = config_parser()
 
 
 def set_search_remover(update_area, update_method):
-    if config.remove_search == "none":
+    if config.remove_search is None:
         return Remover(update_area, update_method)
     elif config.remove_search == "loss":
         return LossSearchRemover(update_area, update_method)

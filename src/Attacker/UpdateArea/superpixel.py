@@ -64,7 +64,7 @@ class Superpixel:
                     for idx in batch
                 ]
             superpixel = np.array([future.result() for future in futures])
-        config.superpixel_cal_time = timekeeper - time.time()
+        config.superpixel_cal_time = time.time() - timekeeper
         return superpixel
 
     def _cal_superpixel(self, x: Tensor, idx: int, total: int) -> list:
