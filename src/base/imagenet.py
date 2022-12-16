@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Callable, Union
 
 from robustbench.data import CustomImageFolder
 from torch import Tensor
@@ -12,7 +12,7 @@ config = config_parser()
 
 
 def load_imagenet(
-    transform, data_dir: str = "../storage/data"
+    transform: Callable, data_dir: str = "../storage/data"
 ) -> Union[Tensor, Tensor]:
     """Load ImageNet data"""
 
