@@ -55,10 +55,12 @@ class SaliencyAttack(Attacker):
                 img = torch.stack(
                     [self.saliency_transform(x_idx) for x_idx in x[start:end]]
                 )
-                saliency_map = self.saliency_model(img)[0].cpu()
-                saliency_map = [T.Resize(height)(m).numpy()[0] for m in saliency_map]
-                self.saliency_detection.append(np.array(saliency_map) >= threshold)
-            self.saliency_detection = np.concatenate(self.saliency_detection, axis=0)
+                saliency_map = self.saliency_model(img)[0]
+                saliency_map = torch.stack(
+                    [T.Resize(height)(m)[0] for m in saliency_map]
+                )
+                self.saliency_detection.append(saliency_map >= threshold)
+            self.saliency_detection = torch.cat(self.saliency_detection)
             detected_pixels = self.saliency_detection.sum(axis=(1, 2))
             not_detected = detected_pixels <= (height // k_init) * (width // k_init)
             while not_detected.sum() > 0:
@@ -66,10 +68,13 @@ class SaliencyAttack(Attacker):
                     f"{threshold=} -> {not_detected.sum()} images not detected"
                 )
                 threshold /= 2
-                saliency_map = self.saliency_model(x[not_detected])[0].cpu().numpy()
+                saliency_map = self.saliency_model(x[not_detected])[0]
                 self.saliency_detection[not_detected] = saliency_map >= threshold
                 detected_pixels = self.saliency_detection.sum(axis=(1, 2))
                 not_detected = detected_pixels <= (height // k_init) * (width // k_init)
+            self.saliency_detection = torch.repeat_interleave(
+                self.saliency_detection.unsqueeze(1), 3, dim=1
+            )
 
             # refine search
             self.x_adv = x.clone()
@@ -169,6 +174,7 @@ class SaliencyAttack(Attacker):
             _block = torch.zeros_like(self.x_adv, dtype=torch.bool)
             for idx, b in enumerate(block):
                 _block[idx, b[0], b[1] : b[2], b[3] : b[4]] = True
+            _block = _block & self.saliency_detection
             loss = loss_storage[index, np.arange(batch)]
             update = loss >= self.best_loss
             upper_update = (update & is_upper).cpu().numpy()
