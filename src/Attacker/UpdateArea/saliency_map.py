@@ -41,7 +41,7 @@ class SaliencyMap:
         update_area[~self.saliency_detection] = 0
         return update_area
 
-    def next(self, idx: int, level: np.ndarray):
+    def update(self, idx: int, level: np.ndarray):
         k_int = max(config.k_int // 2**level, 1)
         assert self.height % k_int == 0
         h = self.height // k_int
@@ -50,8 +50,8 @@ class SaliencyMap:
         update_area = np.arange(1, h * w + 1).reshape(h, w)
         update_area = np.repeat(update_area, k_int, axis=0)
         update_area = np.repeat(update_area, k_int, axis=1)
-        assert update_area.shape == (self.batch, self.height, self.width)
-        update_area[~self.saliency_detection] = 0
+        assert update_area.shape == (self.height, self.width)
+        update_area[~self.saliency_detection[idx]] = 0
         return update_area
 
     def saliency_map(self, x: Tensor):
