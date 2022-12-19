@@ -23,42 +23,35 @@ class SaliencyMap:
 
     def initialize(self, x: Tensor, level: np.ndarray):
         self.batch, self.n_channel, self.height, self.width = x.shape
-        k_int = max(config.k_int // 2**level, 1)
         self.saliency_map(x)
 
-        # split_square
-        assert self.height % k_int == 0
-        h = self.height // k_int
-        assert self.width % k_int == 0
-        w = self.width // k_int
-        update_area = np.arange(1, h * w + 1).reshape(1, h, w)
-        update_area = np.repeat(update_area, self.batch, axis=0)
-        update_area = np.repeat(update_area, k_int, axis=1)
-        update_area = np.repeat(update_area, k_int, axis=2)
+        update_area = []
+        for idx in range(self.batch):
+            k_int = max(config.k_int // 2 ** level[idx], 1)
+            assert self.height % k_int == 0
+            h = self.height // k_int
+            assert self.width % k_int == 0
+            w = self.width // k_int
+            square = np.arange(1, h * w + 1).reshape(h, w)
+            square = np.repeat(square, k_int, axis=0)
+            square = np.repeat(square, k_int, axis=1)
+            update_area.append(square)
+        update_area = np.stack(update_area)
         assert update_area.shape == (self.batch, self.height, self.width)
-
-        # intersection
         update_area[~self.saliency_detection] = 0
-
         return update_area
 
     def next(self, idx: int, level: np.ndarray):
         k_int = max(config.k_int // 2**level, 1)
-
-        # split_square
         assert self.height % k_int == 0
         h = self.height // k_int
         assert self.width % k_int == 0
         w = self.width // k_int
-        update_area = np.arange(1, h * w + 1).reshape(1, h, w)
-        update_area = np.repeat(update_area, self.batch, axis=0)
+        update_area = np.arange(1, h * w + 1).reshape(h, w)
+        update_area = np.repeat(update_area, k_int, axis=0)
         update_area = np.repeat(update_area, k_int, axis=1)
-        update_area = np.repeat(update_area, k_int, axis=2)
         assert update_area.shape == (self.batch, self.height, self.width)
-
-        # intersection
         update_area[~self.saliency_detection] = 0
-
         return update_area
 
     def saliency_map(self, x: Tensor):
@@ -90,3 +83,4 @@ class SaliencyMap:
             not_detected = detected_pixels <= (self.height // config.k_int) * (
                 self.width // config.k_int
             )
+        self.saliency_detection = self.saliency_detection.cpu().numpy()
