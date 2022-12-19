@@ -25,8 +25,8 @@ class BaseMethod:
 
         self.level = np.zeros(self.batch, dtype=int)
         self.area = self.update_area.initialize(x, self.level)
+        self.targets = []
         if config.channel_wise:
-            self.targets = []
             for idx in range(self.batch):
                 n_update_area = self.area[idx].max()
                 channel = np.tile(np.arange(self.n_channel), n_update_area)

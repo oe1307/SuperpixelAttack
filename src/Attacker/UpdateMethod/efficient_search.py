@@ -41,8 +41,9 @@ class EfficientSearch(BaseMethod):
                 ]
                 self.targets[idx] = self.targets[idx][1:]
                 if self.targets[idx].shape[0] == 0:
+                    self.level[idx] += 1
                     self.area[idx] = self.update_area.update(idx, self.level[idx])
-                    self.targets[idx] = np.arange(1, self.area[idx].max())
+                    self.targets[idx] = np.arange(1, self.area[idx].max() + 1)
         timekeeper = time.time()
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
