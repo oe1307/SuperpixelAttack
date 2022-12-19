@@ -18,7 +18,7 @@ class ProposedMethod(Attacker):
         config.n_forward = config.step
         self.criterion = get_criterion()
         self.update_area = set_update_area()
-        self.update_method = set_update_method(self.update_method)
+        self.update_method = set_update_method(self.update_area)
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         self.update_method.set(self.model, self.criterion)

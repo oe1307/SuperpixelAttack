@@ -8,19 +8,35 @@ config = config_parser()
 
 
 class BaseMethod:
-    def __init__(self):
+    def __init__(self, update_area):
         if config.initial_point not in ("random", "lower", "upper"):
             raise NotImplementedError(config.initial_point)
+        self.update_area = update_area
 
     def set(self, model, criterion):
         self.model = model
         self.criterion = criterion
 
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
-        self.batch = x.shape[0]
+        self.batch, self.n_channel = x.shape[:2]
         self.y = y.clone()
         self.upper = upper.clone()
         self.lower = lower.clone()
+
+        self.level = np.zeros(self.batch, dtype=int)
+        self.area = self.update_area.initialize(x, self.level)
+        if config.channel_wise:
+            self.targets = []
+            for idx in range(self.batch):
+                n_update_area = self.area[idx].max()
+                channel = np.tile(np.arange(self.n_channel), n_update_area)
+                labels = np.repeat(range(1, n_update_area + 1), self.n_channel)
+                _target = np.stack([channel, labels], axis=1)
+                self.targets.append(np.random.permutation(_target))
+        else:
+            for idx in range(self.batch):
+                _target = np.arange(1, self.area[idx].max())
+                self.targets.append(np.random.permutation(_target))
 
         if config.initial_point == "random":
             is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)

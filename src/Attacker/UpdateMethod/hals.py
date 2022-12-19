@@ -11,8 +11,8 @@ config = config_parser()
 
 
 class HALS(BaseMethod):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, update_area):
+        super().__init__(update_area)
         self.mode = "init_insert"
         if config.update_area == "random_square":
             raise NotImplementedError("HALS does not support random_square")

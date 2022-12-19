@@ -29,7 +29,7 @@ class ConfigParser:
         if param is not None:
             for p in param:
                 k, v = p.split("=")
-                assert k in self.config
+                assert k in self.config, f"Invalid parameter: {k}"
                 if type(self.config[k]) in (int, float, str):
                     self.config[k] = type(self.config[k])(v)
                 elif type(self.config[k]) is bool:

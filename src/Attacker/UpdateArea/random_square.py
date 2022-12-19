@@ -21,15 +21,18 @@ class RandomSquare:
             h = np.sqrt(p * self.height * self.width).round().astype(int)
             r = np.random.randint(0, self.height - h)
             s = np.random.randint(0, self.width - h)
-            update_area[idx, r : r + h, s : s + h] = True
+            update_area[idx, r : r + h, s : s + h] = 1
         return self.update_area
 
     def next(self, idx: int, level: np.ndarray):
         update_area = np.zeros((self.batch, self.height, self.width), dtype=int)
-        n_half = (self.half_point < level[idx]).sum()
+        if config.channel_wise:
+            n_half = (self.half_point < level[idx] * self.n_channel).sum()
+        else:
+            n_half = (self.half_point < level[idx]).sum()
         p = config.p_init / 2**n_half
         h = np.sqrt(p * self.height * self.width).round().astype(int)
         r = np.random.randint(0, self.height - h)
         s = np.random.randint(0, self.width - h)
-        update_area[idx, r : r + h, s : s + h] = True
+        update_area[idx, r : r + h, s : s + h] = 1
         return update_area
