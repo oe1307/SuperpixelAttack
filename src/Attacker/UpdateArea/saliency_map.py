@@ -21,64 +21,47 @@ class SaliencyMap:
         self.saliency_model.to(config.device)
         self.saliency_model.eval()
 
-    def initialize(self, x: Tensor, forward: np.ndarray):
+    def initialize(self, x: Tensor, level: np.ndarray):
         self.batch, self.n_channel, self.height, self.width = x.shape
+        k_int = max(config.k_int // 2**level, 1)
         self.saliency_map(x)
 
         # split_square
-        assert self.height % self.k_init == 0
-        h = self.height // self.k_init
-        assert self.width % self.k_init == 0
-        w = self.width // self.k_init
-        self.update_area = np.arange(h * w).reshape(1, h, w)
-        self.update_area = np.repeat(self.update_area, self.batch, axis=0)
-        self.update_area = np.repeat(self.update_area, self.k_init, axis=1)
-        self.update_area = np.repeat(self.update_area, self.k_init, axis=2)
+        assert self.height % k_int == 0
+        h = self.height // k_int
+        assert self.width % k_int == 0
+        w = self.width // k_int
+        update_area = np.arange(1, h * w + 1).reshape(1, h, w)
+        update_area = np.repeat(update_area, self.batch, axis=0)
+        update_area = np.repeat(update_area, k_int, axis=1)
+        update_area = np.repeat(update_area, k_int, axis=2)
+        assert update_area.shape == (self.batch, self.height, self.width)
 
         # intersection
-        self.update_area[~self.saliency_detection] = -1
-        targets = []
-        for idx in range(self.batch):
-            labels = np.unique(self.update_area[idx])
-            if config.channel_wise:
-                channel = np.tile(np.arange(self.n_channel), len(labels[labels != -1]))
-                labels = np.repeat(labels[labels != -1], self.n_channel)
-                _targets = np.stack([channel, labels], axis=1)
-                targets.append(np.random.permutation(_targets))
-            else:
-                targets.append(np.random.permutation(labels[labels != -1]))
-        return self.update_area, targets
+        update_area[~self.saliency_detection] = 0
 
-    def next(self, forward: np.ndarray, targets):
-        for idx in range(self.batch):
-            if targets[idx].shape[0] == 0:
-                # split_square
-                if self.k_init > 1:
-                    assert self.k_init % 2 == 0
-                    self.k_init //= 2
-                h = self.height // self.k_init
-                w = self.width // self.k_init
-                self.update_area = np.arange(h * w).reshape(1, h, w)
-                self.update_area = np.repeat(self.update_area, self.batch, axis=0)
-                self.update_area = np.repeat(self.update_area, self.k_init, axis=1)
-                self.update_area = np.repeat(self.update_area, self.k_init, axis=2)
+        return update_area
 
-                # intersection
-                self.update_area[~self.saliency_detection] = -1
-                labels = np.unique(self.update_area[idx])
-                if config.channel_wise:
-                    channel = np.tile(
-                        np.arange(self.n_channel), len(labels[labels != -1])
-                    )
-                    labels = np.repeat(labels[labels != -1], self.n_channel)
-                    _targets = np.stack([channel, labels], axis=1)
-                    targets[idx] = np.random.permutation(_targets)
-                else:
-                    targets[idx] = np.random.permutation(labels[labels != -1])
-        return self.update_area, targets
+    def next(self, idx: int, level: np.ndarray):
+        k_int = max(config.k_int // 2**level, 1)
+
+        # split_square
+        assert self.height % k_int == 0
+        h = self.height // k_int
+        assert self.width % k_int == 0
+        w = self.width // k_int
+        update_area = np.arange(1, h * w + 1).reshape(1, h, w)
+        update_area = np.repeat(update_area, self.batch, axis=0)
+        update_area = np.repeat(update_area, k_int, axis=1)
+        update_area = np.repeat(update_area, k_int, axis=2)
+        assert update_area.shape == (self.batch, self.height, self.width)
+
+        # intersection
+        update_area[~self.saliency_detection] = 0
+
+        return update_area
 
     def saliency_map(self, x: Tensor):
-        self.k_init = config.k_init
         threshold = config.threshold
         self.saliency_detection = []
         n_saliency_batch = math.ceil(self.batch / config.saliency_batch)
@@ -89,20 +72,21 @@ class SaliencyMap:
             img = torch.stack(
                 [self.saliency_transform(x_idx) for x_idx in x[start:end]]
             )
-            _saliency_map = self.saliency_model(img)[0].cpu()
-            _saliency_map = [T.Resize(self.height)(m).numpy()[0] for m in _saliency_map]
-            self.saliency_detection.append(np.array(_saliency_map) >= threshold)
-        self.saliency_detection = np.concatenate(self.saliency_detection, axis=0)
+            saliency_map = self.saliency_model(img)[0]
+            saliency_map = [T.Resize(self.height)(m)[0] for m in saliency_map]
+            saliency_map = torch.stack(saliency_map)
+            self.saliency_detection.append(saliency_map >= threshold)
+        self.saliency_detection = torch.cat(self.saliency_detection)
         detected_pixels = self.saliency_detection.sum(axis=(1, 2))
-        not_detected = detected_pixels <= (self.height // self.k_init) * (
-            self.width // self.k_init
+        not_detected = detected_pixels <= (self.height // config.k_int) * (
+            self.width // config.k_int
         )
         while not_detected.sum() > 0:
             logger.warning(f"{threshold=} -> {not_detected.sum()} images not detected")
             threshold /= 2
-            _saliency_map = self.saliency_model(x[not_detected])[0].cpu().numpy()
-            self.saliency_detection[not_detected] = _saliency_map >= threshold
+            saliency_map = self.saliency_model(x[not_detected])[0]
+            self.saliency_detection[not_detected] = saliency_map >= threshold
             detected_pixels = self.saliency_detection.sum(axis=(1, 2))
-            not_detected = detected_pixels <= (self.height // self.k_init) * (
-                self.width // self.k_init
+            not_detected = detected_pixels <= (self.height // config.k_int) * (
+                self.width // config.k_int
             )

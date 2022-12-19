@@ -5,8 +5,9 @@ import numpy as np
 from skimage.segmentation import slic
 from torch import Tensor
 
-from utils import config_parser, pbar
+from utils import config_parser, pbar, setup_logger
 
+logger = setup_logger(__name__)
 config = config_parser()
 
 
@@ -14,40 +15,18 @@ class Superpixel:
     def __init__(self):
         config.superpixel_cal_time = 0
 
-    def initialize(self, x: Tensor, forward: np.ndarray):
-        self.batch, self.n_channel = x.shape[:2]
+    def initialize(self, x: Tensor, level: np.ndarray):
+        batch = x.shape[0]
         self.superpixel = self.cal_superpixel(x)
-        self.level = np.zeros(self.batch, dtype=int)
-        self.update_area = self.superpixel[np.arange(self.batch), self.level]
-        n_update_area = self.update_area.max(axis=(1, 2))
-        if config.channel_wise:
-            targets = []
-            for idx in range(self.batch):
-                channel = np.tile(np.arange(self.n_channel), n_update_area[idx])
-                labels = np.repeat(range(1, n_update_area[idx] + 1), self.n_channel)
-                _target = np.stack([channel, labels], axis=1)
-                targets.append(np.random.permutation(_target))
-        else:
-            targets = []
-            for idx in range(self.batch):
-                labels = range(1, n_update_area[idx] + 1)
-                targets.append(np.random.permutation(labels))
-        return self.update_area, targets
+        update_areas = self.superpixel[np.arange(batch), level]
+        return update_areas
 
-    def next(self, forward: np.ndarray, targets):
-        for idx in range(self.batch):
-            if targets[idx].shape[0] == 0:
-                self.level[idx] = min(self.level[idx] + 1, len(config.segments) - 1)
-                self.update_area[idx] = self.superpixel[idx, self.level[idx]]
-                _n_update_area = self.update_area[idx].max()
-                if config.channel_wise:
-                    channel = np.tile(np.arange(self.n_channel), _n_update_area)
-                    labels = np.repeat(range(1, _n_update_area + 1), self.n_channel)
-                    _target = np.stack([channel, labels], axis=1)
-                else:
-                    _target = np.arange(1, _n_update_area + 1)
-                targets[idx] = np.random.permutation(_target)
-        return self.update_area, targets
+    def update(self, idx: int, level: int):
+        if level > len(config.segments) - 1:
+            logger.warning("level is out of range")
+            level = len(config.segments) - 1
+        update_area = self.superpixel[idx, level]
+        return update_area
 
     def cal_superpixel(self, x):
         """calculate superpixel with multi-threading"""

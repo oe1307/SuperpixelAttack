@@ -22,7 +22,7 @@ criterion: cw
 update_area: superpixel
 channel_wise: True
 initial_point: lower
-update_method: greedy_local_search
+update_method: efficient_search
 remove_search: 
 
 # superpixel
@@ -34,7 +34,7 @@ initial_split: 32
 # saliency_map
 saliency_batch: 100
 threshold: 0.1
-k_init: 16
+k_int: 16
 
 # random_square
 p_init: 0.8

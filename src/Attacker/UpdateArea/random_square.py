@@ -12,34 +12,24 @@ class RandomSquare:
             np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.step
         )
 
-    def initialize(self, x: Tensor, forward: np.ndarray):
+    def initialize(self, x: Tensor, level: np.ndarray):
         self.batch, self.n_channel, self.height, self.width = x.shape
-        self.update_area = np.zeros((self.batch, self.height, self.width), dtype=bool)
+        update_area = np.zeros((self.batch, self.height, self.width), dtype=int)
         for idx in range(self.batch):
-            n_half = (self.half_point < forward[idx]).sum()
+            n_half = (self.half_point < level[idx]).sum()
             p = config.p_init / 2**n_half
             h = np.sqrt(p * self.height * self.width).round().astype(int)
             r = np.random.randint(0, self.height - h)
             s = np.random.randint(0, self.width - h)
-            self.update_area[idx, r : r + h, s : s + h] = True
-        if config.channel_wise:
-            targets = np.random.permutation(np.arange(self.n_channel))
-        else:
-            targets = np.ones(1, dtype=int)
-        return self.update_area, targets
+            update_area[idx, r : r + h, s : s + h] = True
+        return self.update_area
 
-    def next(self, forward: np.ndarray, targets):
-        if targets.shape[0] == 0:
-            self.update_area = np.zeros_like(self.update_area)
-            for idx in range(self.batch):
-                n_half = (self.half_point < forward[idx]).sum()
-                p = config.p_init / 2**n_half
-                h = np.sqrt(p * self.height * self.width).round().astype(int)
-                r = np.random.randint(0, self.height - h)
-                s = np.random.randint(0, self.width - h)
-                self.update_area[idx, r : r + h, s : s + h] = True
-            if config.channel_wise:
-                targets = np.random.permutation(np.arange(self.n_channel))
-            else:
-                targets = np.ones(1, dtype=int)
-        return self.update_area, targets
+    def next(self, idx: int, level: np.ndarray):
+        update_area = np.zeros((self.batch, self.height, self.width), dtype=int)
+        n_half = (self.half_point < level[idx]).sum()
+        p = config.p_init / 2**n_half
+        h = np.sqrt(p * self.height * self.width).round().astype(int)
+        r = np.random.randint(0, self.height - h)
+        s = np.random.randint(0, self.width - h)
+        update_area[idx, r : r + h, s : s + h] = True
+        return update_area

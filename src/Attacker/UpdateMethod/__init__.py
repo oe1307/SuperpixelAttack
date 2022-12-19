@@ -1,6 +1,6 @@
 from utils import config_parser
 
-from .greedy_local_search import GreedyLocalSearch
+from .efficient_search import EfficientSearch
 from .hals import HALS
 from .refine_search import RefineSearch
 from .uniform_distribution import UniformDistribution
@@ -9,8 +9,8 @@ config = config_parser()
 
 
 def set_update_method():
-    if config.update_method == "greedy_local_search":
-        update_method = GreedyLocalSearch()
+    if config.update_method == "efficient_search":
+        update_method = EfficientSearch()
     elif config.update_method == "hals":
         update_method = HALS()
     elif config.update_method == "refine_search":

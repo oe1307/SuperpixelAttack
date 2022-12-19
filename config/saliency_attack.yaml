@@ -19,7 +19,7 @@ model:
 # hyperparameter
 step: 100
 criterion: cw
-k_init: 16
+k_int: 16
 saliency_batch: 100
 threshold: 0.1
 

@@ -41,7 +41,7 @@ class SaliencyAttack(Attacker):
             self.best_loss = -100 * torch.ones(batch, device=config.device)
             self.forward = np.zeros(batch, dtype=int)
 
-            k_init = config.k_init
+            k_int = config.k_int
             split_level = 1
             block = np.array([(None, 0, height, 0, width)] * batch)
 
@@ -56,13 +56,12 @@ class SaliencyAttack(Attacker):
                     [self.saliency_transform(x_idx) for x_idx in x[start:end]]
                 )
                 saliency_map = self.saliency_model(img)[0]
-                saliency_map = torch.stack(
-                    [T.Resize(height)(m)[0] for m in saliency_map]
-                )
+                saliency_map = [T.Resize(height)(m)[0] for m in saliency_map]
+                saliency_map = torch.stack(saliency_map)
                 self.saliency_detection.append(saliency_map >= threshold)
             self.saliency_detection = torch.cat(self.saliency_detection)
             detected_pixels = self.saliency_detection.sum(axis=(1, 2))
-            not_detected = detected_pixels <= (height // k_init) * (width // k_init)
+            not_detected = detected_pixels <= (height // k_int) * (width // k_int)
             while not_detected.sum() > 0:
                 logger.warning(
                     f"{threshold=} -> {not_detected.sum()} images not detected"
@@ -71,7 +70,7 @@ class SaliencyAttack(Attacker):
                 saliency_map = self.saliency_model(x[not_detected])[0]
                 self.saliency_detection[not_detected] = saliency_map >= threshold
                 detected_pixels = self.saliency_detection.sum(axis=(1, 2))
-                not_detected = detected_pixels <= (height // k_init) * (width // k_init)
+                not_detected = detected_pixels <= (height // k_int) * (width // k_int)
             self.saliency_detection = torch.repeat_interleave(
                 self.saliency_detection.unsqueeze(1), 3, dim=1
             )
@@ -79,12 +78,12 @@ class SaliencyAttack(Attacker):
             # refine search
             self.x_adv = x.clone()
             while True:
-                self.refine(block, k_init, split_level)
+                self.refine(block, k_int, split_level)
                 if self.forward.min() >= config.step:
                     break
-                elif k_init > 1:
-                    assert k_init % 2 == 0
-                    k_init //= 2
+                elif k_int > 1:
+                    assert k_int % 2 == 0
+                    k_int //= 2
             x_adv_all.append(self.x_adv)
         x_adv_all = torch.concat(x_adv_all)
         del self.x_adv, self.upper, self.lower, self.best_loss, self.forward
