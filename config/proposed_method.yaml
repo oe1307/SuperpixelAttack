@@ -27,7 +27,7 @@ update_method: efficient_search
 # superpixel
 segments: [4, 16, 64, 256]
 
-# split_square
+# equally_divided_squares
 initial_split: 32
 
 # saliency_map

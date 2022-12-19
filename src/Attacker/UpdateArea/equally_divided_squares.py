@@ -6,7 +6,7 @@ from utils import config_parser
 config = config_parser()
 
 
-class SplitSquare:
+class EquallyDividedSquares:
     def __init__(self):
         pass
 
