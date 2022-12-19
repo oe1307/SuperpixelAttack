@@ -31,7 +31,6 @@ class EfficientSearch(BaseMethod):
                     channel = np.tile(np.arange(self.n_channel), n_update_area)
                     labels = np.repeat(range(1, n_update_area + 1), self.n_channel)
                     self.targets[idx] = np.stack([channel, labels], axis=1)
-            x_adv = torch.where(is_upper, self.upper, self.lower)
         else:
             is_upper = is_upper.permute(0, 2, 3, 1)
             for idx in range(self.batch):
@@ -44,6 +43,8 @@ class EfficientSearch(BaseMethod):
                     self.level[idx] += 1
                     self.area[idx] = self.update_area.update(idx, self.level[idx])
                     self.targets[idx] = np.arange(1, self.area[idx].max() + 1)
+            is_upper = is_upper.permute(0, 3, 1, 2)
+        x_adv = torch.where(is_upper, self.upper, self.lower)
         timekeeper = time.time()
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
