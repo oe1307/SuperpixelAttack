@@ -23,7 +23,6 @@ update_area: superpixel
 channel_wise: True
 initial_point: lower
 update_method: efficient_search
-remove_search: 
 
 # superpixel
 segments: [4, 16, 64, 256]
