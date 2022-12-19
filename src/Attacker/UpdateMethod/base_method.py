@@ -35,7 +35,7 @@ class BaseMethod:
                 self.targets.append(np.random.permutation(_target))
         else:
             for idx in range(self.batch):
-                _target = np.arange(1, self.area[idx].max())
+                _target = np.arange(1, self.area[idx].max() + 1)
                 self.targets.append(np.random.permutation(_target))
 
         if config.initial_point == "random":
