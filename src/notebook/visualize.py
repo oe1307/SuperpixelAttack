@@ -12,7 +12,10 @@ sys.path.append("..")
 # In[ ]:
 
 
+import random
+
 from matplotlib import pyplot as plt
+from skimage.segmentation import mark_boundaries, slic
 
 from Attacker.UpdateArea import Superpixel
 from base import get_model, load_imagenet
@@ -43,7 +46,16 @@ superpixel = superpixel_manager._cal_superpixel(data[0], 1, 1)
 
 plt.subplots(figsize=(8, 8))
 plt.axis("off")
-plt.imshow(superpixel[1])
+plt.imshow(mark_boundaries(data[0].numpy().transpose(1, 2, 0), superpixel[0]))
+plt.show()
+
+
+# In[ ]:
+
+
+plt.subplots(figsize=(8, 8))
+plt.axis("off")
+plt.imshow(superpixel[2])
 plt.show()
 
 
@@ -59,7 +71,29 @@ plt.show()
 # In[ ]:
 
 
-data[0].shape
+epsilon = 0.1
+x_adv = data[0].numpy().copy()
+for i in range(1, superpixel[0].max() + 1):
+    x_adv[random.randint(0, 2), superpixel[0] == i] += (
+        2 * random.randint(0, 1) - 1
+    ) * epsilon
+x_adv = x_adv.clip(0, 1)
+
+plt.subplots(figsize=(8, 8))
+plt.axis("off")
+plt.imshow(mark_boundaries(x_adv.transpose(1, 2, 0), superpixel[0]))
+plt.show()
+
+for i in range(1, superpixel[1].max() + 1):
+    x_adv[random.randint(0, 2), superpixel[1] == i] += (
+        2 * random.randint(0, 1) - 1
+    ) * epsilon
+x_adv = x_adv.clip(0, 1)
+
+plt.subplots(figsize=(8, 8))
+plt.axis("off")
+plt.imshow(mark_boundaries(x_adv.transpose(1, 2, 0), superpixel[1]))
+plt.show()
 
 
 # In[ ]:
