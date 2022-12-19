@@ -14,7 +14,7 @@ class EquallyDividedSquares:
         self.batch, self.n_channel, self.height, self.width = x.shape
         update_area = []
         for idx in range(self.batch):
-            n_split = max(config.initial_split // 2**level[idx], 1)
+            n_split = max(config.initial_split // 2 ** level[idx], 1)
             assert self.height % n_split == 0
             h = self.height // n_split
             assert self.width % n_split == 0

@@ -1,8 +1,8 @@
 from utils import config_parser
 
+from .equally_divided_squares import EquallyDividedSquares
 from .random_square import RandomSquare
 from .saliency_map import SaliencyMap
-from .equally_divided_squares import EquallyDividedSquares
 from .superpixel import Superpixel
 
 config = config_parser()
