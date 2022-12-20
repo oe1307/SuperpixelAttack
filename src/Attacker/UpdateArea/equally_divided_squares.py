@@ -8,7 +8,8 @@ config = config_parser()
 
 class EquallyDividedSquares:
     def __init__(self):
-        pass
+        if config.update_method != "adaptive_search":
+            raise ValueError("Update area is only available for adaptive search.")
 
     def initialize(self, x: Tensor, level: np.ndarray):
         self.batch, self.n_channel, self.height, self.width = x.shape

@@ -81,7 +81,7 @@ class HALS(BaseMethod):
                 c, label = self.targets[idx][0]
                 is_upper[idx, c, self.area[idx] == label] = ~is_upper[
                     idx, c, self.area[idx] == label
-                ]
+                ]  # FIXME: this is wrong
             else:
                 label = self.targets[idx][0]
                 is_upper[idx, :, self.area[idx] == label] = ~is_upper[

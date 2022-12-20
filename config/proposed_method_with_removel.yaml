@@ -1,0 +1,23 @@
+attacker: ProposedMethodWithRemoval
+
+norm: Linf
+epsilon: 0.01568627450980392
+n_examples: 1000
+
+model:
+    # torchvision
+    resnet50: 1000
+    vgg16_bn: 1000
+
+    # robustbench
+    # Wong2020Fast: 1000
+    # Engstrom2019Robustness: 1000
+    # Salman2020Do_R18: 1000
+    # Salman2020Do_R50: 1000
+    # Salman2020Do_50_2: 1000
+
+# hyperparameter
+step: 100
+criterion: cw
+segments: [4, 16, 64, 256, 1024, 4096]
+removal: wasted

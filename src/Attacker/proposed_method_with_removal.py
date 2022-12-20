@@ -6,7 +6,7 @@ from torch import Tensor
 from base import Attacker, get_criterion
 from utils import config_parser, pbar, setup_logger
 
-from .SearchRemoval import set
+from .SearchRemoval import set_search_method
 from .UpdateArea import Superpixel
 
 logger = setup_logger(__name__)
@@ -18,7 +18,7 @@ class ProposedMethodWithRemoval(Attacker):
         config.n_forward = config.step
         self.criterion = get_criterion()
         self.update_area = Superpixel()
-        self.update_method = set
+        self.update_method = set_search_method(self.update_area)
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
         self.update_method.set(self.model, self.criterion)

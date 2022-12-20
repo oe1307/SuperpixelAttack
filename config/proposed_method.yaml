@@ -20,13 +20,11 @@ model:
 step: 100
 criterion: cw
 update_area: superpixel
-channel_wise: True
-initial_point: stripes
 update_method: efficient_search
+removal: True
 
 # superpixel
 segments: [4, 16, 64, 256, 1024]
-shuffle: True
 
 # equally_divided_squares
 initial_split: 32

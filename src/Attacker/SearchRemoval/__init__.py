@@ -1,16 +1,13 @@
 from utils import config_parser
 
-from .loss_based_remover import LossBasedRemover
+from .updated_base import UpdatedBaseRemover
 
 config = config_parser()
 
 
 def set_search_method(update_area):
-    if config.search_method == "loss_based":
-        update_method = LossBasedRemover(update_area)
+    if config.removal == "wasted":
+        update_method = UpdatedBaseRemover(update_area)
     else:
         raise NotImplementedError(config.update_method)
     return update_method
-
-
-__all__ = ["LossBasedRemover"]
