@@ -1,4 +1,5 @@
 import numpy as np
+from torch import Tensor
 import torch
 
 from utils import config_parser
@@ -11,6 +12,43 @@ class UniformDistribution:
         if config.update_area != "superpixel":
             raise ValueError("Update area is only available for superpixel.")
         self.update_area = update_area
+
+    def set(self, model, criterion):
+        self.model = model
+        self.criterion = criterion
+
+    def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
+        self.batch, self.n_channel, self.height, self.width = x.shape
+        self.y = y.clone()
+        self.upper = upper.clone()
+        self.lower = lower.clone()
+
+        self.level = np.zeros(self.batch, dtype=int)
+        self.area = self.update_area.initialize(x, self.level)
+        self.targets = []
+        for idx in range(self.batch):
+            labels = np.unique(self.area[idx])
+            labels = labels[labels != 0]
+            channel = np.tile(np.arange(self.n_channel), len(labels))
+            labels = np.repeat(labels, self.n_channel)
+            channel_labels = np.stack([channel, labels], axis=1)
+            self.targets.append(np.random.permutation(channel_labels))
+
+        is_upper = torch.randint(
+            0,
+            2,
+            (self.batch, self.n_channel, 1, self.width),
+            device=config.device,
+            dtype=bool,
+        ).repeat_interleave(self.height, dim=2)
+        x_adv = torch.where(is_upper, upper, lower)
+        pred = self.model(x_adv).softmax(1)
+        loss = self.criterion(pred, y)
+        self.forward = np.ones(self.batch, dtype=int)
+        self.is_upper_best = is_upper.clone()
+        self.x_best = x_adv.clone()
+        self.best_loss = loss.clone()
+        return self.forward
 
     def step(self):
         x_adv = self.x_best.permute(0, 2, 3, 1).clone()

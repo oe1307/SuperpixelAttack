@@ -25,7 +25,6 @@ class SaliencyMap:
     def initialize(self, x: Tensor, level: np.ndarray):
         self.batch, self.n_channel, self.height, self.width = x.shape
         self.saliency_map(x)
-
         update_area = []
         for idx in range(self.batch):
             k_int = max(config.k_int // 2 ** level[idx], 1)

@@ -9,7 +9,7 @@ from utils import config_parser
 config = config_parser()
 
 
-class EfficientSearch:
+class AdaptiveSearch:
     def __init__(self, update_area):
         self.update_area = update_area
         config.forward_time = 0
@@ -52,7 +52,7 @@ class EfficientSearch:
             updated = self.updated[idx, c, self.area[idx] == label].sum()
             searched = self.searched[idx, c, self.area[idx] == label].sum()
             probability = 0.5 * (updated / searched) + 0.5
-            if np.random.rand() > probability:
+            if np.random.rand() > probability and config.removal:
                 continue
             is_upper[idx, c, self.area[idx] == label] = ~is_upper[
                 idx, c, self.area[idx] == label

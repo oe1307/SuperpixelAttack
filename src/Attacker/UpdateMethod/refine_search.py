@@ -1,4 +1,5 @@
 import math
+from torch import Tensor
 
 import numpy as np
 import torch
@@ -15,6 +16,30 @@ class RefineSearch:
             raise ValueError("Update area is only available for superpixel.")
         self.max_level = len(config.segments)
         self.update_area = update_area
+
+    def set(self, model, criterion):
+        self.model = model
+        self.criterion = criterion
+
+    def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
+        self.batch, self.n_channel, self.height, self.width = x.shape
+        self.y = y.clone()
+        self.upper = upper.clone()
+        self.lower = lower.clone()
+
+        self.level = np.zeros(self.batch, dtype=int)
+        self.area = self.update_area.initialize(x, self.level)
+        self.targets = []
+        for idx in range(self.batch):
+            labels = np.unique(self.area[idx])
+            labels = labels[labels != 0]
+            channel = np.tile(np.arange(self.n_channel), len(labels))
+            labels = np.repeat(labels, self.n_channel)
+            channel_labels = np.stack([channel, labels], axis=1)
+            self.targets.append(np.random.permutation(channel_labels))
+        self.x_best = x.clone()
+        self.forward = np.zeros(self.batch, dtype=int)
+        return self.forward
 
     def step(self):
         self.refine(self.area.copy(), self.targets.copy(), self.level.copy())

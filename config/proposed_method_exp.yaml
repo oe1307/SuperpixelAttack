@@ -1,0 +1,30 @@
+attacker: ProposedMethod
+
+norm: Linf
+epsilon: 0.01568627450980392
+n_examples: 5000
+
+model:
+    Wong2020Fast: 1000
+    Salman2020Do_R18: 1000
+
+# hyperparameter
+step: 100
+criterion: cw
+update_area: superpixel
+update_method: efficient_search
+removal: True
+
+# superpixel
+segments: [4, 16, 64, 256, 1024]
+
+# equally_divided_squares
+initial_split: 32
+
+# saliency_map
+saliency_batch: 100
+threshold: 0.1
+k_int: 16
+
+# random_square
+p_init: 0.8
