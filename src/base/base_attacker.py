@@ -29,7 +29,7 @@ class Attacker:
         shutil.copytree("../src", f"{config.savedir}/backup")
 
         # remove misclassification images
-        clean_acc = torch.zeros(config.n_examples, dtype=torch.bool)
+        clean_acc = torch.zeros(config.n_examples, device=config.device, dtype=bool)
         n_batch = math.ceil(config.n_examples / self.model.batch_size)
         for i in range(n_batch):
             start = i * self.model.batch_size
