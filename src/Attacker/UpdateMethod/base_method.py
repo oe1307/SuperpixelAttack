@@ -9,7 +9,7 @@ config = config_parser()
 
 class BaseMethod:
     def __init__(self, update_area):
-        if config.initial_point not in ("random", "lower", "upper"):
+        if config.initial_point not in ("random", "lower", "upper", "stripes"):
             raise NotImplementedError(config.initial_point)
         self.update_area = update_area
 
@@ -18,7 +18,7 @@ class BaseMethod:
         self.criterion = criterion
 
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
-        self.batch, self.n_channel = x.shape[:2]
+        self.batch, self.n_channel, self.height, self.width = x.shape
         self.y = y.clone()
         self.upper = upper.clone()
         self.lower = lower.clone()
@@ -47,22 +47,35 @@ class BaseMethod:
                     self.targets.append(labels[labels != 0])
 
         if config.initial_point == "random":
-            is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)
+            is_upper = torch.randint_like(x, 0, 2, device=config.device, dtype=bool)
             x_adv = torch.where(is_upper, upper, lower)
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
             self.forward = np.ones(self.batch, dtype=int)
 
         elif config.initial_point == "lower":
-            is_upper = torch.zeros_like(x, dtype=torch.bool)
+            is_upper = torch.zeros_like(x, device=config.device, dtype=bool)
             x_adv = lower.clone()
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
             self.forward = np.ones(self.batch, dtype=int)
 
         elif config.initial_point == "upper":
-            is_upper = torch.ones_like(x, dtype=torch.bool)
+            is_upper = torch.ones_like(x, device=config.device, dtype=bool)
             x_adv = upper.clone()
+            pred = self.model(x_adv).softmax(1)
+            loss = self.criterion(pred, y)
+            self.forward = np.ones(self.batch, dtype=int)
+
+        elif config.initial_point == "stripes":
+            is_upper = torch.randint(
+                0,
+                2,
+                (self.batch, self.n_channel, 1, self.width),
+                device=config.device,
+                dtype=bool,
+            ).repeat_interleave(self.height, dim=2)
+            x_adv = torch.where(is_upper, upper, lower)
             pred = self.model(x_adv).softmax(1)
             loss = self.criterion(pred, y)
             self.forward = np.ones(self.batch, dtype=int)
