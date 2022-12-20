@@ -142,7 +142,7 @@ class HALS:
         self.best_loss[update] = loss[update]
         self.max_heap = [[] for _ in range(self.batch)]
         for idx in range(self.batch):
-            self.area = self.update_area.update(idx, self.level[idx])
+            self.area[idx] = self.update_area.update(idx, self.level[idx])
             labels = np.unique(self.area[idx])
             labels = labels[labels != 0]
             channel = np.tile(np.arange(self.n_channel), len(labels))
