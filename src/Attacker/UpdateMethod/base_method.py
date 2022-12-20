@@ -32,13 +32,19 @@ class BaseMethod:
                 labels = labels[labels != 0]
                 channel = np.tile(np.arange(self.n_channel), len(labels))
                 labels = np.repeat(labels, self.n_channel)
-                channel_labels = np.stack([channel, labels], axis=1)
-                self.targets.append(np.random.permutation(channel_labels))
+                if config.shuffle:
+                    channel_labels = np.stack([channel, labels], axis=1)
+                    self.targets.append(np.random.permutation(channel_labels))
+                else:
+                    self.targets.append(np.stack([channel, labels], axis=1))
         else:
             for idx in range(self.batch):
                 labels = np.unique(self.area[idx])
-                labels = labels[labels != 0]
-                self.targets.append(np.random.permutation(labels))
+                if config.shuffle:
+                    labels = labels[labels != 0]
+                    self.targets.append(np.random.permutation(labels))
+                else:
+                    self.targets.append(labels[labels != 0])
 
         if config.initial_point == "random":
             is_upper = torch.randint_like(x, 0, 2, dtype=torch.bool)

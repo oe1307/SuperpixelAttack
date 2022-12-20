@@ -31,8 +31,11 @@ class EfficientSearch(BaseMethod):
                     labels = labels[labels != 0]
                     channel = np.tile(np.arange(self.n_channel), len(labels))
                     labels = np.repeat(labels, self.n_channel)
-                    channel_labels = np.stack([channel, labels], axis=1)
-                    self.targets[idx] = np.random.permutation(channel_labels)
+                    if config.shuffle:
+                        channel_labels = np.stack([channel, labels], axis=1)
+                        self.targets[idx] = np.random.permutation(channel_labels)
+                    else:
+                        self.targets[idx] = np.stack([channel, labels], axis=1)
         else:
             is_upper = is_upper.permute(0, 2, 3, 1)
             for idx in range(self.batch):
@@ -45,8 +48,11 @@ class EfficientSearch(BaseMethod):
                     self.level[idx] += 1
                     self.area[idx] = self.update_area.update(idx, self.level[idx])
                     labels = np.unique(self.area[idx])
-                    labels = labels[labels != 0]
-                    self.targets[idx] = np.random.permutation(labels)
+                    if config.shuffle:
+                        labels = labels[labels != 0]
+                        self.targets[idx] = np.random.permutation(labels)
+                    else:
+                        self.targets[idx] = labels[labels != 0]
             is_upper = is_upper.permute(0, 3, 1, 2)
         x_adv = torch.where(is_upper, self.upper, self.lower)
         timekeeper = time.time()
