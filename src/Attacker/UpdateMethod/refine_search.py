@@ -11,8 +11,8 @@ config = config_parser()
 
 
 class RefineSearch(BaseMethod):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, update_area):
+        super().__init__(update_area)
         if config.update_area == "superpixel":
             self.max_level = len(config.segments)
         elif config.update_area == "equally_divided_squares":
@@ -23,96 +23,98 @@ class RefineSearch(BaseMethod):
             raise NotImplementedError("HALS does not support random_square")
 
     def step(self):
-        self.refine(self.level)
-        self.level = (self.level + 1).clip(0, self.max_level)
-        return self.forward
+        self.refine(self.area.copy(), self.targets.copy(), self.level.copy())
+        self.level = np.minimum(self.level + 1, self.max_level).astype(int)
+        for idx in range(self.batch):
+            self.area[idx] = self.update_area.update(idx, self.level[idx])
+            if config.channel_wise:
+                labels = np.unique(self.area[idx])
+                labels = labels[labels != 0]
+                channel = np.tile(np.arange(self.n_channel), len(labels))
+                labels = np.repeat(labels, self.n_channel)
+                channel_labels = np.stack([channel, labels], axis=1)
+                self.targets[idx] = np.random.permutation(channel_labels)
+            else:
+                labels = np.unique(self.area[idx])
+                labels = labels[labels != 0]
+                self.targets[idx] = np.random.permutation(labels)
+        return self.x_best, self.forward
 
-    def refine(self, level):
-        n_targets = max([len(t) for t in self.targets])
-        upper_loss = -100 * torch.ones((n_targets, self.batch), device=config.device)
-        lower_loss = -100 * torch.ones((n_targets, self.batch), device=config.device)
-        for t in range(n_targets):
-            if config.chennel_wise:
-                x_upper = self.x_best.clone()
-                x_lower = self.x_best.clone()
+    def refine(self, area, targets, level):
+        n_targets = np.array([len(t) for t in targets])
+        loss_storage = [[] for _ in range(self.batch)]
+        for t in range(n_targets.max()):
+            is_upper = self.is_upper_best.clone()
+            if config.channel_wise:
                 for idx in range(self.batch):
-                    if self.targets[idx].shape[0] > t + 1:
+                    if n_targets[idx] <= t:
                         continue
-                    c, label = self.targets[idx][t]
-                    x_upper[idx, c, self.area == label] = self.upper[
-                        idx, c, self.area == label
+                    c, label = targets[idx][t]
+                    is_upper[idx, c, area[idx] == label] = ~is_upper[
+                        idx, c, area[idx] == label
                     ]
-                    x_lower[idx, c, self.area == label] = self.lower[
-                        idx, c, self.area == label
-                    ]
-                    self.forward[idx] += 2
+                    self.forward[idx] += 1
             else:
                 for idx in range(self.batch):
-                    if self.targets[idx].shape[0] > t + 1:
+                    if n_targets[idx] <= t:
                         continue
-                    label = self.targets[idx][t]
-                    x_upper.permute(0, 2, 3, 1)[
-                        idx, self.area == label
-                    ] = self.upper.permute(0, 2, 3, 1)[idx, self.area == label]
-                    x_lower.permute(0, 2, 3, 1)[
-                        idx, self.area == label
-                    ] = self.lower.permute(0, 2, 3, 1)[idx, self.area == label]
-                    self.forward[idx] += 2
-                x_upper = x_upper.permute(0, 3, 1, 2)
-                x_lower = x_lower.permute(0, 3, 1, 2)
-            pred = self.model(x_upper).softmax(dim=1)
-            upper_loss[t, self.forward < config.step] = self.criterion(pred, self.y)
-            pred = self.model(x_lower).softmax(dim=1)
-            lower_loss[t, self.forward < config.step] = self.criterion(pred, self.y)
-            pbar.debug(t + 1, n_targets, f"forward = {self.forward.min()}")
-            if self.forward.min() >= config.step:
+                    label = targets[idx][t]
+                    is_upper.permute(0, 2, 3, 1)[
+                        idx, area[idx] == label
+                    ] = ~is_upper.permute(0, 2, 3, 1)[idx, area[idx] == label]
+                    self.forward[idx] += 1
+            x_adv = torch.where(is_upper, self.upper, self.lower)
+            pred = self.model(x_adv).softmax(dim=1)
+            loss = self.criterion(pred, self.y)
+            for idx in range(self.batch):
+                if n_targets[idx] > t:
+                    loss_storage[idx].append(loss[idx].item())
+            pbar.debug(
+                t + 1,
+                max(n_targets),
+                f"level = {level.max()}",
+                f"forward = {self.forward.mean():.2f}",
+            )
+            if np.logical_or(n_targets <= t, self.forward >= config.step).all():
                 logger.debug("")
                 break
-        loss_storage, u_is_better = torch.stack([lower_loss, upper_loss]).max(dim=0)
-        indices = loss_storage.argsort(dim=0, descending=True)
-        for index in indices:
-            is_upper = u_is_better[index, np.arange(self.batch)].to(torch.bool)
-            loss = loss_storage[index, np.arange(self.batch)]
-            update = loss >= self.best_loss
-            upper_update = (update & is_upper).cpu().numpy()
-            lower_update = (update & ~is_upper).cpu().numpy()
+        loss_storage = [np.array(loss) for loss in loss_storage]
+        indicies = [loss.argsort()[::-1] for loss in loss_storage]
+        level += 1
+        for t in range(n_targets.max()):
+            next_targets = targets.copy()
+            next_area = area.copy()
             for idx in range(self.batch):
-                if config.channel_wise and upper_update[idx]:
-                    c, label = self.targets[idx][index[idx]]
-                    self.x_best[idx, c, self.area == label] = self.upper[
-                        idx, c, self.area == label
-                    ]
-                elif upper_update[idx]:
-                    label = self.targets[idx][index[idx]]
-                    self.x_best.permute(0, 2, 3, 1)[
-                        idx, self.area == label
-                    ] = self.upper.permute(0, 2, 3, 1)[idx, self.area == label]
-                elif config.channel_wise and lower_update[idx]:
-                    c, label = self.targets[idx][index[idx]]
-                    self.x_best[idx, c, self.area == label] = self.lower[
-                        idx, c, self.area == label
-                    ]
-                elif lower_update[idx]:
-                    label = self.targets[idx][index[idx]]
-                    self.x_best.permute(0, 2, 3, 1)[
-                        idx, self.area == label
-                    ] = self.lower.permute(0, 2, 3, 1)[idx, self.area == label]
-                if level[idx] < self.max_level:
-                    level[idx] += 1
-                    for idx in range(self.batch):
-                        next_area = self.update_area.update(idx, level[idx])
-                        pair = np.stack([self.area[idx], next_area], axis=0)
-                        pair = np.unique(pair, axis=0)
-                        if config.channel_wise:
-                            c, label = self.targets[idx][index[idx]]
-                            labels = pair[pair[:, 0] == label][:, 1]
-                            channel = np.ones_like(labels) * c
-                            _target = np.stack([channel, labels], axis=1)
-                            self.targets[idx] = np.random.permutation(_target)
-                            self.area = next_area
-                        else:
-                            label = self.targets[idx][index[idx]]
-                            labels = pair[pair[:, 0] == label][:, 1]
-                            self.targets[idx] = np.random.permutation(labels)
-                            self.area = next_area
-            self.refine(level)
+                if len(indicies[idx]) > t:
+                    loss = loss_storage[idx][indicies[idx][t]]
+                    update = (loss >= self.best_loss[idx]).item()
+                    if config.channel_wise and update:
+                        c, label = targets[idx][indicies[idx][t]]
+                        self.is_upper_best[
+                            idx, c, area[idx] == label
+                        ] = ~self.is_upper_best[idx, c, area[idx] == label]
+                    elif update:
+                        label = targets[idx][indicies[idx][t]]
+                        self.x_best.permute(0, 2, 3, 1)[
+                            idx, area[idx] == label
+                        ] = self.lower.permute(0, 2, 3, 1)[idx, area[idx] == label]
+                if self.forward[idx] < config.step and level.max() < self.max_level:
+                    next_area[idx] = self.update_area.update(idx, level[idx])
+                    pair = np.stack(
+                        [area[idx].reshape(-1), next_area[idx].reshape(-1)]
+                    ).T
+                    pair = np.unique(pair, axis=0)
+                    if config.channel_wise:
+                        c, label = targets[idx][indicies[idx][t]]
+                        labels = pair[pair[:, 0] == label][:, 1]
+                        channel = np.ones_like(labels) * c
+                        _target = np.stack([channel, labels], axis=1)
+                        next_targets[idx] = np.random.permutation(_target)
+                    else:
+                        label = targets[idx][indicies[idx][t]]
+                        labels = pair[pair[:, 0] == label][:, 1]
+                        next_targets[idx] = np.random.permutation(labels)
+                else:
+                    next_targets[idx] = np.array([])
+            if self.forward.min() < config.step and level.max() < self.max_level:
+                self.refine(next_area.copy(), next_targets.copy(), level.copy())
