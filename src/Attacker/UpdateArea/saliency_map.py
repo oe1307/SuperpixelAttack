@@ -14,6 +14,8 @@ config = config_parser()
 
 class SaliencyMap:
     def __init__(self):
+        if config.update_method != "adaptive_search":
+            raise ValueError("Update area is only available for adaptive search.")
         self.saliency_model = SODModel().to(config.device)
         self.saliency_transform = T.Resize(256)
         weights = torch.load("../storage/model/saliency/saliency_weight.pth")

@@ -8,6 +8,8 @@ config = config_parser()
 
 class RandomSquare:
     def __init__(self):
+        if config.update_method != "adaptive_search":
+            raise ValueError("Update area is only available for adaptive search.")
         self.half_point = (
             np.array([0.001, 0.005, 0.02, 0.1, 0.2, 0.4, 0.6, 0.8]) * config.step
         )
@@ -26,10 +28,7 @@ class RandomSquare:
 
     def update(self, idx: int, level: np.ndarray):
         update_area = np.zeros((self.height, self.width), dtype=int)
-        if config.channel_wise:
-            n_half = (self.half_point < level * self.n_channel).sum()
-        else:
-            n_half = (self.half_point < level).sum()
+        n_half = (self.half_point < level * self.n_channel).sum()
         p = config.p_init / 2**n_half
         h = np.sqrt(p * self.height * self.width).round().astype(int)
         r = np.random.randint(0, self.height - h)

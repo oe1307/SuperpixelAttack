@@ -6,17 +6,15 @@ from torch import Tensor
 
 from utils import config_parser
 
-from .base_method import BaseMethod
-
 config = config_parser()
 
 
-class HALS(BaseMethod):
+class HALS:
     def __init__(self, update_area):
-        super().__init__(update_area)
+        if config.update_area != "superpixel":
+            raise ValueError("Update area is only available for superpixel.")
+        self.update_area = update_area
         self.mode = "insert"
-        if config.update_area == "random_square":
-            raise NotImplementedError("HALS does not support random_square")
 
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
         forward = super().initialize(x, y, lower, upper)

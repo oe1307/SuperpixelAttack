@@ -5,23 +5,16 @@ import torch
 
 from utils import config_parser, pbar, setup_logger
 
-from .base_method import BaseMethod
-
 logger = setup_logger(__name__)
 config = config_parser()
 
 
-class RefineSearch(BaseMethod):
+class RefineSearch:
     def __init__(self, update_area):
-        super().__init__(update_area)
-        if config.update_area == "superpixel":
-            self.max_level = len(config.segments)
-        elif config.update_area == "equally_divided_squares":
-            self.max_level = math.log2(config.initial_split)
-        elif config.update_area == "saliency_map":
-            self.max_level = math.log2(config.k_int)
-        elif config.update_area == "random_square":
-            raise NotImplementedError("HALS does not support random_square")
+        if config.update_area != "superpixel":
+            raise ValueError("Update area is only available for superpixel.")
+        self.max_level = len(config.segments)
+        self.update_area = update_area
 
     def step(self):
         self.refine(self.area.copy(), self.targets.copy(), self.level.copy())
