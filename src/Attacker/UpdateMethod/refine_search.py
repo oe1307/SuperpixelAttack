@@ -47,7 +47,7 @@ class RefineSearch(BaseMethod):
             is_upper = self.is_upper_best.clone()
             if config.channel_wise:
                 for idx in range(self.batch):
-                    if n_targets[idx] <= t:
+                    if n_targets[idx] <= t or self.forward[idx] >= config.step:
                         continue
                     c, label = targets[idx][t]
                     is_upper[idx, c, area[idx] == label] = ~is_upper[
@@ -56,7 +56,7 @@ class RefineSearch(BaseMethod):
                     self.forward[idx] += 1
             else:
                 for idx in range(self.batch):
-                    if n_targets[idx] <= t:
+                    if n_targets[idx] <= t or self.forward[idx] >= config.step:
                         continue
                     label = targets[idx][t]
                     is_upper.permute(0, 2, 3, 1)[
@@ -98,22 +98,22 @@ class RefineSearch(BaseMethod):
                         self.x_best.permute(0, 2, 3, 1)[
                             idx, area[idx] == label
                         ] = self.lower.permute(0, 2, 3, 1)[idx, area[idx] == label]
-                if self.forward[idx] < config.step and level.max() < self.max_level:
-                    next_area[idx] = self.update_area.update(idx, level[idx])
-                    pair = np.stack(
-                        [area[idx].reshape(-1), next_area[idx].reshape(-1)]
-                    ).T
-                    pair = np.unique(pair, axis=0)
-                    if config.channel_wise:
-                        c, label = targets[idx][indicies[idx][t]]
-                        labels = pair[pair[:, 0] == label][:, 1]
-                        channel = np.ones_like(labels) * c
-                        _target = np.stack([channel, labels], axis=1)
-                        next_targets[idx] = np.random.permutation(_target)
-                    else:
-                        label = targets[idx][indicies[idx][t]]
-                        labels = pair[pair[:, 0] == label][:, 1]
-                        next_targets[idx] = np.random.permutation(labels)
+                    if self.forward[idx] < config.step and level.max() < self.max_level:
+                        next_area[idx] = self.update_area.update(idx, level[idx])
+                        pair = np.stack(
+                            [area[idx].reshape(-1), next_area[idx].reshape(-1)]
+                        ).T
+                        pair = np.unique(pair, axis=0)
+                        if config.channel_wise:
+                            c, label = targets[idx][indicies[idx][t]]
+                            labels = pair[pair[:, 0] == label][:, 1]
+                            channel = np.ones_like(labels) * c
+                            _target = np.stack([channel, labels], axis=1)
+                            next_targets[idx] = np.random.permutation(_target)
+                        else:
+                            label = targets[idx][indicies[idx][t]]
+                            labels = pair[pair[:, 0] == label][:, 1]
+                            next_targets[idx] = np.random.permutation(labels)
                 else:
                     next_targets[idx] = np.array([])
             if self.forward.min() < config.step and level.max() < self.max_level:
