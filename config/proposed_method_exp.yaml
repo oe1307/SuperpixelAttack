@@ -12,7 +12,7 @@ model:
 step: 100
 criterion: cw
 update_area: superpixel
-update_method: efficient_search
+update_method: adaptive_search
 removal: True
 
 # superpixel
