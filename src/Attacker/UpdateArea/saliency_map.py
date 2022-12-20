@@ -14,11 +14,10 @@ config = config_parser()
 
 class SaliencyMap:
     def __init__(self):
-        self.saliency_model = SODModel()
+        self.saliency_model = SODModel().to(config.device)
         self.saliency_transform = T.Resize(256)
         weights = torch.load("../storage/model/saliency/saliency_weight.pth")
         self.saliency_model.load_state_dict(weights["model"])
-        self.saliency_model.to(config.device)
         self.saliency_model.eval()
 
     def initialize(self, x: Tensor, level: np.ndarray):
@@ -64,7 +63,7 @@ class SaliencyMap:
             end = min((i + 1) * config.saliency_batch, self.batch)
             img = torch.stack(
                 [self.saliency_transform(x_idx) for x_idx in x[start:end]]
-            )
+            ).to(config.device)
             saliency_map = self.saliency_model(img)[0]
             saliency_map = [T.Resize(self.height)(m)[0] for m in saliency_map]
             saliency_map = torch.stack(saliency_map)
