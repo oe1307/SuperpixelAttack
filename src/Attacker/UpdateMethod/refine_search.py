@@ -1,8 +1,9 @@
-import numpy as np
-import torch
 import math
 
-from utils import config_parser, setup_logger, pbar
+import numpy as np
+import torch
+
+from utils import config_parser, pbar, setup_logger
 
 from .base_method import BaseMethod
 
