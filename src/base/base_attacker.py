@@ -47,7 +47,7 @@ class Attacker:
 
         # calculate robust accuracy
         assert x_adv_all.shape == x_all.shape
-        robust_acc = torch.zeros(config.n_examples, dtype=torch.bool)
+        robust_acc = torch.zeros(config.n_examples, device=config.device, dtype=bool)
         for i in range(n_batch):
             start = i * model.batch_size
             end = min((i + 1) * model.batch_size, config.n_examples)
