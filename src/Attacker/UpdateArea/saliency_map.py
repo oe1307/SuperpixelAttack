@@ -18,7 +18,9 @@ class SaliencyMap:
             raise ValueError("Update area is only available for adaptive search.")
         self.saliency_model = SODModel().to(config.device)
         self.saliency_transform = T.Resize(256)
-        weights = torch.load("../storage/model/saliency/saliency_weight.pth")
+        weights = torch.load(
+            "../storage/model/saliency/best-model_epoch-204_mae-0.0505_loss-0.1370.pth"
+        )
         self.saliency_model.load_state_dict(weights["model"])
         self.saliency_model.eval()
 

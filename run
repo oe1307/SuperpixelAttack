@@ -25,6 +25,7 @@ elif [ "$1 " = "format " ]; then
     black $root_dir/src -q
     isort $root_dir/src -q
     pflake8 $root_dir/src
+    echo "formatted"
 
 else
     echo "Usage: $0 [install|setup|format]"
