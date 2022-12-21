@@ -15,7 +15,7 @@
 
 2. download ImageNet and models
 
-Login [image-net.org](https://image-net.org/login.php) and download [ILSVRC2012 validation images](https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar) and [ILSVRC2012_devkit_t12.tar.gz](https://image-net.org/data/ILSVRC/2012/ILSVRC2012_devkit_t12.tar.gz).
+Login [image-net.org](https://image-net.org/login.php) and download [ILSVRC2012_img_val.tar](https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar) and [ILSVRC2012_devkit_t12.tar.gz](https://image-net.org/data/ILSVRC/2012/ILSVRC2012_devkit_t12.tar.gz).
 Set `ILSVRC2012_img_val.tar` and `ILSVRC2012_devkit_t12.tar.gz` in `storage/data`, then
 
 ```
