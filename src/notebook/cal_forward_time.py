@@ -63,6 +63,7 @@ n_batch = math.ceil(n_examples / batch_size)
 with torch.no_grad():
     for q in range(query):
         for i in range(n_batch):
+            print(f"\r query: {q}, batch: {i}", end="")
             start = i * batch_size
             end = min((i + 1) * batch_size, n_examples)
             x = x_all[start:end]
