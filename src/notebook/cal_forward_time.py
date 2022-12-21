@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 
 
 n_examples = 5000
-batch_size = 1000
+batch_size = 100
 query = 100
 thread = 5
 device = 0
@@ -62,7 +62,7 @@ n_batch = math.ceil(n_examples / batch_size)
 with torch.no_grad():
     for i in range(n_batch):
         for q in range(query):
-            print(f"\r batch: {i}, forward: {q}     ", end="")
+            print(f"\r batch: {i + 1}, forward: {q + 1}     ", end="")
             start = i * batch_size
             end = min((i + 1) * batch_size, n_examples)
             x = x_all[start:end]
