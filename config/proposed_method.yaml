@@ -6,15 +6,15 @@ n_examples: 5000
 
 model:
     # torchvision
-    resnet50: 2000
-    vgg16_bn: 2000
+    resnet50: 1000
+    vgg16_bn: 1000
 
     # robustbench
-    Wong2020Fast: 2000
-    Engstrom2019Robustness: 2000
-    Salman2020Do_R18: 2000
-    Salman2020Do_R50: 2000
-    Salman2020Do_50_2: 2000
+    Wong2020Fast: 1000
+    Engstrom2019Robustness: 1000
+    Salman2020Do_R18: 1000
+    Salman2020Do_R50: 1000
+    Salman2020Do_50_2: 1000
 
 # hyperparameter
 step: 100
