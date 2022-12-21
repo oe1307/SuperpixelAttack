@@ -85,7 +85,7 @@ class HALS:
                 continue
             c, label = self.targets[idx][0]
             upper = self.is_upper[idx, c, self.area[idx] == label]
-            if upper.sum() <= self.area[idx].sum() // 2:
+            if upper.sum() <= (self.area[idx] == label).sum() // 2:
                 is_upper[idx, c, self.area[idx] == label] = True
                 self.forward[idx] += 1
         x_adv = torch.where(is_upper, self.upper, self.lower)
@@ -108,7 +108,7 @@ class HALS:
                 continue
             c, label = self.targets[idx][0]
             upper = self.is_upper[idx, c, self.area[idx] == label]
-            if upper.sum() >= self.area[idx].sum() // 2:
+            if upper.sum() >= (self.area[idx] == label).sum() // 2:
                 is_upper[idx, c, self.area[idx] == label] = False
                 self.forward[idx] += 1
         x_adv = torch.where(is_upper, self.upper, self.lower)
