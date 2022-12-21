@@ -18,7 +18,7 @@ class UniformDistribution:
         self.criterion = criterion
 
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
-        self.batch, self.n_channel, self.height, self.width = x.shape
+        self.batch, n_channel, height, width = x.shape
         self.y = y.clone()
         self.upper = upper.clone()
         self.lower = lower.clone()
@@ -29,25 +29,18 @@ class UniformDistribution:
         for idx in range(self.batch):
             labels = np.unique(self.area[idx])
             labels = labels[labels != 0]
-            channel = np.tile(np.arange(self.n_channel), len(labels))
-            labels = np.repeat(labels, self.n_channel)
+            channel = np.tile(np.arange(n_channel), len(labels))
+            labels = np.repeat(labels, n_channel)
             channel_labels = np.stack([channel, labels], axis=1)
             self.targets.append(np.random.permutation(channel_labels))
 
         is_upper = torch.randint(
-            0,
-            2,
-            (self.batch, self.n_channel, 1, self.width),
-            device=config.device,
-            dtype=bool,
-        ).repeat_interleave(self.height, dim=2)
-        x_adv = torch.where(is_upper, upper, lower)
-        pred = self.model(x_adv).softmax(1)
-        loss = self.criterion(pred, y)
+            0, 2, (self.batch, n_channel, 1, width), device=config.device, dtype=bool
+        ).repeat_interleave(height, dim=2)
+        self.x_best = torch.where(is_upper, upper, lower)
+        pred = self.model(self.x_best).softmax(1)
+        self.best_loss = self.criterion(pred, y)
         self.forward = np.ones(self.batch, dtype=int)
-        self.is_upper_best = is_upper.clone()
-        self.x_best = x_adv.clone()
-        self.best_loss = loss.clone()
         return self.forward
 
     def step(self):
@@ -64,8 +57,7 @@ class UniformDistribution:
                 labels = np.unique(self.area[idx])
                 labels = labels[labels != 0]
                 self.targets[idx] = np.random.permutation(labels)
-        x_adv = x_adv.permute(0, 3, 1, 2)
-        x_adv = x_adv.clamp(self.lower, self.upper)
+        x_adv = x_adv.permute(0, 3, 1, 2).clamp(self.lower, self.upper)
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
         self.forward += 1
