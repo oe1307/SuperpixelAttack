@@ -25,10 +25,10 @@ class ProposedMethod(Attacker):
 
         x_adv_all = []
         n_images = x_all.shape[0]
-        n_batch = math.ceil(n_images / self.model.batch_size)
+        n_batch = math.ceil(n_images / config.batch_size)
         for b in range(n_batch):
-            start = b * self.model.batch_size
-            end = min((b + 1) * self.model.batch_size, n_images)
+            start = b * config.batch_size
+            end = min((b + 1) * config.batch_size, n_images)
             x = x_all[start:end]
             y = y_all[start:end]
             upper = (x + config.epsilon).clamp(0, 1).clone()

@@ -54,9 +54,10 @@ def main():
     for model_name, batch_size in config.model.items():
         print(f"{model_name}")
         reproducibility(config.seed)
+        config.model_name = model_name
         config.datetime = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         attacker = get_attacker()
-        model, transform = get_model(model_name, batch_size)
+        model, transform = get_model()
         data, label = load_imagenet(transform)
         attacker.attack(model, data, label)
         torch.cuda.empty_cache()

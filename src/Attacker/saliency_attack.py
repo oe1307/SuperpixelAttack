@@ -31,10 +31,10 @@ class SaliencyAttack(Attacker):
     def _attack(self, x_all: Tensor, y_all: Tensor):
         x_adv_all = []
         n_images, n_channel, height, width = x_all.shape
-        n_batch = math.ceil(n_images / self.model.batch_size)
+        n_batch = math.ceil(n_images / config.batch_size)
         for i in range(n_batch):
-            start = i * self.model.batch_size
-            end = min((i + 1) * self.model.batch_size, n_images)
+            start = i * config.batch_size
+            end = min((i + 1) * config.batch_size, n_images)
             x = x_all[start:end]
             self.y = y_all[start:end]
             batch = x.shape[0]

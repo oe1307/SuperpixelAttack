@@ -30,10 +30,10 @@ class Attacker:
 
         # remove misclassification images
         clean_acc = torch.zeros(config.n_examples, device=config.device, dtype=bool)
-        n_batch = math.ceil(config.n_examples / self.model.batch_size)
+        n_batch = math.ceil(config.n_examples / config.batch_size)
         for i in range(n_batch):
-            start = i * self.model.batch_size
-            end = min((i + 1) * self.model.batch_size, config.n_examples)
+            start = i * config.batch_size
+            end = min((i + 1) * config.batch_size, config.n_examples)
             x = x_all[start:end]
             y = y_all[start:end]
             pred = self.model(x).softmax(dim=1)
@@ -49,8 +49,8 @@ class Attacker:
         assert x_adv_all.shape == x_all.shape
         robust_acc = torch.zeros(config.n_examples, device=config.device, dtype=bool)
         for i in range(n_batch):
-            start = i * model.batch_size
-            end = min((i + 1) * model.batch_size, config.n_examples)
+            start = i * config.batch_size
+            end = min((i + 1) * config.batch_size, config.n_examples)
             x_clean = x_all[start:end]
             x_adv = x_adv_all[start:end]
             y = y_all[start:end]
