@@ -137,4 +137,4 @@ class RefineSearch:
                 else:
                     next_targets[idx] = np.array([])
             if self.forward.min() < config.step and level < len(config.segments) - 1:
-                self.refine(next_area.copy(), next_targets.copy(), level.copy())
+                self.refine(next_area.copy(), next_targets.copy(), level)
