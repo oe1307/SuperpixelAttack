@@ -16,7 +16,7 @@ elif [ "$1 " = "setup " ]; then
         tar -zxvf ILSVRC2012_devkit_t12.tar.gz
         cd $root_dir/setup
         python3 setup_imagenet.py
-        python3 download_model.py
+        python3 download_models.py
     else
         echo "-> imagenet already exists"
     fi
