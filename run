@@ -1,27 +1,29 @@
 #!/bin/sh
 
-if [ $1 = "setup" ]; then
-    mkdir -p $(dirname $0)/storage/data
+if [ $1 = "install" ]; then
+    cd $(dirname $0)
+    pip install --upgrade pip
+    pip install -r requirements.txt
+
+elif [ $1 = "setup" ]; then
     cd $(dirname $0)/storage/data
     if [ ! -e imagenet ]; then
-        scp ds:/data0/issa/dataset/imagenet.tar.gz imagenet.tar.gz
-        tar -xzf imagenet.tar.gz
+        mkdir imagenet
+        tar -xvf ILSVRC2012_img_val.tar -C imagenet
+        tar -xvf ILSVRC2012_devkit_t12.tar
+        cd $(dirname $0)/setup
+        python3 setup_imagenet.py
+        python3 download_model.py
     else
         echo "-> imagenet already exists"
     fi
-    mkdir -p ../model/saliency
-    cd ../model/saliency
+    mkdir -p $(dirname $0)/storage/model/saliency
+    cd $(dirname $0)/storage/model/saliency
     if [ ! -e saliency_weight.pth ]; then
         scp ds:/data0/issa/other/saliency_weight.pth saliency_weight.pth
     else
         echo "-> saliency already exists"
     fi
-
-elif [ $1 = "install" ]; then
-    cd $(dirname $0)
-    pip install --upgrade pip
-    pip list --format freeze | grep -v -e pip -e setuptools | xargs pip uninstall -y
-    pip install -r requirements.txt
 
 elif [ $1 = "format" ]; then
     echo && echo "----black-----"
@@ -33,5 +35,5 @@ elif [ $1 = "format" ]; then
     echo
 
 else
-    echo "Usage: $0 [setup|install|format]"
+    echo "Usage: $0 [install|setup|format]"
 fi

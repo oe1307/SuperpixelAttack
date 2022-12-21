@@ -1,7 +1,10 @@
+# base
+scipy
+torch
+
 # model
 git+https://github.com/RobustBench/robustbench.git
 --find-links https://download.pytorch.org/whl/cu116/torch_stable.html
-torch
 torchvision
 
 # attacker
@@ -10,7 +13,6 @@ git+https://github.com/BorealisAI/advertorch.git
 scikit-image
 
 # utils
-yaspin
 colorlog
 pyyaml
 ipython
