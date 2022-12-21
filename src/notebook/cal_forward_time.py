@@ -72,4 +72,4 @@ with torch.no_grad():
             loss = cw_loss(pred, y)
             cal_forward_time += time.time() - timekeeper
 
-print(f"\n{cal_forward_time}")
+print(f"\ncalculate forward in {cal_forward_time} sec")
