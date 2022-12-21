@@ -39,10 +39,10 @@ def cal_superpixel(x, idx):
 
 transform = T.Compose([T.Resize(232), T.CenterCrop(224), T.ToTensor()])
 dataset = CustomImageFolder("../../storage/data/imagenet", transform=transform)
-print("Loading dataset...")
 dataloader = DataLoader(dataset, n_examples, shuffle=False, num_workers=thread)
-print("Loaded dataset")
+print("Loading dataset...")
 img = next(iter(dataloader))[0]
+print("Loaded dataset")
 
 
 # In[ ]:
@@ -59,4 +59,4 @@ else:
         ]
     superpixel = np.array([future.result() for future in futures])
 
-print(f"calculate superpixel in {time.time() - timekeeper:.2f} sec")
+print(f"\ncalculate superpixel in {time.time() - timekeeper:.2f} sec")
