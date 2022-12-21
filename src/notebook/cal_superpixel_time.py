@@ -17,7 +17,7 @@ from torchvision import transforms as T
 
 
 n_examples = 5000
-thread = 1
+thread = 10
 segments = [4, 16, 64, 256]
 
 
@@ -25,7 +25,7 @@ segments = [4, 16, 64, 256]
 
 
 def cal_superpixel(x, idx):
-    print(f"\r {idx} / {n_examples}", end="")
+    print(f"\r {idx + 1} / {n_examples}", end="")
     superpixel_storage = []
     for n_segments in segments:
         img = (x.numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
@@ -38,8 +38,10 @@ def cal_superpixel(x, idx):
 
 
 transform = T.Compose([T.Resize(232), T.CenterCrop(224), T.ToTensor()])
-dataset = CustomImageFolder("../../storage/data", transform=transform)
+dataset = CustomImageFolder("../../storage/data/imagenet", transform=transform)
+print("Loading dataset...")
 dataloader = DataLoader(dataset, n_examples, shuffle=False, num_workers=thread)
+print("Loaded dataset")
 img = next(iter(dataloader))[0]
 
 
