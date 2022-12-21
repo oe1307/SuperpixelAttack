@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 n_examples = 5000
 batch_size = 1000
 query = 100
-thread = 10
+thread = 5
 device = 0
 model_name = "Wong2020Fast"
 
@@ -42,7 +42,7 @@ def cw_loss(pred: Tensor, y: Tensor):
 # In[ ]:
 
 
-model = robustbench.load_model(model_name, "../storage/model", "imagenet").to(device)
+model = robustbench.load_model(model_name, "../../storage/model", "imagenet").to(device)
 model.eval()
 transform = get_preprocessing(
     BenchmarkDataset.imagenet, ThreatModel.Linf, model_name, None
@@ -50,7 +50,8 @@ transform = get_preprocessing(
 dataset = CustomImageFolder("../../storage/data/imagenet", transform=transform)
 dataloader = DataLoader(dataset, n_examples, shuffle=False, num_workers=thread)
 print("Loading dataset...")
-x_all, y_all = next(iter(dataloader))[:2].to(device)
+x_all, y_all = next(iter(dataloader))[:2]
+x_all, y_all = x_all.to(device), y_all.to(device)
 print("Loaded dataset")
 
 
