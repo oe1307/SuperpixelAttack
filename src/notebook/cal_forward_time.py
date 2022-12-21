@@ -61,9 +61,9 @@ print("Loaded dataset")
 cal_forward_time = 0
 n_batch = math.ceil(n_examples / batch_size)
 with torch.no_grad():
-    for q in range(query):
-        for i in range(n_batch):
-            print(f"\r query: {q}, batch: {i}", end="")
+    for i in range(n_batch):
+        for q in range(query):
+            print(f"\r batch: {i}, forward: {q}", end="")
             start = i * batch_size
             end = min((i + 1) * batch_size, n_examples)
             x = x_all[start:end]
