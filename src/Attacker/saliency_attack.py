@@ -21,7 +21,9 @@ class SaliencyAttack(Attacker):
         # saliency model
         self.saliency_model = SODModel()
         self.saliency_transform = T.Resize(256)
-        weights = torch.load("../storage/model/saliency/saliency_weight.pth")
+        weights = torch.load(
+            "../storage/model/saliency/best-model_epoch-204_mae-0.0505_loss-0.1370.pth"
+        )
         self.saliency_model.load_state_dict(weights["model"])
         self.saliency_model.to(config.device)
         self.saliency_model.eval()
