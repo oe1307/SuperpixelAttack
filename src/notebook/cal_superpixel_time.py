@@ -25,7 +25,7 @@ segments = [4, 16, 64, 256]
 
 
 def cal_superpixel(x, idx):
-    print(f"\r {idx + 1} / {n_examples}", end="")
+    print(f"\r {idx + 1} / {n_examples}     ", end="")
     superpixel_storage = []
     for n_segments in segments:
         img = (x.numpy().transpose(1, 2, 0) * 255).astype(np.uint8)

@@ -12,7 +12,6 @@ import torch
 from robustbench.data import CustomImageFolder, get_preprocessing
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 from torch import Tensor
-from torch.nn import Module
 from torch.utils.data import DataLoader
 
 # In[ ]:
@@ -63,7 +62,7 @@ n_batch = math.ceil(n_examples / batch_size)
 with torch.no_grad():
     for i in range(n_batch):
         for q in range(query):
-            print(f"\r batch: {i}, forward: {q}", end="")
+            print(f"\r batch: {i}, forward: {q}     ", end="")
             start = i * batch_size
             end = min((i + 1) * batch_size, n_examples)
             x = x_all[start:end]
