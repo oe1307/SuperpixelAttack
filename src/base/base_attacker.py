@@ -70,7 +70,7 @@ class Attacker:
         msg = (
             "\n"
             + f"n_examples = {config.n_examples}\n"
-            + f"model = {self.model.name}\n"
+            + f"model = {config.model_name}\n"
             + f"epsilon = {config.epsilon}\n"
             + f"forward = {config.n_forward}\n"
             + f"total time = {total_time:.2f} s\n"
