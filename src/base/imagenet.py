@@ -17,7 +17,7 @@ def load_imagenet(
     """Load ImageNet data"""
 
     config.n_classes = 1000
-    data_dir = os.path.join(data_dir, "imagenet/val")
+    data_dir = os.path.join(data_dir, "imagenet")
     if not os.path.exists(data_dir):
         raise FileNotFoundError("please download imagenet dataset")
     dataset = CustomImageFolder(data_dir, transform=transform)
