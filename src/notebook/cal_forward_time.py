@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 import math
 import time
 
@@ -9,12 +15,18 @@ from torch import Tensor
 from torch.nn import Module
 from torch.utils.data import DataLoader
 
+# In[ ]:
+
+
 n_examples = 5000
 batch_size = 1000
 query = 100
 thread = 10
 device = 0
 model_name = "Wong2020Fast"
+
+
+# In[ ]:
 
 
 def cw_loss(pred: Tensor, y: Tensor):
@@ -27,6 +39,9 @@ def cw_loss(pred: Tensor, y: Tensor):
     return loss
 
 
+# In[ ]:
+
+
 model = robustbench.load_model(model_name, "../storage/model", "imagenet").to(device)
 model.eval()
 transform = get_preprocessing(
@@ -37,6 +52,10 @@ dataloader = DataLoader(dataset, n_examples, shuffle=False, num_workers=thread)
 print("Loading dataset...")
 x_all, y_all = next(iter(dataloader))[:2].to(device)
 print("Loaded dataset")
+
+
+# In[ ]:
+
 
 cal_forward_time = 0
 n_batch = math.ceil(n_examples / batch_size)
