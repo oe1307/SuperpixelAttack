@@ -5,8 +5,8 @@ epsilon: 0.01568627450980392
 n_examples: 5000
 
 model:
-    Wong2020Fast: 1000
-    Salman2020Do_R18: 1000
+    Wong2020Fast: 2000
+    Salman2020Do_R18: 2000
 
 # hyperparameter
 step: 100
