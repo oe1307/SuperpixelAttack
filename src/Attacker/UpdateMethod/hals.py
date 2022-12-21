@@ -15,6 +15,10 @@ class HALS:
             raise ValueError("Update area is only available for superpixel.")
         self.update_area = update_area
 
+    def set(self, model, criterion):
+        self.model = model
+        self.criterion = criterion
+
     def initialize(self, x: Tensor, y: Tensor, lower: Tensor, upper: Tensor):
         self.batch, self.n_channel, self.height, self.width = x.shape
         self.y = y.clone()
