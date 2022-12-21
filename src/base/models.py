@@ -20,7 +20,7 @@ def get_model(model_dir="../storage/model") -> Union[Module, Callable]:
         "vgg16_bn",
     ):
         model = torchvision.models.get_model(config.model_name, weights="DEFAULT")
-        transform = get_transform(config.model_name)
+        transform = get_transform()
 
     elif config.model_name in (
         "Wong2020Fast",
