@@ -20,22 +20,11 @@ elif [ "$1 " = "setup " ]; then
     else
         echo "-> imagenet already exists"
     fi
-    mkdir -p $root_dir/storage/model/saliency
-    cd $root_dir/storage/model/saliency
-    if [ ! -e saliency_weight.pth ]; then
-        scp ds:/data0/issa/other/saliency_weight.pth saliency_weight.pth
-    else
-        echo "-> saliency already exists"
-    fi
 
 elif [ "$1 " = "format " ]; then
-    echo && echo "----black-----"
     black $root_dir/src -q
-    echo && echo "----isort-----"
-    isort $root_dir/src -s ./run
-    echo && echo "----flake8----"
+    isort $root_dir/src -q
     pflake8 $root_dir/src
-    echo
 
 else
     echo "Usage: $0 [install|setup|format]"
