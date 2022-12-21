@@ -34,19 +34,25 @@ then
 Table1 and Table2: Comparison with baseline
 
 ```
-sh exp/baseline.sh
+sh exp/1-baseline.sh
 ```
 
 Table3: Update Area
 
 ```
-sh exp/update_area.sh
+sh exp/2-update_area.sh
 ```
 
 Table4: Update Method
 
 ```
-sh exp/update_method.sh
+sh exp/3-update_method.sh
+```
+
+Table5: superpixel and forward calculate time
+
+```
+sh exp/4-calculate_time.sh
 ```
 
 ## Attacker
