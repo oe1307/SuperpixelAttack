@@ -124,7 +124,7 @@ class RefineSearch:
                         self.forward[idx] < config.step
                         and level < len(config.segments) - 1
                     ):
-                        next_area[idx] = self.update_area.update(idx, level[idx])
+                        next_area[idx] = self.update_area.update(idx, level)
                         pair = np.stack(
                             [area[idx].reshape(-1), next_area[idx].reshape(-1)]
                         ).T
