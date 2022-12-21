@@ -3,7 +3,7 @@ cd $(dirname $0)/../src
 # Parsimonious attack
 python attack.py -c ../config/parsimonious_attack.yaml -g 0 -p step=100
 python attack.py -c ../config/parsimonious_attack.yaml -g 0 -p step=1000
-python attack.py -c ../config/parsimonious_attack.yaml -g 0 -p step=1000
+python attack.py -c ../config/parsimonious_attack.yaml -g 0 -p step=10000
 
 # GenAttack
 python attack.py -c ../config/gen_attack.yaml -g 0 -p step=17
