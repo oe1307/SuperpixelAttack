@@ -1,37 +1,40 @@
 #!/bin/sh
 
-if [ $1 = "install" ]; then
-    cd $(dirname $0)
+cd $(dirname $0)
+root_dir=$(pwd -P)
+
+if [ "$1 " = "install " ]; then
+    cd $root_dir
     pip install --upgrade pip
     pip install -r requirements.txt
 
-elif [ $1 = "setup" ]; then
-    cd $(dirname $0)/storage/data
+elif [ "$1 " = "setup " ]; then
+    cd $root_dir/storage/data
     if [ ! -e imagenet ]; then
         mkdir imagenet
         tar -xvf ILSVRC2012_img_val.tar -C imagenet
         tar -zxvf ILSVRC2012_devkit_t12.tar.gz
-        cd $(dirname $0)/setup
+        cd $root_dir/setup
         python3 setup_imagenet.py
         python3 download_model.py
     else
         echo "-> imagenet already exists"
     fi
-    mkdir -p $(dirname $0)/storage/model/saliency
-    cd $(dirname $0)/storage/model/saliency
+    mkdir -p $root_dir/storage/model/saliency
+    cd $root_dir/storage/model/saliency
     if [ ! -e saliency_weight.pth ]; then
         scp ds:/data0/issa/other/saliency_weight.pth saliency_weight.pth
     else
         echo "-> saliency already exists"
     fi
 
-elif [ $1 = "format" ]; then
+elif [ "$1 " = "format " ]; then
     echo && echo "----black-----"
-    black $(dirname $0)/src -q
+    black $root_dir/src -q
     echo && echo "----isort-----"
-    isort $(dirname $0)/src -s ./run
+    isort $root_dir/src -s ./run
     echo && echo "----flake8----"
-    pflake8 $(dirname $0)/src
+    pflake8 $root_dir/src
     echo
 
 else
