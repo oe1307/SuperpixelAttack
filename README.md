@@ -21,7 +21,7 @@ Set `ILSVRC2012_img_val.tar` and `ILSVRC2012_devkit_t12.tar.gz` in `storage/data
 
 Go to [sairajk/PyTorch-Pyramid-Feature-Attention-Network-for-Saliency-Detection](https://github.com/sairajk/PyTorch-Pyramid-Feature-Attention-Network-for-Saliency-Detection) and download pretrained [saliency model](https://drive.google.com/file/d/1Sc7dgXCZjF4wVwBihmIry-Xk7wTqrJdr/view).
 
-Set `best-model_epoch-204_mae-0.0505_loss-0.1370.pth` in `storage/saliency/model/saliency/`.
+Set `best-model_epoch-204_mae-0.0505_loss-0.1370.pth` in `storage/model/saliency/`.
 
 then
 
