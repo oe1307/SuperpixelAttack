@@ -12,7 +12,7 @@ config = config_parser()
 class AdaptiveSearch:
     def __init__(self, update_area):
         self.update_area = update_area
-        config.forward_time = 0
+        config.cal_forward_time = 0
 
     def set(self, model, criterion):
         self.model = model
@@ -41,8 +41,7 @@ class AdaptiveSearch:
         self.best_loss = self.criterion(pred, y)
         self.forward = np.ones(self.batch, dtype=int)
 
-        self.updated = np.ones(self.x_best.shape)
-        self.searched = np.ones(self.x_best.shape)
+        self.searched, self.updated = np.ones(x.shape), np.ones(x.shape)
         return self.forward
 
     def step(self):
@@ -62,8 +61,7 @@ class AdaptiveSearch:
         timekeeper = time.time()
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
-        config.forward_time += time.time() - timekeeper
-        self.forward += 1
+        config.cal_forward_time += time.time() - timekeeper
         update = loss >= self.best_loss
         self.is_upper_best[update] = is_upper[update]
         self.x_best[update] = x_adv[update]

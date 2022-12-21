@@ -1,6 +1,6 @@
 import numpy as np
-from torch import Tensor
 import torch
+from torch import Tensor
 
 from utils import config_parser
 

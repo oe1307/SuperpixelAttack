@@ -36,8 +36,8 @@ class Attacker:
             end = min((i + 1) * self.model.batch_size, config.n_examples)
             x = x_all[start:end]
             y = y_all[start:end]
-            logits = self.model(x).clone()
-            clean_acc[start:end] = logits.argmax(dim=1) == y
+            pred = self.model(x).softmax(dim=1)
+            clean_acc[start:end] = pred.argmax(dim=1) == y
         config.clean_acc = clean_acc.sum().item()
 
         x_adv = self._attack(x_all[clean_acc], y_all[clean_acc])
@@ -54,15 +54,15 @@ class Attacker:
             x_clean = x_all[start:end]
             x_adv = x_adv_all[start:end]
             y = y_all[start:end]
-            upper = (x_clean + config.epsilon).clamp(0, 1).clone()
-            lower = (x_clean - config.epsilon).clamp(0, 1).clone()
 
             # for check
+            upper = (x_clean + config.epsilon).clamp(0, 1).clone()
+            lower = (x_clean - config.epsilon).clamp(0, 1).clone()
             assert (x_adv <= upper + 1e-10).all() and (x_adv >= lower - 1e-10).all()
             x_adv = x_adv.clamp(lower, upper)
 
-            logits = self.model(x_adv).clone()
-            robust_acc[start:end] = logits.argmax(dim=1) == y
+            pred = self.model(x_adv).softmax(dim=1)
+            robust_acc[start:end] = pred.argmax(dim=1) == y
             np.save(f"{config.savedir}/robust_acc.npy", robust_acc.cpu().numpy())
         total_time = time.time() - self.timekeeper
         attack_success_rate = 100 - robust_acc.sum() / config.n_examples * 100

@@ -1,8 +1,6 @@
-import math
-from torch import Tensor
-
 import numpy as np
 import torch
+from torch import Tensor
 
 from utils import config_parser, pbar, setup_logger
 
