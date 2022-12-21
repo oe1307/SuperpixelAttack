@@ -24,7 +24,7 @@ update_method: adaptive_search
 removal: True
 
 # superpixel
-segments: [4, 16, 64, 256, 1024, 4096]
+segments: [4, 16, 64, 256, 1024, 4096, 16384]
 
 # equally_divided_squares
 initial_split: 32
