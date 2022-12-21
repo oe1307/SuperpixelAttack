@@ -12,7 +12,6 @@ config = config_parser()
 class AdaptiveSearch:
     def __init__(self, update_area):
         self.update_area = update_area
-        config.cal_forward_time = 0
 
     def set(self, model, criterion):
         self.model = model
@@ -58,10 +57,8 @@ class AdaptiveSearch:
             ]
             self.forward[idx] += 1
         x_adv = torch.where(is_upper, self.upper, self.lower)
-        timekeeper = time.time()
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
-        config.cal_forward_time += time.time() - timekeeper
         update = loss >= self.best_loss
         self.is_upper_best[update] = is_upper[update]
         self.x_best[update] = x_adv[update]
