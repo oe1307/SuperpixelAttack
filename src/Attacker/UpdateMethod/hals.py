@@ -96,7 +96,7 @@ class HALS:
                 continue
             c, label = self.targets[idx][0]
             upper = self.is_upper[idx, c, self.area[idx] == label]
-            if upper.sum() <= self.area[idx].sum() // 2:
+            if upper.sum() <= (self.area[idx] == label).sum() // 2:
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
                 self.targets[idx] = self.targets[idx][1:]
@@ -119,7 +119,7 @@ class HALS:
                 continue
             c, label = self.targets[idx][0]
             upper = self.is_upper[idx, c, self.area[idx] == label]
-            if upper.sum() >= self.area[idx].sum() // 2:
+            if upper.sum() >= (self.area[idx] == label).sum() // 2:
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
                 self.targets[idx] = self.targets[idx][1:]

@@ -12,8 +12,8 @@ model:
     # robustbench
     Wong2020Fast: 100
     Engstrom2019Robustness: 200
-    Salman2020Do_R18: 200
     Salman2020Do_R50: 200
+    Salman2020Do_R18: 200
     Salman2020Do_50_2: 200
 
 # hyperparameter
