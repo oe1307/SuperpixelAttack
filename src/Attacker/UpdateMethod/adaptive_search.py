@@ -37,6 +37,7 @@ class AdaptiveSearch:
         pred = self.model(self.x_best).softmax(1)
         self.best_loss = self.criterion(pred, y)
         self.forward = np.ones(self.batch, dtype=int)
+        self.alpha = np.ones(self.batch) * config.alpha[0]
 
         self.searched, self.updated = np.ones(x.shape), np.ones(x.shape)
         return self.forward
@@ -49,7 +50,7 @@ class AdaptiveSearch:
             c, label = self.targets[idx][0]
             updated = self.updated[idx, c, self.area[idx] == label].sum()
             searched = self.searched[idx, c, self.area[idx] == label].sum()
-            probability = 0.5 * (updated / searched) + 0.5
+            probability = (1 - self.alpha[idx]) * (updated / searched) + self.alpha[idx]
             if np.random.rand() > probability and config.removal:
                 continue
             is_upper[idx, c, self.area[idx] == label] = ~is_upper[
@@ -79,5 +80,6 @@ class AdaptiveSearch:
                 labels = np.repeat(labels, self.n_channel)
                 channel_labels = np.stack([channel, labels], axis=1)
                 self.targets[idx] = np.random.permutation(channel_labels)
+                self.alpha[idx] = config.alpha[self.level[idx]]
         assert (self.forward <= config.step).all()
         return self.x_best, self.forward
