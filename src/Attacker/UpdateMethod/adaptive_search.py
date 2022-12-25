@@ -44,6 +44,8 @@ class AdaptiveSearch:
     def step(self):
         is_upper = self.is_upper_best.clone()
         for idx in range(self.batch):
+            if self.forward[idx] >= config.step:
+                continue
             c, label = self.targets[idx][0]
             updated = self.updated[idx, c, self.area[idx] == label].sum()
             searched = self.searched[idx, c, self.area[idx] == label].sum()
@@ -62,6 +64,8 @@ class AdaptiveSearch:
         self.x_best[update] = x_adv[update]
         self.best_loss[update] = loss[update]
         for idx in range(self.batch):
+            if self.forward[idx] >= config.step:
+                continue
             c, label = self.targets[idx][0]
             self.targets[idx] = self.targets[idx][1:]
             self.updated[idx, c, self.area[idx] == label] += update[idx].item()
@@ -75,4 +79,5 @@ class AdaptiveSearch:
                 labels = np.repeat(labels, self.n_channel)
                 channel_labels = np.stack([channel, labels], axis=1)
                 self.targets[idx] = np.random.permutation(channel_labels)
+        assert (self.forward <= config.step).all()
         return self.x_best, self.forward
