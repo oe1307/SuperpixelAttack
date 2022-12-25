@@ -95,11 +95,11 @@ class HALS:
             if self.targets[idx].shape[0] == 0:
                 continue
             c, label = self.targets[idx][0]
+            self.targets[idx] = self.targets[idx][1:]
             upper = self.is_upper[idx, c, self.area[idx] == label]
             if upper.sum() <= (self.area[idx] == label).sum() // 2:
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
-                self.targets[idx] = self.targets[idx][1:]
 
     def deletion(self):
         is_upper = self.is_upper.clone()
@@ -118,11 +118,11 @@ class HALS:
             if self.targets[idx].shape[0] == 0:
                 continue
             c, label = self.targets[idx][0]
+            self.targets[idx] = self.targets[idx][1:]
             upper = self.is_upper[idx, c, self.area[idx] == label]
             if upper.sum() >= (self.area[idx] == label).sum() // 2:
                 delta = (self.best_loss[idx] - loss[idx]).item()
                 heapq.heappush(self.max_heap[idx], (delta, (c, label)))
-                self.targets[idx] = self.targets[idx][1:]
 
     def update(self):
         d = self.mode == "insert"
