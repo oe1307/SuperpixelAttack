@@ -56,7 +56,6 @@ class AdaptiveSearch:
             is_upper[idx, c, self.area[idx] == label] = ~is_upper[
                 idx, c, self.area[idx] == label
             ]
-            self.forward[idx] += 1
         x_adv = torch.where(is_upper, self.upper, self.lower)
         pred = self.model(x_adv).softmax(dim=1)
         loss = self.criterion(pred, self.y)
@@ -71,6 +70,7 @@ class AdaptiveSearch:
             self.targets[idx] = self.targets[idx][1:]
             self.updated[idx, c, self.area[idx] == label] += update[idx].item()
             self.searched[idx, c, self.area[idx] == label] += 1
+            self.forward[idx] += 1
             if self.targets[idx].shape[0] == 0:
                 self.level[idx] += 1
                 self.area[idx] = self.update_area.update(idx, self.level[idx])
