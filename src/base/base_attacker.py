@@ -63,7 +63,7 @@ class Attacker:
 
             pred = self.model(x_adv).softmax(dim=1)
             robust_acc[start:end] = pred.argmax(dim=1) == y
-            np.save(f"{config.savedir}/robust_acc.npy", robust_acc.cpu().numpy())
+        np.save(f"{config.savedir}/robust_acc.npy", robust_acc.cpu().numpy())
         total_time = time.time() - self.timekeeper
         attack_success_rate = 100 - robust_acc.sum() / config.n_examples * 100
 
