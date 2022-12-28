@@ -13,8 +13,8 @@ step: 100
 criterion: cw
 update_area: superpixel
 update_method: adaptive_search
-removal: True
-alpha: [1.0, 1.0, 0.8, 0.8, 0.8, 0.8, 0.8]
+removal: False
+alpha: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 # superpixel
 segments: [4, 16, 64, 256, 1024, 4096, 16384]
