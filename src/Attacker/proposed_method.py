@@ -43,6 +43,7 @@ class ProposedMethod(Attacker):
                 x_best, forward = self.update_method.step()
                 pbar.debug(forward.min(), config.step, "forward")
 
+            assert (forward <= config.step).all()
             x_adv_all.append(x_best)
         x_adv_all = torch.concat(x_adv_all)
         return x_adv_all

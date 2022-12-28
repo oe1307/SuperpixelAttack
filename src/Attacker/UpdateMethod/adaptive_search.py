@@ -37,40 +37,16 @@ class AdaptiveSearch:
         pred = self.model(self.x_best).softmax(1)
         self.best_loss = self.criterion(pred, y)
         self.forward = np.ones(self.batch, dtype=int)
-        self.alpha = np.ones(self.batch) * config.alpha[0]
-
-        self.searched, self.updated = np.ones(x.shape), np.ones(x.shape)
         return self.forward
 
     def step(self):
         is_upper = self.is_upper_best.clone()
         for idx in range(self.batch):
-            if self.forward[idx] >= config.step:
-                continue
             c, label = self.targets[idx][0]
-            updated = self.updated[idx, c, self.area[idx] == label].sum()
-            searched = self.searched[idx, c, self.area[idx] == label].sum()
-            probability = (1 - self.alpha[idx]) * (updated / searched) + self.alpha[idx]
-            if np.random.rand() > probability and config.removal:
-                continue
+            self.targets[idx] = self.targets[idx][1:]
             is_upper[idx, c, self.area[idx] == label] = ~is_upper[
                 idx, c, self.area[idx] == label
             ]
-            self.forward[idx] += 1
-        x_adv = torch.where(is_upper, self.upper, self.lower)
-        pred = self.model(x_adv).softmax(dim=1)
-        loss = self.criterion(pred, self.y)
-        update = loss >= self.best_loss
-        self.is_upper_best[update] = is_upper[update]
-        self.x_best[update] = x_adv[update]
-        self.best_loss[update] = loss[update]
-        for idx in range(self.batch):
-            if self.forward[idx] > config.step:
-                continue
-            c, label = self.targets[idx][0]
-            self.targets[idx] = self.targets[idx][1:]
-            self.updated[idx, c, self.area[idx] == label] += update[idx].item()
-            self.searched[idx, c, self.area[idx] == label] += 1
             if self.targets[idx].shape[0] == 0:
                 self.level[idx] += 1
                 self.area[idx] = self.update_area.update(idx, self.level[idx])
@@ -80,6 +56,12 @@ class AdaptiveSearch:
                 labels = np.repeat(labels, self.n_channel)
                 channel_labels = np.stack([channel, labels], axis=1)
                 self.targets[idx] = np.random.permutation(channel_labels)
-                self.alpha[idx] = config.alpha[self.level[idx]]
-        assert (self.forward <= config.step).all()
+        x_adv = torch.where(is_upper, self.upper, self.lower)
+        pred = self.model(x_adv).softmax(dim=1)
+        loss = self.criterion(pred, self.y)
+        self.forward += 1
+        update = loss >= self.best_loss
+        self.is_upper_best[update] = is_upper[update]
+        self.x_best[update] = x_adv[update]
+        self.best_loss[update] = loss[update]
         return self.x_best, self.forward
