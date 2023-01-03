@@ -6,7 +6,7 @@ root_dir=$(pwd -P)
 if [ "$1 " = "install " ]; then
     cd $root_dir
     pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install --upgrade -r requirements.txt
 
 elif [ "$1 " = "setup " ]; then
     cd $root_dir/storage/data
@@ -22,10 +22,12 @@ elif [ "$1 " = "setup " ]; then
     fi
 
 elif [ "$1 " = "format " ]; then
+    echo "---black---"
     black $root_dir/src -q
+    echo "---isort---"
     isort $root_dir/src -q
+    echo "---pflake8---"
     pflake8 $root_dir/src
-    echo "formatted"
 
 else
     echo "Usage: $0 [install|setup|format]"

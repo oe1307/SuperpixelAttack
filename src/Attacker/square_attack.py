@@ -1,4 +1,5 @@
 import math
+import time
 
 import torch
 import torchattacks
@@ -16,7 +17,7 @@ class SquareAttack(Attacker):
         config.n_forward = config.restart * config.step
 
     def _attack(self, x_all: Tensor, y_all: Tensor) -> Tensor:
-        attacker = torchattacks.Square(
+        attacker = TorchAttackSquare(
             self.model,
             config.norm,
             config.epsilon,
@@ -38,3 +39,45 @@ class SquareAttack(Attacker):
             x_adv_all.append(x_adv)
         x_adv_all = torch.cat(x_adv_all, dim=0)
         return x_adv_all
+
+
+class TorchAttackSquare(torchattacks.Square):
+    def init_hyperparam(self, x):
+        assert self.norm in ["Linf", "L2"]
+        assert self.eps is not None
+        assert self.loss in ["ce", "margin", "cw", "dlr"]
+
+        if self.device is None:
+            self.device = x.device
+        self.orig_dim = list(x.shape[1:])
+        self.ndims = len(self.orig_dim)
+        if self.seed is None:
+            self.seed = time.time()
+
+    def margin_and_loss(self, x, y):
+        if config.criterion == "ce":
+            return super().margin_and_loss(x, y)
+        elif config.criterion == "cw":
+            return self.cw_loss(x, y)
+        elif config.criterion == "dlr":
+            return self.dlr_loss(x, y)
+
+    def cw_loss(self, x, y):
+        logits = self.get_logits(x)
+        logits_sorted, idx_sorted = logits.sort(dim=1, descending=True)
+        class_pred = logits[torch.arange(logits.shape[0]), y]
+        target_pred = torch.where(
+            idx_sorted[:, 0] == y, logits_sorted[:, 1], logits_sorted[:, 0]
+        )
+        loss = class_pred - target_pred
+        return loss, loss
+
+    def dlr_loss(self, x, y):
+        logits = self.get_logits(x)
+        logits_sorted, idx_sorted = logits.sort(dim=1, descending=True)
+        class_pred = logits[torch.arange(logits.shape[0]), y]
+        target_pred = torch.where(
+            idx_sorted[:, 0] == y, logits_sorted[:, 1], logits_sorted[:, 0]
+        )
+        loss = (class_pred - target_pred) / (logits_sorted[:, 0] - logits_sorted[:, 2])
+        return loss, loss
