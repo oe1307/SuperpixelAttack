@@ -1,0 +1,10 @@
+attacker: GenAttack
+
+norm: Linf
+epsilon: 0.01568627450980392
+n_examples: 5000
+seed: 0
+iter: 100
+
+model: Salman2020Do_R18
+batch_size: 3500
