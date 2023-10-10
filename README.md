@@ -1,5 +1,7 @@
 # Superpixel Attack
 
+### Implementation of papers accepted for AJCAI 2023
+
     Superpixel Attack: Enhancing Black-box Adversarial Attack with Image-driven Division Areas
 
 ![superpixel_attack](assets/superpixel_attack.jpg)
