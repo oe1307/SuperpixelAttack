@@ -36,3 +36,14 @@ python main.py -c ../config/superpixel_attack.yaml -g 0 -t 10
 ```
 python main.py -c ../config/sign_hunter.yaml -g 1 -t 20 -p model=Wong2020Fast iter=1000
 ```
+
+## Citation
+
+```
+@techreport{oe2023superpixel,
+  title={Superpixel Attack: Enhancing Black-Box Adversarial Attack with Image-Driven Division Areas},
+  author={Oe, Issa and Yamamura, Keiichiro and Ishikura, Hiroki and Hamahira, Ryo and Fujisawa, Katsuki},
+  year={2023},
+  institution={EasyChair}
+}
+```
