@@ -1,0 +1,16 @@
+attacker: SaliencyAttack
+
+norm: Linf
+epsilon: 0.01568627450980392
+n_examples: 5000
+seed: 0
+iter: 100
+criterion: cw
+
+model: Salman2020Do_R18
+batch_size: 3500
+
+# hyperparameter
+k_int: 16
+threshold: 0.1
+sod_batch: 100
